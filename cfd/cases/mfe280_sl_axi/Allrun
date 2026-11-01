@@ -1,0 +1,45 @@
+#!/bin/bash
+# Parallel rhoCentralFoam run with a three-stage Courant-number ramp.
+#   ./Allrun [nProcs]        default 8 (one rank per physical core)
+#   FORCE=1 ./Allrun         skip the check for other running OpenFOAM jobs
+# Re-running continues from the latest processor time; finished stages are skipped.
+cd "$(dirname "$0")" || exit 1
+if [ -z "$WM_PROJECT_DIR" ]; then
+    . /usr/lib/openfoam/openfoam2306/etc/bashrc || exit 1
+fi
+NP=${1:-8}
+
+if [ -z "$FORCE" ]; then
+    busy=$(pgrep -a -f 'Foam' | grep -v -E 'pgrep|Allrun|Allmesh|bash -c|bash -lc')
+    if [ -n "$busy" ]; then
+        echo "Other OpenFOAM processes are running in this distro:"; echo "$busy"
+        echo "Not starting. Use FORCE=1 ./Allrun to override."; exit 1
+    fi
+fi
+grep -q nonuniform 0/p || { echo "0/p has no initial field: run make_case.py --init-only first"; exit 1; }
+
+MPIFLAGS=""
+[ "$(id -u)" = 0 ] && MPIFLAGS="--allow-run-as-root"
+
+if [ ! -d processor0 ]; then
+    foamDictionary -entry numberOfSubdomains -set "$NP" system/decomposeParDict > /dev/null
+    decomposePar > log.decomposePar 2>&1 || { echo "decomposePar failed"; exit 1; }
+fi
+
+latest() { foamListTimes -processor -latestTime 2>/dev/null | tail -1; }
+
+stage() {  # stage <n> <maxCo> <endTime>
+    t=$(latest); t=${t:-0}
+    if awk -v a="$t" -v b="$3" 'BEGIN{exit !(a+0 >= b+0)}'; then echo "stage $1 already done (t = $t)"; return; fi
+    foamDictionary -entry maxCo -set "$2" system/controlDict > /dev/null
+    foamDictionary -entry endTime -set "$3" system/controlDict > /dev/null
+    echo "stage $1: maxCo $2 until $3 ($(date))"
+    mpirun $MPIFLAGS -np "$NP" rhoCentralFoam -parallel > "log.rhoCentralFoam.$1" 2>&1 \
+        || { echo "rhoCentralFoam failed in stage $1, see log.rhoCentralFoam.$1"; exit 1; }
+}
+
+stage 1 0.1 2000
+stage 2 0.25 6000
+stage 3 0.5 40000
+reconstructPar -latestTime > log.reconstructPar 2>&1
+echo "done ($(date))"

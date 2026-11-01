@@ -1,0 +1,1070 @@
+[
+ {
+  "name": "Chamber_GRCop42_regen",
+  "group": "Thrust_Chamber",
+  "material": "GRCop-42",
+  "file": "Chamber_GRCop42_regen.stl"
+ },
+ {
+  "name": "Nozzle_In718_regen",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Nozzle_In718_regen.stl"
+ },
+ {
+  "name": "Nozzle_joint_bolts",
+  "group": "Thrust_Chamber",
+  "material": "A286",
+  "file": "Nozzle_joint_bolts.stl"
+ },
+ {
+  "name": "Nozzle_joint_nuts_washers",
+  "group": "Thrust_Chamber",
+  "material": "A286",
+  "file": "Nozzle_joint_nuts_washers.stl"
+ },
+ {
+  "name": "Coolant_outlet_manifold",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_outlet_manifold.stl"
+ },
+ {
+  "name": "Coolant_inlet_manifold_nozzle",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_inlet_manifold_nozzle.stl"
+ },
+ {
+  "name": "Coolant_distribution_manifold_chamber",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_distribution_manifold_chamber.stl"
+ },
+ {
+  "name": "Coolant_jumper_1",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_jumper_1.stl"
+ },
+ {
+  "name": "Jumper_1_flanges",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_1_flanges.stl"
+ },
+ {
+  "name": "Jumper_1_seal",
+  "group": "Thrust_Chamber",
+  "material": "PTFE/Inconel seal",
+  "file": "Jumper_1_seal.stl"
+ },
+ {
+  "name": "Jumper_1_bolts",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_1_bolts.stl"
+ },
+ {
+  "name": "Jumper_1_nuts_washers",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_1_nuts_washers.stl"
+ },
+ {
+  "name": "Coolant_jumper_2",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_jumper_2.stl"
+ },
+ {
+  "name": "Jumper_2_flanges",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_2_flanges.stl"
+ },
+ {
+  "name": "Jumper_2_seal",
+  "group": "Thrust_Chamber",
+  "material": "PTFE/Inconel seal",
+  "file": "Jumper_2_seal.stl"
+ },
+ {
+  "name": "Jumper_2_bolts",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_2_bolts.stl"
+ },
+ {
+  "name": "Jumper_2_nuts_washers",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_2_nuts_washers.stl"
+ },
+ {
+  "name": "Coolant_jumper_3",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_jumper_3.stl"
+ },
+ {
+  "name": "Jumper_3_flanges",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_3_flanges.stl"
+ },
+ {
+  "name": "Jumper_3_seal",
+  "group": "Thrust_Chamber",
+  "material": "PTFE/Inconel seal",
+  "file": "Jumper_3_seal.stl"
+ },
+ {
+  "name": "Jumper_3_bolts",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_3_bolts.stl"
+ },
+ {
+  "name": "Jumper_3_nuts_washers",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_3_nuts_washers.stl"
+ },
+ {
+  "name": "Coolant_jumper_4",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_jumper_4.stl"
+ },
+ {
+  "name": "Jumper_4_flanges",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_4_flanges.stl"
+ },
+ {
+  "name": "Jumper_4_seal",
+  "group": "Thrust_Chamber",
+  "material": "PTFE/Inconel seal",
+  "file": "Jumper_4_seal.stl"
+ },
+ {
+  "name": "Jumper_4_bolts",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_4_bolts.stl"
+ },
+ {
+  "name": "Jumper_4_nuts_washers",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Jumper_4_nuts_washers.stl"
+ },
+ {
+  "name": "Coolant_exit_manifold",
+  "group": "Thrust_Chamber",
+  "material": "Inconel 718",
+  "file": "Coolant_exit_manifold.stl"
+ },
+ {
+  "name": "Injector_body_fuel_plenum",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_body_fuel_plenum.stl"
+ },
+ {
+  "name": "Injector_faceplate",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_faceplate.stl"
+ },
+ {
+  "name": "Injector_ox_posts",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_ox_posts.stl"
+ },
+ {
+  "name": "Injector_interpropellant_plate",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_interpropellant_plate.stl"
+ },
+ {
+  "name": "Ox_dome",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Ox_dome.stl"
+ },
+ {
+  "name": "TVC_lug_pitch",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "TVC_lug_pitch.stl"
+ },
+ {
+  "name": "TVC_lug_yaw",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "TVC_lug_yaw.stl"
+ },
+ {
+  "name": "Injector_chamber_bolts",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_chamber_bolts.stl"
+ },
+ {
+  "name": "Injector_chamber_nuts_washers",
+  "group": "Injector_Head",
+  "material": "Inconel 718",
+  "file": "Injector_chamber_nuts_washers.stl"
+ },
+ {
+  "name": "Gimbal_block",
+  "group": "Gimbal",
+  "material": "Ti-6Al-4V",
+  "file": "Gimbal_block.stl"
+ },
+ {
+  "name": "Gimbal_pins",
+  "group": "Gimbal",
+  "material": "A286",
+  "file": "Gimbal_pins.stl"
+ },
+ {
+  "name": "Gimbal_upper_yoke",
+  "group": "Gimbal",
+  "material": "Ti-6Al-4V",
+  "file": "Gimbal_upper_yoke.stl"
+ },
+ {
+  "name": "Gimbal_pad_bolts",
+  "group": "Gimbal",
+  "material": "Inconel 718",
+  "file": "Gimbal_pad_bolts.stl"
+ },
+ {
+  "name": "Gimbal_pad_washers",
+  "group": "Gimbal",
+  "material": "Inconel 718",
+  "file": "Gimbal_pad_washers.stl"
+ },
+ {
+  "name": "Gimbal_lower_plate",
+  "group": "Gimbal",
+  "material": "Ti-6Al-4V",
+  "file": "Gimbal_lower_plate.stl"
+ },
+ {
+  "name": "LOX_turbine_disk",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_turbine_disk.stl"
+ },
+ {
+  "name": "LOX_turbine_rotor_blades",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_turbine_rotor_blades.stl"
+ },
+ {
+  "name": "LOX_turbine_stator_vanes",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_turbine_stator_vanes.stl"
+ },
+ {
+  "name": "LOX_stator_shrouds",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_stator_shrouds.stl"
+ },
+ {
+  "name": "LOX_turbine_housing",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_turbine_housing.stl"
+ },
+ {
+  "name": "LOX_exhaust_collector",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_exhaust_collector.stl"
+ },
+ {
+  "name": "LOX_bearing_housing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_bearing_housing.stl"
+ },
+ {
+  "name": "LOX_bearing_1",
+  "group": "LOX_Turbopump",
+  "material": "A286",
+  "file": "LOX_bearing_1.stl"
+ },
+ {
+  "name": "LOX_bearing_2",
+  "group": "LOX_Turbopump",
+  "material": "A286",
+  "file": "LOX_bearing_2.stl"
+ },
+ {
+  "name": "LOX_kick_stage_housing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_kick_stage_housing.stl"
+ },
+ {
+  "name": "LOX_impeller1_hub",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_impeller1_hub.stl"
+ },
+ {
+  "name": "LOX_impeller1_shroud",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_impeller1_shroud.stl"
+ },
+ {
+  "name": "LOX_impeller1_blades",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_impeller1_blades.stl"
+ },
+ {
+  "name": "LOX_pump_volute_casing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_pump_volute_casing.stl"
+ },
+ {
+  "name": "LOX_inducer_hub",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_inducer_hub.stl"
+ },
+ {
+  "name": "LOX_inducer_blades",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_inducer_blades.stl"
+ },
+ {
+  "name": "LOX_inlet_housing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_inlet_housing.stl"
+ },
+ {
+  "name": "LOX_shaft",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_shaft.stl"
+ },
+ {
+  "name": "LOX_preburner_shell",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_preburner_shell.stl"
+ },
+ {
+  "name": "LOX_preburner_injector_head",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_preburner_injector_head.stl"
+ },
+ {
+  "name": "LOX_preburner_crossfeed_port",
+  "group": "LOX_Turbopump",
+  "material": "SX500",
+  "file": "LOX_preburner_crossfeed_port.stl"
+ },
+ {
+  "name": "LOX_torch_igniter",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_torch_igniter.stl"
+ },
+ {
+  "name": "LOX_bolts_ox_pump_inlet_housing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_bolts_ox_pump_inlet_housing.stl"
+ },
+ {
+  "name": "LOX_bolts_ox_bearing_housing",
+  "group": "LOX_Turbopump",
+  "material": "Inconel 718",
+  "file": "LOX_bolts_ox_bearing_housing.stl"
+ },
+ {
+  "name": "CH4_turbine_disk",
+  "group": "CH4_Turbopump",
+  "material": "MAR-M-247",
+  "file": "CH4_turbine_disk.stl"
+ },
+ {
+  "name": "CH4_turbine_rotor_blades",
+  "group": "CH4_Turbopump",
+  "material": "MAR-M-247",
+  "file": "CH4_turbine_rotor_blades.stl"
+ },
+ {
+  "name": "CH4_turbine_stator_vanes",
+  "group": "CH4_Turbopump",
+  "material": "MAR-M-247",
+  "file": "CH4_turbine_stator_vanes.stl"
+ },
+ {
+  "name": "CH4_stator_shrouds",
+  "group": "CH4_Turbopump",
+  "material": "MAR-M-247",
+  "file": "CH4_stator_shrouds.stl"
+ },
+ {
+  "name": "CH4_turbine_housing",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_turbine_housing.stl"
+ },
+ {
+  "name": "CH4_exhaust_collector",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_exhaust_collector.stl"
+ },
+ {
+  "name": "CH4_bearing_housing",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_bearing_housing.stl"
+ },
+ {
+  "name": "CH4_bearing_1",
+  "group": "CH4_Turbopump",
+  "material": "A286",
+  "file": "CH4_bearing_1.stl"
+ },
+ {
+  "name": "CH4_bearing_2",
+  "group": "CH4_Turbopump",
+  "material": "A286",
+  "file": "CH4_bearing_2.stl"
+ },
+ {
+  "name": "CH4_impeller1_hub",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller1_hub.stl"
+ },
+ {
+  "name": "CH4_impeller1_shroud",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller1_shroud.stl"
+ },
+ {
+  "name": "CH4_impeller1_blades",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller1_blades.stl"
+ },
+ {
+  "name": "CH4_impeller2_hub",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller2_hub.stl"
+ },
+ {
+  "name": "CH4_impeller2_shroud",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller2_shroud.stl"
+ },
+ {
+  "name": "CH4_impeller2_blades",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_impeller2_blades.stl"
+ },
+ {
+  "name": "CH4_pump_volute_casing",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_pump_volute_casing.stl"
+ },
+ {
+  "name": "CH4_inducer_hub",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_inducer_hub.stl"
+ },
+ {
+  "name": "CH4_inducer_blades",
+  "group": "CH4_Turbopump",
+  "material": "Ti-6Al-4V",
+  "file": "CH4_inducer_blades.stl"
+ },
+ {
+  "name": "CH4_inlet_housing",
+  "group": "CH4_Turbopump",
+  "material": "304L",
+  "file": "CH4_inlet_housing.stl"
+ },
+ {
+  "name": "CH4_shaft",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_shaft.stl"
+ },
+ {
+  "name": "CH4_preburner_shell",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_preburner_shell.stl"
+ },
+ {
+  "name": "CH4_preburner_injector_head",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_preburner_injector_head.stl"
+ },
+ {
+  "name": "CH4_preburner_crossfeed_port",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_preburner_crossfeed_port.stl"
+ },
+ {
+  "name": "CH4_preburner_return_port",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_preburner_return_port.stl"
+ },
+ {
+  "name": "CH4_torch_igniter",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_torch_igniter.stl"
+ },
+ {
+  "name": "CH4_pump_casing_flange",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_pump_casing_flange.stl"
+ },
+ {
+  "name": "CH4_bolts_fuel_pump_inlet_housing",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_bolts_fuel_pump_inlet_housing.stl"
+ },
+ {
+  "name": "CH4_bolts_fuel_bearing_housing",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_bolts_fuel_bearing_housing.stl"
+ },
+ {
+  "name": "CH4_bolts_fuel_pump_volute_cover",
+  "group": "CH4_Turbopump",
+  "material": "Inconel 718",
+  "file": "CH4_bolts_fuel_pump_volute_cover.stl"
+ },
+ {
+  "name": "Ox_hot_gas_joint_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_hot_gas_joint_flanges.stl"
+ },
+ {
+  "name": "Ox_hot_gas_joint_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Ox_hot_gas_joint_seal.stl"
+ },
+ {
+  "name": "Ox_hot_gas_joint_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_hot_gas_joint_bolts.stl"
+ },
+ {
+  "name": "Ox_hot_gas_joint_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_hot_gas_joint_nuts_washers.stl"
+ },
+ {
+  "name": "Fuel_hot_gas_joint_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_hot_gas_joint_flanges.stl"
+ },
+ {
+  "name": "Fuel_hot_gas_joint_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Fuel_hot_gas_joint_seal.stl"
+ },
+ {
+  "name": "Fuel_hot_gas_joint_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_hot_gas_joint_bolts.stl"
+ },
+ {
+  "name": "Fuel_hot_gas_joint_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_hot_gas_joint_nuts_washers.stl"
+ },
+ {
+  "name": "LOX_inlet_interface_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_inlet_interface_flanges.stl"
+ },
+ {
+  "name": "LOX_inlet_interface_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "LOX_inlet_interface_seal.stl"
+ },
+ {
+  "name": "LOX_inlet_interface_bolts",
+  "group": "Plumbing",
+  "material": "A286",
+  "file": "LOX_inlet_interface_bolts.stl"
+ },
+ {
+  "name": "LOX_inlet_interface_nuts_washers",
+  "group": "Plumbing",
+  "material": "A286",
+  "file": "LOX_inlet_interface_nuts_washers.stl"
+ },
+ {
+  "name": "CH4_inlet_interface_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_inlet_interface_flanges.stl"
+ },
+ {
+  "name": "CH4_inlet_interface_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "CH4_inlet_interface_seal.stl"
+ },
+ {
+  "name": "CH4_inlet_interface_bolts",
+  "group": "Plumbing",
+  "material": "A286",
+  "file": "CH4_inlet_interface_bolts.stl"
+ },
+ {
+  "name": "CH4_inlet_interface_nuts_washers",
+  "group": "Plumbing",
+  "material": "A286",
+  "file": "CH4_inlet_interface_nuts_washers.stl"
+ },
+ {
+  "name": "LOX_discharge_duct",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_A_flanges.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "LOX_discharge_duct_A_seal.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_A_bolts.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_A_nuts_washers.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_B_flanges.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "LOX_discharge_duct_B_seal.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_B_bolts.stl"
+ },
+ {
+  "name": "LOX_discharge_duct_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "LOX_discharge_duct_B_nuts_washers.stl"
+ },
+ {
+  "name": "MOV_main_ox_valve",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "MOV_main_ox_valve.stl"
+ },
+ {
+  "name": "CH4_discharge_duct",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_A_flanges.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "CH4_discharge_duct_A_seal.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_A_bolts.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_A_nuts_washers.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_B_flanges.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "CH4_discharge_duct_B_seal.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_B_bolts.stl"
+ },
+ {
+  "name": "CH4_discharge_duct_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "CH4_discharge_duct_B_nuts_washers.stl"
+ },
+ {
+  "name": "MFV_main_fuel_valve",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "MFV_main_fuel_valve.stl"
+ },
+ {
+  "name": "FPB_feed_duct",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct.stl"
+ },
+ {
+  "name": "FPB_feed_duct_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_A_flanges.stl"
+ },
+ {
+  "name": "FPB_feed_duct_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "FPB_feed_duct_A_seal.stl"
+ },
+ {
+  "name": "FPB_feed_duct_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_A_bolts.stl"
+ },
+ {
+  "name": "FPB_feed_duct_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_A_nuts_washers.stl"
+ },
+ {
+  "name": "FPB_feed_duct_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_B_flanges.stl"
+ },
+ {
+  "name": "FPB_feed_duct_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "FPB_feed_duct_B_seal.stl"
+ },
+ {
+  "name": "FPB_feed_duct_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_B_bolts.stl"
+ },
+ {
+  "name": "FPB_feed_duct_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPB_feed_duct_B_nuts_washers.stl"
+ },
+ {
+  "name": "Nozzle_return_duct",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_A_flanges.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Nozzle_return_duct_A_seal.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_A_bolts.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_A_nuts_washers.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_B_flanges.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Nozzle_return_duct_B_seal.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_B_bolts.stl"
+ },
+ {
+  "name": "Nozzle_return_duct_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Nozzle_return_duct_B_nuts_washers.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_A_flanges.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Ox_crossfeed_line_A_seal.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_A_bolts.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_A_nuts_washers.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_B_flanges.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Ox_crossfeed_line_B_seal.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_B_bolts.stl"
+ },
+ {
+  "name": "Ox_crossfeed_line_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Ox_crossfeed_line_B_nuts_washers.stl"
+ },
+ {
+  "name": "FPOV_fuel_preburner_ox_valve",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FPOV_fuel_preburner_ox_valve.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_A_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_A_flanges.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_A_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Fuel_crossfeed_line_A_seal.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_A_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_A_bolts.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_A_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_A_nuts_washers.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_B_flanges",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_B_flanges.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_B_seal",
+  "group": "Plumbing",
+  "material": "PTFE/Inconel seal",
+  "file": "Fuel_crossfeed_line_B_seal.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_B_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_B_bolts.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_line_B_nuts_washers",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_line_B_nuts_washers.stl"
+ },
+ {
+  "name": "OPFV_ox_preburner_fuel_valve",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "OPFV_ox_preburner_fuel_valve.stl"
+ },
+ {
+  "name": "Fuel_crossfeed_tee",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "Fuel_crossfeed_tee.stl"
+ },
+ {
+  "name": "OX_igniter_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "OX_igniter_bolts.stl"
+ },
+ {
+  "name": "FUEL_igniter_bolts",
+  "group": "Plumbing",
+  "material": "Inconel 718",
+  "file": "FUEL_igniter_bolts.stl"
+ },
+ {
+  "name": "PT_101_chamber_pressure",
+  "group": "Instrumentation",
+  "material": "A286",
+  "file": "PT_101_chamber_pressure.stl"
+ },
+ {
+  "name": "PT_201_LOX_pump_discharge",
+  "group": "Instrumentation",
+  "material": "A286",
+  "file": "PT_201_LOX_pump_discharge.stl"
+ },
+ {
+  "name": "PT_301_CH4_pump_discharge",
+  "group": "Instrumentation",
+  "material": "A286",
+  "file": "PT_301_CH4_pump_discharge.stl"
+ },
+ {
+  "name": "ST_202_LOX_TPA_speed",
+  "group": "Instrumentation",
+  "material": "A286",
+  "file": "ST_202_LOX_TPA_speed.stl"
+ },
+ {
+  "name": "ST_302_CH4_TPA_speed",
+  "group": "Instrumentation",
+  "material": "A286",
+  "file": "ST_302_CH4_TPA_speed.stl"
+ }
+]

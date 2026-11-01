@@ -1,0 +1,94 @@
+# MFE-280 baseline design basis.
+# Units: SI unless the key says otherwise (bar, mm, deg, K).
+# Every number here is an input or an assumption. Outputs go to results/design.json.
+
+name: MFE-280
+description: >-
+  Sea-level methalox full-flow staged-combustion engine. Requirements are set to
+  the public Raptor 3 sea-level figures (280 tf, 350 s, ~350 bar, O/F 3.6) so the
+  models can be checked against a known design point.
+
+requirements:
+  thrust_sl_kN: 2746.0          # 280 tf, SpaceX Aug-2024 performance card
+  pc_bar: 350.0                 # main-chamber stagnation pressure (May-2023 test claim)
+  mixture_ratio: 3.6            # O/F by mass
+  p_ambient_Pa: 101325.0
+  throttle_min: 0.40            # public Raptor throttle range 40-100 %
+  isp_sl_target_s: 350.0        # benchmark only, not used as an input
+  mass_target_kg: 1525.0        # benchmark only (engine without vehicle-side hardware)
+
+propellants:
+  lox:  {T_K: 70.0, p_inlet_bar: 6.0}    # subcooled; ullage + liquid head, assumed
+  lch4: {T_K: 95.0, p_inlet_bar: 6.0}    # subcooled; ullage + liquid head, assumed
+
+efficiencies:
+  eta_cstar: 0.990              # gas-gas injection, FFSC; typical 0.985-0.995
+  eta_cf: 0.980                 # bell divergence + boundary layer + kinetics on vacuum Cf
+
+chamber:
+  contraction_ratio: 3.0        # Ac/At
+  Lstar_m: 0.80
+  convergent_half_angle_deg: 30.0
+  R_up_over_Rt: 1.5             # upstream throat arc
+  R_dn_over_Rt: 0.382           # downstream throat arc
+  R_fillet_over_Rc: 0.6         # cylinder-to-cone fillet, scaled by chamber radius
+
+nozzle:
+  expansion_ratio: 34.0         # trade study in scripts/run_trades.py
+  bell_fraction: 0.80           # Rao 80 % bell
+
+cooling:
+  # Two liner zones joined by a bolted coolant-transfer flange at eps_joint (divergent side).
+  # Channel width is capped by liner bending under the coolant-to-gas pressure difference;
+  # channel height is sized by the model (ffsc/cooling.py) to meet Twg_target.
+  eps_joint: 12.0
+  zones:
+    - {name: chamber, material: GRCop-42, t_hot_mm: 0.6, w_max_mm: 1.0, rib_min_mm: 0.9,
+       rib_max_mm: 3.0, Twg_target_K: 880.0, h_min_mm: 1.5, h_max_mm: 12.0}
+    - {name: nozzle, material: Inconel 718, t_hot_mm: 0.6, w_max_mm: 2.2, rib_min_mm: 1.0,
+       rib_max_mm: 3.0, Twg_target_K: 950.0, h_min_mm: 1.5, h_max_mm: 8.0}
+  nozzle_circuit_fraction: 0.30 # share of jacket flow sent down the nozzle circuit
+  bartz_factor: 1.0             # 1.0 = uncorrected Bartz (conservative at the throat)
+  roughness_um: 8.0             # L-PBF channels after abrasive flow polishing, assumed
+  coolant_fraction: 1.0         # share of the FPB fuel flow routed through the jacket
+  closeout_allow_MPa: 520.0     # Inconel 718 closeout working stress (yield / 2), global hoop from gas pressure
+  side_load_frac: 0.05          # sea-level transient nozzle side load / thrust (nozzle joint sizing)
+
+cycle:
+  T_opb_K: 820.0                # ox-rich preburner exit, limited by ox-rich turbine alloy
+  T_fpb_K: 1100.0               # fuel-rich preburner exit; cast superalloy turbine (MAR-M-247 class)
+  dp_main_inj_frac: 0.10        # gas-gas main injector dP / pc
+  dp_pb_inj_frac: 0.12          # liquid preburner injector dP / p_pb
+  dp_hot_gas_duct_frac: 0.03    # turbine exhaust duct + manifold dP / pc
+  dp_line_frac: 0.02            # discharge lines and open valves dP / p_discharge
+  eta_turbine_max: 0.82         # peak total-to-static efficiency, single-stage reaction
+  turbine_reaction: 0.5
+  tip_clearance_mm: 0.25
+
+turbopumps:
+  ox:
+    stages: 1
+    suction_specific_speed_us: 32000   # inducer design limit (rpm, gpm, ft), NASA SP-8052 range
+    head_coefficient: 0.55
+    shaft_stress_MPa: 250.0            # allowable torsional shear, Inconel 718 with margin
+    turbine_tip_speed_max_m_s: 520.0
+  fuel:
+    stages: 2
+    suction_specific_speed_us: 32000
+    head_coefficient: 0.55
+    shaft_stress_MPa: 250.0
+    turbine_tip_speed_max_m_s: 560.0
+
+injector:
+  thrust_per_element_kN: 18.0
+  ring_pitch_factor: 1.8        # element pitch / fuel-annulus outer diameter
+  # Outer element row biased fuel-rich to protect the wall (two-stream-tube model).
+  bl_mass_fraction: 0.08
+  bl_mixture_ratio: 2.0
+
+structures:
+  closeout_allow_MPa: 520.0     # Inconel 718 at 300 K, yield/1.5... see docs/05
+  bolt_grade: "A286 (AMS 5737) / Inconel 718"
+  bolt_proof_MPa: 760.0
+  preload_frac_proof: 0.75
+  separation_safety: 1.4

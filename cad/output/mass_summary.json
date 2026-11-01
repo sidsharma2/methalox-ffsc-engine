@@ -1,0 +1,13 @@
+{
+  "total_modelled_kg": 1868.369999999998,
+  "by_assembly_kg": {
+    "Thrust_Chamber": 498.8800000000001,
+    "Injector_Head": 287.39000000000004,
+    "Gimbal": 28.2,
+    "LOX_Turbopump": 374.98,
+    "CH4_Turbopump": 223.36000000000004,
+    "Plumbing": 454.96000000000004,
+    "Instrumentation": 0.6
+  },
+  "build_s": 12.620688676834106
+}

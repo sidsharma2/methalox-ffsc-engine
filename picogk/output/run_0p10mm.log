@@ -1,0 +1,19 @@
+[0p10mm] PicoGK 26.2.0 (2026-06-05 07:23:09 picogk.26.2), headless
+[0p10mm] sector 7.500 deg, z = 0 .. 976.15 mm, voxel 0.1 mm
+  chunk 10/98  z <= 100.0 mm  PicoGK memory 0.18 GB
+  chunk 20/98  z <= 200.0 mm  PicoGK memory 0.35 GB
+  chunk 30/98  z <= 300.0 mm  PicoGK memory 0.51 GB
+  chunk 40/98  z <= 400.0 mm  PicoGK memory 0.64 GB
+  chunk 50/98  z <= 500.0 mm  PicoGK memory 0.79 GB
+  chunk 60/98  z <= 600.0 mm  PicoGK memory 0.95 GB
+  chunk 70/98  z <= 700.0 mm  PicoGK memory 1.19 GB
+  chunk 80/98  z <= 800.0 mm  PicoGK memory 1.45 GB
+  chunk 90/98  z <= 900.0 mm  PicoGK memory 1.72 GB
+  chunk 98/98  z <= 976.1 mm  PicoGK memory 1.93 GB
+[0p10mm] voxelized in 152.28 s, voxel memory 1.93 GB
+[0p10mm] voxel volume 418739 mm3 vs analytic 419172 mm3 (-0.103 %)
+[0p10mm] mesh 87,628,320 triangles, watertight True (boundary 0, non-manifold 0, misoriented 0), genus 16, volume 419307 mm3 (+0.032 %)
+[0p10mm] probe z 60 mm: channels 8/8, hot wall 0.6..0.6 mm, width 1..1 mm, retained true
+[0p10mm] probe z 351.286 mm: channels 8/8, hot wall 0.6..0.6 mm, width 1..1 mm, retained true
+[0p10mm] probe z 900 mm: channels 16/16, hot wall 0.6..0.6 mm, width 1..1 mm, retained true
+[0p10mm] done in 523.95 s, peak working set 10.64 GB

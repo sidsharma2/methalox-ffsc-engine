@@ -1,0 +1,8 @@
+#!/bin/bash
+# Remove mesh, results and logs; keeps 0.orig, constant/*Properties and system/.
+cd "$(dirname "$0")" || exit 1
+if [ -z "$WM_PROJECT_DIR" ]; then
+    . /usr/lib/openfoam/openfoam2306/etc/bashrc || exit 1
+fi
+rm -rf processor* postProcessing log.* constant/polyMesh 0
+foamListTimes -rm > /dev/null 2>&1

@@ -1,0 +1,488 @@
+{
+  "model": "Regen-cooled GRCop-42 chamber, periodic 8-channel sector, PicoGK voxel model",
+  "generated_utc": "2026-10-31 21:33:42Z",
+  "units": "mm, mm^2, mm^3, s, GB (1e9 bytes)",
+  "inputs": {
+    "cooling_profile": {
+      "path": "results/cooling_profile.csv",
+      "sha256": "5d2f158f76bd6b58b9f2add6a22193f3ad2bda604f4c15c5c7fc74d185bd8096"
+    },
+    "contour": {
+      "path": "results/contour.csv",
+      "sha256": "04bbac86d2570cbcf58a76a1296307d3302b4c5736c6c4ed4ea2b3f515bcd303"
+    }
+  },
+  "geometry": {
+    "frame": "Z = engine axis from the injector face; sector theta = 0..angle from \u002BX towards \u002BY",
+    "z_start_mm": 0,
+    "z_joint_mm": 976.147,
+    "sector_angle_deg": 7.5,
+    "N_base": 384,
+    "channels_in_sector_base": 8,
+    "bifurcations": [
+      {
+        "z_start_mm": 599.768,
+        "blend_mm": 10,
+        "N_before": 384,
+        "N_after": 768
+      }
+    ],
+    "throat_z_mm": 351.286,
+    "throat_r_mm": 117.446,
+    "bbox_analytic_mm": {
+      "min": [
+        116.441,
+        -0,
+        0
+      ],
+      "max": [
+        423.237,
+        55.244,
+        976.147
+      ]
+    },
+    "analytic_volume_mm3": 419172.5,
+    "station_trapezoid_volume_mm3": 418695,
+    "rib_csv_consistency_mm": 8.881784197001252E-16
+  },
+  "runs": [
+    {
+      "voxel_size_mm": 0.15,
+      "chunk_mm": 10,
+      "picogk": "PicoGK Core Library 26.2.0 (2026-06-05 07:23:09 picogk.26.2)",
+      "voxel_volume_mm3": 419492.8,
+      "voxel_volume_error_pct": 0.0764,
+      "voxel_volume_method": "PicoGK CalculateProperties recipe: mesh -\u003E voxels -\u003E native voxel count",
+      "mesh_volume_method": "divergence theorem on the extracted (watertight) surface mesh",
+      "mesh_volume_mm3": 419471.8,
+      "mesh_volume_error_pct": 0.0714,
+      "bbox_mm": {
+        "min": [
+          116.47,
+          0,
+          0
+        ],
+        "max": [
+          423.175,
+          55.213,
+          976.147
+        ]
+      },
+      "mesh": {
+        "triangles": 38921056,
+        "vertices": 19460484,
+        "edges": 58381584,
+        "boundary_edges": 0,
+        "non_manifold_edges": 0,
+        "misoriented_edges": 0,
+        "degenerate_triangles": 0,
+        "components": 1,
+        "euler_characteristic": -44,
+        "genus": 23,
+        "watertight": true,
+        "area_mm2": 385077.9,
+        "check": "own check on PicoGK\u0027s indexed mesh: every edge shared by exactly two oppositely oriented triangles; vertex-manifoldness not checked"
+      },
+      "feature_retention": [
+        {
+          "z_mm": 60,
+          "N_total": 384,
+          "channels_expected": 8,
+          "channels_counted": 8,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 4,
+          "hot_wall_mm": {
+            "n": 8,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 8,
+            "min": 0.4498,
+            "mean": 0.5809,
+            "max": 0.5997
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 8,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 12,
+          "channel_height_mm": {
+            "n": 8,
+            "min": 12,
+            "mean": 12,
+            "max": 12
+          },
+          "closeout_nominal_mm": 17.0453,
+          "closeout_mm": {
+            "n": 8,
+            "min": 17.0453,
+            "mean": 17.0453,
+            "max": 17.0453
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        },
+        {
+          "z_mm": 351.286,
+          "N_total": 384,
+          "channels_expected": 8,
+          "channels_counted": 8,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 4,
+          "hot_wall_mm": {
+            "n": 8,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 8,
+            "min": 0.5992,
+            "mean": 0.5992,
+            "max": 0.5992
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 8,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 11.9623,
+          "channel_height_mm": {
+            "n": 8,
+            "min": 11.9623,
+            "mean": 11.9623,
+            "max": 11.9624
+          },
+          "closeout_nominal_mm": 6.083,
+          "closeout_mm": {
+            "n": 8,
+            "min": 6.0826,
+            "mean": 6.0829,
+            "max": 6.083
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        },
+        {
+          "z_mm": 900,
+          "N_total": 768,
+          "channels_expected": 16,
+          "channels_counted": 16,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 4,
+          "hot_wall_mm": {
+            "n": 16,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 16,
+            "min": 0.5995,
+            "mean": 0.5995,
+            "max": 0.5995
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 16,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 12,
+          "channel_height_mm": {
+            "n": 16,
+            "min": 12,
+            "mean": 12,
+            "max": 12
+          },
+          "closeout_nominal_mm": 1,
+          "closeout_mm": {
+            "n": 16,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        }
+      ],
+      "timing_s": {
+        "analytic": 0.1,
+        "voxelize": 54.17,
+        "occupancy_images": 26.79,
+        "mesh": 3.18,
+        "stl_write": 19.85,
+        "voxel_volume": 58.19,
+        "mesh_check": 8.92,
+        "total": 171.28
+      },
+      "memory_GB": {
+        "picogk_voxels": 0.709,
+        "picogk_mesh": 0.701,
+        "peak_working_set": 4.713,
+        "peak_private_bytes": 5.072,
+        "peak_working_set_after_stage": {
+          "analytic": 0.04,
+          "voxelize": 0.82,
+          "occupancy_images": 1.29,
+          "mesh": 3.23,
+          "stl_write": 3.23,
+          "voxel_volume": 4.71,
+          "mesh_check": 4.71
+        }
+      },
+      "files": {
+        "stl": "picogk/output/regen_sector_0p15mm.stl",
+        "images": [
+          "picogk/output/slice_z0060_0p15mm.png",
+          "picogk/output/slice_throat_0p15mm.png",
+          "picogk/output/slice_z0900_0p15mm.png",
+          "picogk/output/bifurcation_unrolled_0p15mm.png"
+        ],
+        "log": "picogk/output/run_0p15mm.log",
+        "stl_bytes": 1946052884
+      }
+    },
+    {
+      "voxel_size_mm": 0.1,
+      "chunk_mm": 10,
+      "picogk": "PicoGK Core Library 26.2.0 (2026-06-05 07:23:09 picogk.26.2)",
+      "voxel_volume_mm3": 418739.4,
+      "voxel_volume_error_pct": -0.1033,
+      "voxel_volume_method": "PicoGK CalculateProperties recipe: mesh -\u003E voxels -\u003E native voxel count",
+      "mesh_volume_method": "divergence theorem on the extracted (watertight) surface mesh",
+      "mesh_volume_mm3": 419306.5,
+      "mesh_volume_error_pct": 0.032,
+      "bbox_mm": {
+        "min": [
+          116.456,
+          0,
+          0
+        ],
+        "max": [
+          423.21,
+          55.222,
+          976.147
+        ]
+      },
+      "mesh": {
+        "triangles": 87628320,
+        "vertices": 43814130,
+        "edges": 131442480,
+        "boundary_edges": 0,
+        "non_manifold_edges": 0,
+        "misoriented_edges": 0,
+        "degenerate_triangles": 10,
+        "components": 1,
+        "euler_characteristic": -30,
+        "genus": 16,
+        "watertight": true,
+        "area_mm2": 386301.7,
+        "check": "own check on PicoGK\u0027s indexed mesh: every edge shared by exactly two oppositely oriented triangles; vertex-manifoldness not checked"
+      },
+      "feature_retention": [
+        {
+          "z_mm": 60,
+          "N_total": 384,
+          "channels_expected": 8,
+          "channels_counted": 8,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 6,
+          "hot_wall_mm": {
+            "n": 8,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 8,
+            "min": 0.5999,
+            "mean": 0.5999,
+            "max": 0.5999
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 8,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 12,
+          "channel_height_mm": {
+            "n": 8,
+            "min": 12,
+            "mean": 12,
+            "max": 12
+          },
+          "closeout_nominal_mm": 17.0453,
+          "closeout_mm": {
+            "n": 8,
+            "min": 17.0453,
+            "mean": 17.0453,
+            "max": 17.0453
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        },
+        {
+          "z_mm": 351.286,
+          "N_total": 384,
+          "channels_expected": 8,
+          "channels_counted": 8,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 6,
+          "hot_wall_mm": {
+            "n": 8,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 8,
+            "min": 0.5999,
+            "mean": 0.5999,
+            "max": 0.5999
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 8,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 11.9623,
+          "channel_height_mm": {
+            "n": 8,
+            "min": 11.9621,
+            "mean": 11.9623,
+            "max": 11.9624
+          },
+          "closeout_nominal_mm": 6.083,
+          "closeout_mm": {
+            "n": 8,
+            "min": 6.083,
+            "mean": 6.083,
+            "max": 6.0832
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        },
+        {
+          "z_mm": 900,
+          "N_total": 768,
+          "channels_expected": 16,
+          "channels_counted": 16,
+          "radial_occupancy_failures": 0,
+          "mesh_line_failures": 0,
+          "hot_wall_nominal_mm": 0.6,
+          "hot_wall_nominal_voxels": 6,
+          "hot_wall_mm": {
+            "n": 16,
+            "min": 0.6,
+            "mean": 0.6,
+            "max": 0.6
+          },
+          "hot_wall_occupied_mm": {
+            "n": 16,
+            "min": 0.4992,
+            "mean": 0.5963,
+            "max": 0.625
+          },
+          "channel_width_nominal_mm": 1,
+          "channel_width_mm": {
+            "n": 16,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "channel_height_nominal_mm": 12,
+          "channel_height_mm": {
+            "n": 16,
+            "min": 12,
+            "mean": 12,
+            "max": 12
+          },
+          "closeout_nominal_mm": 1,
+          "closeout_mm": {
+            "n": 16,
+            "min": 1,
+            "mean": 1,
+            "max": 1
+          },
+          "retained": true,
+          "criterion": "every channel counted on the mid-height arc and gas|wall|channel|closeout|outside on every radial line (nearest-voxel occupancy); hot wall and channel width measured on the extracted mesh within half a voxel of nominal"
+        }
+      ],
+      "timing_s": {
+        "analytic": 0.1,
+        "voxelize": 152.28,
+        "occupancy_images": 30.1,
+        "mesh": 9.23,
+        "stl_write": 43.69,
+        "voxel_volume": 267.94,
+        "mesh_check": 20.52,
+        "total": 523.95
+      },
+      "memory_GB": {
+        "picogk_voxels": 1.934,
+        "picogk_mesh": 1.577,
+        "peak_working_set": 10.641,
+        "peak_private_bytes": 11.288,
+        "peak_working_set_after_stage": {
+          "analytic": 0.04,
+          "voxelize": 2.15,
+          "occupancy_images": 2.62,
+          "mesh": 7.22,
+          "stl_write": 7.22,
+          "voxel_volume": 10.64,
+          "mesh_check": 10.64
+        }
+      },
+      "files": {
+        "stl": "picogk/output/regen_sector_0p10mm.stl",
+        "images": [
+          "picogk/output/slice_z0060_0p10mm.png",
+          "picogk/output/slice_throat_0p10mm.png",
+          "picogk/output/slice_z0900_0p10mm.png",
+          "picogk/output/bifurcation_unrolled_0p10mm.png"
+        ],
+        "log": "picogk/output/run_0p10mm.log",
+        "stl_bytes": 4381416084
+      }
+    }
+  ],
+  "resolution_check": {
+    "voxel_volume_change_pct": -0.1796,
+    "mesh_volume_change_pct": -0.0394,
+    "note": "change from the coarser to the finer voxel size"
+  },
+  "full_360": {
+    "built": false,
+    "voxel_size_mm": 0.3,
+    "estimated_triangles": 467052672,
+    "estimated_stl_GB": 23.4,
+    "estimated_voxels_GB": 8.5,
+    "estimated_mesh_GB": 8.4,
+    "fits_memory_budget": false,
+    "reason": "skipped: estimated PicoGK memory 17 GB (voxels \u002B mesh) exceeds the 12 GB budget; the 384-768 channels x 2 side walls x 12 mm height dominate the surface area. It would also be visual-only: 1.0 mm channels are 3.3 voxels wide at 0.3 mm.",
+    "basis": "scaled from the 0.15 mm sector run"
+  }
+}
