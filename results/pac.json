@@ -1,0 +1,341 @@
+{
+  "inputs": {
+    "alpha_O": 0.35,
+    "eps_O_eV": 7.3,
+    "alpha_O_range": [
+      0.1,
+      0.5
+    ],
+    "eps_O_eV_range": [
+      4.2,
+      25.0
+    ],
+    "EN_breakdown_Td": 100.0,
+    "pulser_kV": 30.0,
+    "gap_mm": 1.0,
+    "demonstrated_NRP_bar": 12.0,
+    "demonstrated_laser_bar": 40.0,
+    "flame_power_fraction": [
+      0.0006,
+      0.01
+    ],
+    "e_p_J_kg": [
+      0.0,
+      1000.0,
+      3000.0,
+      10000.0,
+      30000.0,
+      100000.0
+    ]
+  },
+  "anchor": "real inlet enthalpy from the cycle (liquid LOX, jacket-heated CH4)",
+  "fpb": {
+    "design_tau_s": 0.004,
+    "mdot_kg_s": 217.51023853065158,
+    "sweep": {
+      "nominal": [
+        {
+          "e_p_J_kg": 0.0,
+          "tau_ext_s": 0.003716272234383503,
+          "T_K": 973.5457038771364,
+          "power_MW": 0.0
+        },
+        {
+          "e_p_J_kg": 1000.0,
+          "tau_ext_s": 0.003716272234383503,
+          "T_K": 974.2429456231863,
+          "power_MW": 0.21751023853065157
+        },
+        {
+          "e_p_J_kg": 3000.0,
+          "tau_ext_s": 0.0036366401836799294,
+          "T_K": 973.5477792136865,
+          "power_MW": 0.6525307155919547
+        },
+        {
+          "e_p_J_kg": 10000.0,
+          "tau_ext_s": 0.0035587144836146615,
+          "T_K": 976.3910873364298,
+          "power_MW": 2.175102385306516
+        },
+        {
+          "e_p_J_kg": 30000.0,
+          "tau_ext_s": 0.003193428589544115,
+          "T_K": 979.9889907791105,
+          "power_MW": 6.525307155919547
+        },
+        {
+          "e_p_J_kg": 100000.0,
+          "tau_ext_s": 0.002209708691207961,
+          "T_K": 992.2235276619674,
+          "power_MW": 21.75102385306516
+        }
+      ],
+      "optimistic": [
+        {
+          "e_p_J_kg": 0.0,
+          "tau_ext_s": 0.003716272234383503,
+          "T_K": 973.5457038771364,
+          "power_MW": 0.0
+        },
+        {
+          "e_p_J_kg": 1000.0,
+          "tau_ext_s": 0.003716272234383503,
+          "T_K": 974.30871738407,
+          "power_MW": 0.21751023853065157
+        },
+        {
+          "e_p_J_kg": 3000.0,
+          "tau_ext_s": 0.0036366401836799294,
+          "T_K": 973.7860936039475,
+          "power_MW": 0.6525307155919547
+        },
+        {
+          "e_p_J_kg": 10000.0,
+          "tau_ext_s": 0.003482458570612165,
+          "T_K": 975.0566173698508,
+          "power_MW": 2.175102385306516
+        },
+        {
+          "e_p_J_kg": 30000.0,
+          "tau_ext_s": 0.003058037694024063,
+          "T_K": 977.9270393086981,
+          "power_MW": 6.525307155919547
+        },
+        {
+          "e_p_J_kg": 100000.0,
+          "tau_ext_s": 0.0019828921206120832,
+          "T_K": 988.9509193737468,
+          "power_MW": 21.75102385306516
+        }
+      ]
+    },
+    "tau_ext_equilibrium_anchor_s": 0.000514298586923114,
+    "burning_branch": {
+      "100 ms": {
+        "tau_s": 0.1,
+        "T_K": 1025.228746233123,
+        "conversion": 0.9930240679994369,
+        "burning": true,
+        "X": {
+          "H2": 0.004522409524696271,
+          "CO": 0.030019781688688386,
+          "CO2": 0.02487323556451767,
+          "H2O": 0.15476985142811006,
+          "CH4": 0.7530900575523454,
+          "O2": 0.0008316314027046225
+        }
+      },
+      "30 ms": {
+        "tau_s": 0.03,
+        "T_K": 1017.7238484550314,
+        "conversion": 0.9898543471855542,
+        "burning": true,
+        "X": {
+          "H2": 0.008001560980364019,
+          "CO": 0.036042317647970584,
+          "CO2": 0.02298578250992329,
+          "H2O": 0.14797393740359427,
+          "CH4": 0.7554751944357858,
+          "O2": 0.0012022503313748934
+        }
+      },
+      "10 ms": {
+        "tau_s": 0.01,
+        "T_K": 1003.0271092171012,
+        "conversion": 0.9852815807578288,
+        "burning": true,
+        "X": {
+          "H2": 0.011389211272818908,
+          "CO": 0.0424905653043478,
+          "CO2": 0.019512419641371553,
+          "H2O": 0.14060852765095505,
+          "CH4": 0.7569239670555707,
+          "O2": 0.0017345779424702082
+        }
+      },
+      "8 ms": {
+        "tau_s": 0.008,
+        "T_K": 998.7960901685855,
+        "conversion": 0.9836345889868382,
+        "burning": true,
+        "X": {
+          "H2": 0.01163333134540278,
+          "CO": 0.043678246388476456,
+          "CO2": 0.018565251330908198,
+          "H2O": 0.13894825126697125,
+          "CH4": 0.757565435879225,
+          "O2": 0.0019273731375427964
+        }
+      }
+    },
+    "HP_equilibrium_T_K": 1018.6136966675673
+  },
+  "opb": {
+    "design_tau_s": 0.003,
+    "premixed_rows": [
+      {
+        "e_p_J_kg": 0.0,
+        "burning_at_100ms": false,
+        "power_MW": 0.0
+      },
+      {
+        "e_p_J_kg": 10000.0,
+        "burning_at_100ms": false,
+        "power_MW": 6.216530144622947
+      },
+      {
+        "e_p_J_kg": 100000.0,
+        "burning_at_100ms": false,
+        "power_MW": 62.16530144622946
+      },
+      {
+        "e_p_J_kg": 300000.0,
+        "burning_at_100ms": false,
+        "power_MW": 186.4959043386884
+      }
+    ]
+  },
+  "ignition_delay_s": {
+    "OPB": {
+      "820": 0.059004463712514624,
+      "900": 0.005362001996449216,
+      "1000": 0.0004990563844766107,
+      "1100": 7.542592222816228e-05
+    },
+    "FPB": {
+      "820": 0.3374904308614482,
+      "900": 0.04129579412791943,
+      "1000": 0.00434077456856241,
+      "1100": 0.0006339699543945143
+    }
+  },
+  "main": {
+    "tau_ext_s": 2.0664299727430616e-08,
+    "residence_s": 0.0010705291952047274,
+    "margin": 51805.733043238055
+  },
+  "breakdown": {
+    "Start transient (5 bar, 300 K)": {
+      "p_bar": 5.0,
+      "T_K": 300.0,
+      "V_kV_per_mm": 12.0716175267332
+    },
+    "NRP limit shown (12 bar, 300 K)": {
+      "p_bar": 12.0,
+      "T_K": 300.0,
+      "V_kV_per_mm": 28.971882064159676
+    },
+    "Main chamber": {
+      "p_bar": 350.0,
+      "T_K": 1000.0,
+      "V_kV_per_mm": 253.50396806139713
+    },
+    "FPB": {
+      "p_bar": 630.7445422967551,
+      "T_K": 1018.6136966675673,
+      "V_kV_per_mm": 448.4982027980177
+    },
+    "OPB": {
+      "p_bar": 621.0835101600286,
+      "T_K": 820.0,
+      "V_kV_per_mm": 548.5962868399594
+    }
+  },
+  "pulser_max_p_bar_300K": 12.425841000000004,
+  "fpb_fix": {
+    "tau_ext_s": 0.003716272234383503,
+    "design_tau_s": 0.004,
+    "margin_now": 1.0763474115247547,
+    "tau_new_s": 0.008,
+    "margin_new": 2.1526948230495093,
+    "shell_mass_added_kg": 17.97
+  },
+  "power_density": {
+    "sources": {
+      "li_ion_high_power": {
+        "kW_per_kg": 1.2,
+        "Wh_per_kg": 170.0
+      },
+      "next_gen_cells": {
+        "kW_per_kg": 2.0,
+        "Wh_per_kg": 240.0
+      },
+      "shaft_alternator": {
+        "kW_per_kg": 5.0,
+        "Wh_per_kg": null
+      },
+      "fission_microreactor": {
+        "kW_per_kg": 0.036,
+        "Wh_per_kg": null
+      }
+    },
+    "kilopower_kW_per_kg": 0.0067,
+    "engine_turbines_W": 88479031.33738363,
+    "turbopump_mass_kg": 562.5,
+    "engine_turbomachinery_kW_per_kg": 157.29605571090423,
+    "propellant_chemical_Wh_per_kg": 3019.3236714975847,
+    "concepts": [
+      {
+        "name": "Plasma in the FPB to double its kinetic margin",
+        "P_W": 21751023.85306516,
+        "t_s": 170.0,
+        "budget_kg": 17.97,
+        "alternative": "8 ms FPB residence time",
+        "req_kW_per_kg": 1210.4075599924963,
+        "req_Wh_per_kg": 57158.134777423445,
+        "feasible_with": []
+      },
+      {
+        "name": "Electric drive on the LOX shaft to reach 400 bar",
+        "P_W": 11410000.0,
+        "t_s": 170.0,
+        "budget_kg": 354.51,
+        "alternative": "options C3-C5 + Y1 (Y2)",
+        "req_kW_per_kg": 32.185269809032185,
+        "req_Wh_per_kg": 1519.8599632042976,
+        "feasible_with": []
+      },
+      {
+        "name": "Electric boost pumps, inlet 6 -> 10 bar",
+        "P_W": 628419.4032780227,
+        "t_s": 170.0,
+        "budget_kg": -8.283880655605572,
+        "alternative": "tank pressure (Y1)",
+        "req_kW_per_kg": null,
+        "req_Wh_per_kg": null,
+        "feasible_with": []
+      },
+      {
+        "name": "Plasma or laser start ignition",
+        "P_W": 4000.0,
+        "t_s": 5.0,
+        "budget_kg": 3.4,
+        "alternative": "torch igniters",
+        "req_kW_per_kg": 1.1764705882352942,
+        "req_Wh_per_kg": 1.6339869281045751,
+        "feasible_with": [
+          "li_ion_high_power",
+          "next_gen_cells",
+          "shaft_alternator"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "main_chamber_kinetic_margin": 51805.733043238055,
+    "fpb_tau_ext_ms_no_plasma": 3.7162722343835033,
+    "fpb_tau_ext_ms_10kJkg_optimistic": 3.482458570612165,
+    "fpb_tau_ext_ms_100kJkg_nominal": 2.209708691207961,
+    "fpb_design_tau_ms": 4.0,
+    "fpb_burning_T_K": 1018.6136966675673,
+    "fpb_power_MW_at_100kJkg": 21.75102385306516,
+    "opb_premixed_burns_with_plasma": false,
+    "opb_ignition_delay_ms_820K": 59.00446371251462,
+    "breakdown_kV_per_mm_OPB": 548.5962868399594,
+    "pulser_30kV_max_p_bar": 12.425841000000004,
+    "fpb_fix_shell_kg": 17.97,
+    "engine_turbomachinery_kW_per_kg": 157.29605571090423,
+    "verdict": "Not viable in steady combustion. The main chamber has a kinetic margin of about 50,000. A premixed ox-rich preburner has no burning branch with or without plasma. The fuel-rich preburner is kinetically marginal, but plasma needs MW to move it, while a longer residence time fixes it for about 18 kg. Breakdown at 600 bar needs hundreds of kV per mm. Viable for start ignition at low pressure (N2)."
+  }
+}

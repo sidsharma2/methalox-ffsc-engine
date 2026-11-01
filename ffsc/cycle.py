@@ -138,8 +138,14 @@ def solve_cycle(cfg, mdot_o, mdot_f, jacket):
             turb = design_turbine(gs, m_fpb, PR, pump.N_rpm, tp["fuel"], cy)
             return turb.power_W - pump.power_W
 
-        PR_o_new = first_root(lambda x: balance("ox", x))
-        PR_f_new = first_root(lambda x: balance("fuel", x))
+        try:
+            PR_o_new = first_root(lambda x: balance("ox", x))
+        except RuntimeError as err:
+            raise RuntimeError(f"LOX shaft: {err}") from None
+        try:
+            PR_f_new = first_root(lambda x: balance("fuel", x))
+        except RuntimeError as err:
+            raise RuntimeError(f"CH4 shaft: {err}") from None
         done = (abs(PR_o_new - PR_o) < 1e-4 and abs(PR_f_new - PR_f) < 1e-4
                 and abs(m_f_opb_new - m_f_opb) < 1e-4 and abs(m_o_fpb_new - m_o_fpb) < 1e-4)
         PR_o, PR_f, m_f_opb, m_o_fpb = PR_o_new, PR_f_new, m_f_opb_new, m_o_fpb_new
@@ -161,8 +167,13 @@ def solve_cycle(cfg, mdot_o, mdot_f, jacket):
     kick_W = m_o_fpb * p_kick / (ox_pump.rho * 0.60)
     d_ox, tq_ox = shaft_diameter(ox_t.power_W, ox_pump.N_rpm, tp["ox"]["shaft_stress_MPa"])
     d_fu, tq_fu = shaft_diameter(fu_t.power_W, fu_pump.N_rpm, tp["fuel"]["shaft_stress_MPa"])
-    Z_o2 = CP.PropsSI("Z", "T", cy["T_opb_K"], "P", p_opb, "Oxygen")
-    Z_ch4 = CP.PropsSI("Z", "T", cy["T_fpb_K"], "P", p_fpb, "Methane")
+    def _Z(T, p, fluid):                              # reported only; the O2 EOS ends near 80 MPa
+        try:
+            return CP.PropsSI("Z", "T", T, "P", p, fluid)
+        except ValueError:
+            return None
+    Z_o2 = _Z(cy["T_opb_K"], p_opb, "Oxygen")
+    Z_ch4 = _Z(cy["T_fpb_K"], p_fpb, "Methane")
 
     def gs_out(gs):
         return {k: (float(v) if isinstance(v, (float, np.floating)) else v) for k, v in gs.items() if k != "h_is"}

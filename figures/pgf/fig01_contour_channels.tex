@@ -1,0 +1,42 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig01_profile.csv}{\prof}
+\pgfplotstableread[col sep=comma]{data/fig01_band_grcop.csv}{\bandCu}
+\pgfplotstableread[col sep=comma]{data/fig01_band_inconel.csv}{\bandIn}
+\pgfplotstableread[col sep=comma]{data/fig01_band_closeout.csv}{\bandCl}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=1 by 2, vertical sep=0.3cm, x descriptions at=edge bottom},
+    width=14.7cm, xmin=-102.499, xmax=2152.49]
+\nextgroupplot[height=5.6cm, ymin=0, ymax=760, ytick distance=100, ylabel={radius (mm)},
+    legend style={at={(0.99,0.30)}, anchor=south east}]
+  \addplot[draw=none, fill=cCu, fill opacity=0.55, area] table[x=x, y=y] {\bandCu};
+  \addlegendentry{GRCop-42 liner (L-PBF) + channels}
+  \addplot[draw=none, fill=cIn, fill opacity=0.55, area] table[x=x, y=y] {\bandIn};
+  \addlegendentry{Inconel 718 liner + channels}
+  \addplot[draw=none, fill=cCl, fill opacity=0.8, area] table[x=x, y=y] {\bandCl};
+  \addlegendentry{Inconel 718 closeout}
+  \addplot[cK, line width=0.8pt] table[x=x, y=r] {\prof};
+  \addlegendentry{gas-side contour}
+  \draw[cK, refline] (axis cs:976.147,0) -- (axis cs:976.147,760);
+  \node[ann, anchor=base west] at (axis cs:991.147,120) {bolted joint, $\varepsilon = 12$};
+  \draw[cK, line width=0.4pt, dashed] (axis cs:351.286,0) -- (axis cs:351.286,760);
+  \node[ann, anchor=base west] at (axis cs:366.286,40) {throat, $D_t = 235$ mm};
+\nextgroupplot[height=4.3cm, ymin=0.378138, ymax=12.5534, ytick pos=left,
+    ylabel={channel size (mm)}, xlabel={axial distance from injector face (mm)},
+    legend style={at={(0.01,0.55)}, anchor=west}]
+  \addplot[cK, opacity=0.5, line width=0.5pt] table[x=x, y=H_sized] {\prof};
+  \addlegendentry{height, sized per station}
+  \addplot[cK] table[x=x, y=H] {\prof};
+  \addlegendentry{height, smoothed (built)}
+  \addplot[cOx] table[x=x, y=W] {\prof};
+  \addlegendentry{width}
+  \addplot[cFu] table[x=x, y=rib] {\prof};
+  \addlegendentry{rib}
+\end{groupplot}
+\begin{axis}[twin=cG, at={(group c1r2.south west)}, anchor=south west, width=14.7cm, height=4.3cm,
+    xmin=-102.499, xmax=2152.49, ymin=323.2, ymax=1660.8, ylabel={channels}]
+  \addplot[cG, line width=0.7pt, const plot mark mid] table[x=x, y=N] {\prof};
+\end{axis}
+\end{tikzpicture}
+\end{document}

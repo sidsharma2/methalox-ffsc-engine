@@ -1,0 +1,22 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig06_wall_of_1p6.csv}{\wba}
+\pgfplotstableread[col sep=comma]{data/fig06_wall_of_2p0.csv}{\wbb}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.65cm},
+    width=7.27cm, height=4.9cm, xmin=3.6, xmax=12.4,
+    xlabel={wall stream-tube share (\% of mass flow)}]
+\nextgroupplot[ymin=1.46305, ymax=13.2975, ylabel={sea-level $I_{sp}$ loss (s)},
+    legend style={at={(0.03,0.97)}, anchor=north west}]
+  \addplot[cK, mark=*, mk] table[x=share, y=loss] {\wba};
+  \addlegendentry{wall O/F 1.6}
+  \addplot[cK, mark=square*, mk] table[x=share, y=loss] {\wbb};
+  \addlegendentry{wall O/F 2.0}
+\nextgroupplot[ymin=106.986, ymax=120.397, ylabel={jacket pressure drop (bar)}]
+  \addplot[cK, mark=*, mk] table[x=share, y=dp] {\wba};
+  \addplot[cK, mark=square*, mk] table[x=share, y=dp] {\wbb};
+  \node[ann, text=cR, anchor=south east] at (rel axis cs:0.97,0.04) {wall O/F 2.4: cycle does not close};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

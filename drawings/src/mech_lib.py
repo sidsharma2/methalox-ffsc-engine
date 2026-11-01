@@ -1,9 +1,10 @@
 """Helpers for the MFE-280 mechanical drawings: view placement, section hatching,
 clipping for detail views, ISO fastener designations and data loading.
 
-Geometry comes from drawings/build/<view>.json (written by extract_views.py in FreeCAD);
-numbers come from results/design.json, results/cooling_profile.csv, cad/output/bom.csv
-and cad/output/layout.json.
+Geometry comes from <out>/build/<view>.json (written by extract_views.py in FreeCAD);
+numbers come from design.json, cooling_profile.csv, bom.csv and layout.json of the selected
+iteration (itercfg: results/ and cad/output/ for iteration 1, results/iterations/<ID>/ and
+cad/iterations/<ID>/ otherwise).
 """
 
 import csv
@@ -11,15 +12,18 @@ import json
 import math
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-BUILD = ROOT / "drawings" / "build"
+import itercfg
 
-DESIGN = json.load(open(ROOT / "results" / "design.json", encoding="utf-8"))
-LAYOUT = json.load(open(ROOT / "cad" / "output" / "layout.json", encoding="utf-8"))
-BOM = list(csv.DictReader(open(ROOT / "cad" / "output" / "bom.csv", encoding="utf-8")))
-PROFILE = [{k: float(v) for k, v in r.items()} for r in csv.DictReader(open(ROOT / "results" / "cooling_profile.csv"))]
+ROOT = Path(__file__).resolve().parents[2]
+BUILD = itercfg.BUILD
+
+DESIGN = itercfg.DESIGN
+LAYOUT = json.load(open(itercfg.CAD / "layout.json", encoding="utf-8"))
+BOM = list(csv.DictReader(open(itercfg.CAD / "bom.csv", encoding="utf-8")))
+PROFILE = [{k: float(v) for k, v in r.items()} for r in csv.DictReader(open(itercfg.RESULTS / "cooling_profile.csv"))]
 JOINTS = {j["name"]: j for j in DESIGN["joints"]}
 IJOINTS = {j["name"]: j for j in DESIGN["internal_joints"]}
+BOM_PARTS = {r["part"] for r in BOM}
 
 
 def load_view(name):
@@ -31,6 +35,10 @@ def bom_row(part):
         if r["part"] == part:
             return r
     raise KeyError(part)
+
+
+def in_bom(part):
+    return part in BOM_PARTS
 
 
 def asm_mass(assembly):
@@ -239,7 +247,9 @@ class View:
         hatching where dimension text sits on a cut face."""
         styles = self.d.get("hatch", {})
         for n, p in self.d["parts"].items():
-            if p["cat"] not in ("hatch", "cutonly") or not p["faces"]:
+            if p["cat"] == "weld" and p["faces"]:          # weld beads cut by the plane: filled black
+                solid_parts = tuple(solid_parts) + (n,)
+            elif p["cat"] not in ("hatch", "cutonly") or not p["faces"]:
                 continue
             if only and n not in only:
                 continue
@@ -353,7 +363,8 @@ def wall_mid(x_mm):
 
 def face_extreme(view, name, side, direction):
     """Outline point of a part's cut face on one side of the axis (side = +1/-1 in view y),
-    extreme in direction (dx, dy); returns sheet coordinates (balloon / leader target)."""
+    extreme in direction (dx, dy); returns sheet coordinates (balloon / leader target).
+    Parts without a cut face fall back to the corner of their projected bounding box."""
     best, bv = None, -1e18
     for f in view.faces_of(name):
         for q in f["outer"]:
@@ -362,13 +373,65 @@ def face_extreme(view, name, side, direction):
             val = q[0] * direction[0] + q[1] * direction[1]
             if val > bv:
                 best, bv = q, val
+    if best is None:
+        bb = view.d["parts"][name]["bbox"]
+        corners = [(bb[0], bb[1]), (bb[2], bb[1]), (bb[2], bb[3]), (bb[0], bb[3])]
+        if side:
+            corners = [c for c in corners if c[1] * side > 0] or corners
+        best = max(corners, key=lambda q: q[0] * direction[0] + q[1] * direction[1])
     return view.P(best)
 
 
 def faces_bbox(view, name):
     pts = [q for f in view.faces_of(name) for q in f["outer"]]
+    if not pts:
+        return tuple(view.d["parts"][name]["bbox"])
     xs, ys = [q[0] for q in pts], [q[1] for q in pts]
     return min(xs), min(ys), max(xs), max(ys)
+
+
+def has_part(view, name):
+    return name in view.d["parts"]
+
+
+def weld_symbol(sheet, target, at, side=1, tail="141", all_round=True, length=16.0, h=2.2):
+    """ISO 2553 (system A) weld symbol: arrow line from the reference-line start `at` to the joint
+    `target`, continuous reference line of `length` towards side (+1 right, -1 left), dashed
+    identification line under it, single-V butt symbol on the arrow side, all-round circle at the
+    arrow / reference-line junction and the process number (ISO 4063) in the tail."""
+    x, y = at
+    sheet.line(target, at, "THIN")
+    sheet.arrowhead(target, at, 2.5, 0.85)
+    x1 = x + side * length
+    sheet.line((x, y), (x1, y), "THIN")
+    sheet.line((x, y - 1.0), (x1 - side * 2.0, y - 1.0), "HIDDEN")
+    xv = x + side * 0.45 * length
+    sheet.poly([(xv - 1.6, y + 2.6), (xv, y), (xv + 1.6, y + 2.6)], "THIN")
+    if all_round:
+        sheet.circle((x, y), 1.4, "THIN")
+    if tail:
+        sheet.line((x1, y), (x1 + side * 2.2, y + 2.2), "THIN")
+        sheet.line((x1, y), (x1 + side * 2.2, y - 2.2), "THIN")
+        sheet.text(tail, (x1 + side * 3.2, y), h, "MIDDLE_LEFT" if side > 0 else "MIDDLE_RIGHT", width=0.9)
+
+
+def weld_marks(view, pick=None):
+    """Weld beads recorded by extract_views (cat 'weld') with a cut face or a kept half in the view:
+    list of (name, model-space target point on the bead). pick: {name: (dx, dy)} chooses the outline
+    point extreme in that direction; default the point farthest from the view axis."""
+    out = []
+    for n, p in view.d["parts"].items():
+        if p.get("cat") != "weld":
+            continue
+        pts = [q for f in p["faces"] for q in f["outer"]]
+        if pts:
+            d = (pick or {}).get(n)
+            q = max(pts, key=(lambda q: q[0] * d[0] + q[1] * d[1]) if d else (lambda q: abs(q[1])))
+            out.append((n, (q[0], q[1])))
+        elif p.get("bbox"):
+            bb = p["bbox"]
+            out.append((n, ((bb[0] + bb[2]) / 2, bb[3])))
+    return out
 
 
 def bolt_set_points(z_top, grip, d, y):

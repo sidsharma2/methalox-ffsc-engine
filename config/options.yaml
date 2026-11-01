@@ -1,0 +1,205 @@
+# Design-options register for iteration 2 onward.
+# Each option says what changes, why the physics supports it, how scripts/run_options.py evaluates
+# it, its technology readiness for this application (TRL 1-9), and the development effort class
+# (nre: S / M / L / XL, priced in config/costs.yaml). Evaluation types:
+#   cycle   - rerun the 0-D/1-D chain with config overrides (mods), report Isp and pump pressures
+#   variant - CAD-built variant from scripts/build_variant.py (results/variants/<name>)
+#   bom     - parts removed or resized in the iteration-1 bill of materials (estimate until modelled in CAD)
+#   calc    - a dedicated calculation in run_options.py (bearing DN, boost pump, alternator, plasma)
+# Baseline for every delta: the iteration-1 improved engine (cad/output_improved, 1,796 kg).
+
+options:
+  # ---------------------------------------------------------------- component selection
+  - id: C1
+    name: Hybrid ceramic (Si3N4 ball) bearings on the CH4 turbopump
+    category: component
+    physics: >-
+      Rolling-bearing speed is limited by DN (bore mm x rpm). The CH4 shaft runs near 2.5 million DN,
+      above the usual range for steel 440C cryogenic bearings. Silicon nitride balls are 60 % lighter,
+      so the centrifugal ball load and the heat generation drop.
+    eval: {type: calc, fn: bearing_dn}
+    trl: 6
+    nre: M
+    make_buy: buy (modified COTS precision bearing)
+  - id: C2
+    name: Hydrostatic bearings on the CH4 turbopump
+    category: component
+    physics: >-
+      A propellant-fed hydrostatic bearing has no DN limit and no rolling contact, so life is set by
+      start/stop rubs only. It costs a bleed flow of a few percent of the pump flow at discharge pressure.
+    eval: {type: calc, fn: bearing_dn}
+    trl: 5
+    nre: L
+    make_buy: make (in-house design and test)
+  - id: C3
+    name: Single-crystal fuel-turbine blades, FPB 1100 -> 1200 K
+    category: component
+    physics: >-
+      More turbine inlet temperature gives more specific work per kg of FPB gas, so less pump pressure is
+      needed for the same power. Cast MAR-M-247 limits the inlet near 1,100 K in fuel-rich gas.
+    eval: {type: cycle, mods: {cycle.T_fpb_K: 1200.0}}
+    trl: 6
+    nre: M
+    make_buy: buy (SX casting supplier) + make (blisk machining)
+  - id: C4
+    name: Ox-rich hot-section alloy or coating qualified to 900 K
+    category: component
+    physics: >-
+      The ox-rich turbine inlet temperature is limited by burn resistance of the metal in hot dense
+      oxygen, not by strength. A burn-resistant alloy or coating lets the OPB run hotter.
+    eval: {type: cycle, mods: {cycle.T_opb_K: 900.0}}
+    trl: 4
+    nre: XL
+    make_buy: make (alloy/coating development and promoted-ignition testing)
+  - id: C5
+    name: Two-stage turbines (peak efficiency 0.82 -> 0.87)
+    category: component
+    physics: >-
+      Dense preburner gas gives short blades and a large tip-clearance loss. Two stages lower the
+      loading per stage and allow longer blades at the same speed.
+    eval: {type: cycle, mods: {cycle.eta_turbine_max: 0.87}}
+    trl: 7
+    nre: M
+    make_buy: make
+  # ---------------------------------------------------------------- integration
+  - id: I1
+    name: Welded hot-gas joints (turbine collector welded to the injector inlets)
+    category: integration
+    physics: >-
+      Removes two flange pairs at 395 bar and 820-1,100 K, with their bolts, nuts and seals, and the
+      leak paths in hot oxygen-rich gas.
+    eval: {type: bom, remove: ["^(Ox|Fuel)_hot_gas_joint_"]}
+    trl: 7
+    nre: S
+    make_buy: make
+  - id: I2
+    name: Coolant manifolds printed integral with the chamber and nozzle jackets
+    category: integration
+    physics: >-
+      An integral D-section passage shares the closeout as one wall, but at the same flow area its arc
+      radius is sqrt(2) times larger and the hoop wall grows with it, so the shell mass of a pressure
+      vessel (~ p V / sigma) stays the same. The I2-C CAD build measured +17 %: longer port stubs, and more
+      than half of the torus remains where the jacket wall slopes. The case for I2 is manufacturing only
+      (one print, no manifold welds to inspect), not mass.
+    eval: {type: bom, scale: {"^Coolant_(outlet|inlet|distribution|exit)_manifold": 1.169}}   # measured in the I2-C build
+    trl: 6
+    nre: M
+    make_buy: make (L-PBF, large-format machine)
+  - id: I3
+    name: Welded duct joints downstream of the pumps (keep the vehicle interfaces bolted)
+    category: integration
+    physics: >-
+      Removes 12 flange pairs at 400-920 bar. Each pair adds flange rings, bolts and a seal; a butt weld
+      at the same pressure needs none of these. Valves then come out by cutting, so this suits a
+      production engine, not a test article.
+    eval: {type: bom, remove: ["^(LOX|CH4)_discharge_duct_[AB]_", "^FPB_feed_duct_[AB]_", "^Nozzle_return_duct_[AB]_",
+                               "^(Ox|Fuel)_crossfeed_line_[AB]_"]}
+    trl: 8
+    nre: S
+    make_buy: make
+  - id: I4
+    name: Single-piece printed main injector (posts, faceplate, plates and plenum)
+    category: integration
+    physics: >-
+      176 parts and 346 brazed or welded post joints become one print. The solids are the same, so the
+      mass is the same; the gain is part count, joint inspection and assembly hours.
+    eval: {type: bom, scale: {"^Injector_(body_fuel_plenum|faceplate|ox_posts|interpropellant_plate)$": 1.0},
+           merge_parts: ["^Injector_(body_fuel_plenum|faceplate|ox_posts|interpropellant_plate)$"]}
+    trl: 6
+    nre: M
+    make_buy: make
+  - id: I5
+    name: Bimetallic chamber and nozzle in one piece (no bolted eps-12 joint)
+    category: integration
+    physics: >-
+      A GRCop-42 to Inconel 718 transition built by DED or bimetallic L-PBF removes the 40-bolt nozzle
+      joint, its two flange rings and the four coolant jumpers that cross it.
+    eval: {type: bom, remove: ["^Nozzle_joint_", "^Jumper_\\d_", "^Coolant_jumper_\\d"], flange_joint: nozzle_joint}
+    trl: 5
+    nre: L
+    make_buy: make
+  # ---------------------------------------------------------------- cycle / higher pressures
+  - id: Y1
+    name: Pump inlet pressure 6 -> 10 bar
+    category: cycle
+    physics: >-
+      Inducer cavitation (Nss) caps shaft speed. More inlet pressure allows a faster, smaller turbopump:
+      LOX shaft speed 15,700 -> 23,100 rpm.
+    eval: {type: variant, name: I2_inlet10, ref: I2_ref350}
+    trl: 8
+    nre: S
+    make_buy: vehicle (tank pressure) or option N3
+  - id: Y2
+    name: Chamber pressure 350 -> 400 bar (enablers C3, C4, C5, Y1 together)
+    category: cycle
+    physics: >-
+      Higher pc shrinks the throat at fixed thrust and raises sea-level Isp; the cost is pump pressure
+      and turbine power. The cycle closes at 400 bar only with all four enablers.
+    eval: {type: variant, name: I2_uprate400, ref: I2_ref350}
+    trl: 4
+    nre: XL
+    make_buy: make
+  - id: K1
+    name: Fuel-rich preburner residence time 4 -> 8 ms
+    category: cycle
+    physics: >-
+      A well-stirred reactor at the real FPB inlet enthalpy (liquid LOX, jacket-heated CH4) burns near
+      1,000 K and blows out at 3.8 ms, so the 4 ms design has almost no kinetic margin. Doubling the
+      residence time doubles the volume; a pressure vessel's mass scales with p V, so the shell doubles
+      (measured x2.00), and the wider preburner grows its injector head (x1.49).
+    eval: {type: bom, scale: {"^CH4_preburner_shell$": 2.0, "^CH4_preburner_injector_head$": 1.494}}   # measured in I2-C
+    trl: 7
+    nre: S
+    make_buy: make
+  # ---------------------------------------------------------------- novel, physics-backed
+  - id: N1
+    name: Plasma-assisted combustion (NRP discharges) in the preburners
+    category: novel
+    physics: >-
+      Non-equilibrium discharges make O atoms and heat that shorten ignition and extend extinction
+      limits. Assessed with Cantera PSR kinetics plus breakdown-voltage scaling (ffsc/plasma.py).
+    eval: {type: calc, fn: plasma}
+    trl: 2
+    nre: XL
+    make_buy: make
+  - id: N2
+    name: Plasma or laser ignition at start (replaces both spark-torch igniters and their GOX/GCH4 supply)
+    category: novel
+    physics: >-
+      Ignition happens at low pressure during the start transient, where non-equilibrium discharges work
+      and laser breakdown is easy. The torch igniters, their propellant taps, valves and lines go.
+    eval: {type: bom, remove: ["_torch_igniter$", "_igniter_bolts$"]}
+    trl: 5
+    nre: M
+    make_buy: buy (laser or pulser unit) + make (window or electrode port)
+  - id: N3
+    name: Battery-driven electric boost pumps (inlet 6 -> 10 bar without tank pressure)
+    category: novel
+    physics: >-
+      Boost power = mdot * dp / (rho * eta). The power source mass is set by power or by energy over
+      the burn, whichever is larger, and is compared with the turbopump mass saved in variant Y1.
+    eval: {type: calc, fn: boost_pump}
+    trl: 5
+    nre: L
+    make_buy: buy (motor, inverter, cells) + make (pump)
+  - id: N4
+    name: Turbine-shaft alternator for engine electrical power
+    category: novel
+    physics: >-
+      The turbines deliver about 100 MW; tapping 100-200 kW for valve actuators, igniters and
+      electronics removes the engine's dependence on vehicle batteries for long burns.
+    eval: {type: calc, fn: alternator}
+    trl: 5
+    nre: M
+    make_buy: buy (high-speed PM machine) + make (integration)
+  - id: N5
+    name: Lower OPB temperature spread through injector mixing (pattern factor)
+    category: novel
+    physics: >-
+      The turbine metal sees the hottest streak, not the mean. At a fixed peak temperature a lower
+      pattern factor allows a higher mean OPB temperature. Plasma cannot provide the uniformity at
+      665 bar (option N1), so the route is the preburner injector itself.
+    eval: {type: calc, fn: pattern_factor}
+    trl: 4
+    nre: L
+    make_buy: make

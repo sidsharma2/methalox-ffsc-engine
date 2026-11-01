@@ -35,13 +35,20 @@ D = json.load(open(os.path.join(RES, "design.json"), encoding="utf-8"))
 J = {j["name"]: j for j in D["joints"]}
 JI = {j["name"]: j for j in D["internal_joints"]}
 CY = D["cycle"]
+# iteration-2 CAD switches (config "cad"); empty for iteration 1
+CADF = D["config"].get("cad", {}) or {}
+WELDED = set(CADF.get("welded_joints", []))           # I1, I3: butt welds instead of flange pairs
+INTEGRAL = bool(CADF.get("integral_manifolds"))       # I2: D-section manifolds printed onto the jacket
+ONEPIECE = bool(CADF.get("single_piece_injector"))    # I4: injector printed in one piece
+IGNITION = CADF.get("ignition", "torch")              # N2: "laser" replaces the spark-torch igniters
+BEARINGS = CADF.get("bearings", {}) or {}             # C1 / C2 per side: "hybrid_Si3N4" or "hydrostatic"
 PROF = [{k: float(v) for k, v in row.items()} for row in csv.DictReader(open(os.path.join(RES, "cooling_profile.csv")))]
 CONT = [(float(r["x_m"]), float(r["r_m"])) for r in csv.DictReader(open(os.path.join(RES, "contour.csv")))]
 mm = lambda m: 1000.0 * m
 
-DENSITY = {"GRCop-42": 8790, "Inconel 718": 8190, "SX500": 8100, "MAR-M-247": 8540, "Ti-6Al-4V": 4430,
+DENSITY = {"M50/Si3N4 hybrid": 7200, "GRCop-42": 8790, "Inconel 718": 8190, "SX500": 8100, "MAR-M-247": 8540, "Ti-6Al-4V": 4430,
            "A286": 7940, "304L": 7900, "PTFE/Inconel seal": 8000}
-COLOR = {"GRCop-42": (0.78, 0.42, 0.22), "Inconel 718": (0.63, 0.63, 0.66), "SX500": (0.52, 0.56, 0.62),
+COLOR = {"M50/Si3N4 hybrid": (0.30, 0.30, 0.36), "GRCop-42": (0.78, 0.42, 0.22), "Inconel 718": (0.63, 0.63, 0.66), "SX500": (0.52, 0.56, 0.62),
          "MAR-M-247": (0.45, 0.43, 0.40), "Ti-6Al-4V": (0.72, 0.74, 0.78), "A286": (0.30, 0.30, 0.33),
          "304L": (0.80, 0.80, 0.83), "PTFE/Inconel seal": (0.9, 0.85, 0.3)}
 
@@ -87,6 +94,11 @@ def add_joint(group, tag, joint, d_pipe, P, d, note=""):
         f"{joint['n_bolts']} nuts + {2 * joint['n_bolts']} washers")
 
 
+def weld_bead(r_od, P, d, h=6.0):
+    """Butt-weld cap: a shallow ring proud of the pipe OD, centred on the weld plane."""
+    return cl.placed(cl.tube(r_od - 1.0, r_od + 2.5, h, -h / 2), P, d)
+
+
 def valve_body(d_pipe, length):
     r = d_pipe / 2
     body = cl.cyl(r + 22, length, -length / 2).fuse(Part.makeSphere(r + 38))
@@ -111,6 +123,13 @@ ZONE_T = {0: None, 1: None}
 px = [mm(r["x"]) for r in PROF]
 pro = [mm(r["r"] + r["t_hot"] + r["H"] + r["t_closeout"]) for r in PROF]
 env = [max(pro[max(0, i - 6):i + 7]) for i in range(len(pro))]
+# I2: integral manifolds are centred on the jacket surface, so their inner half must be cut away by
+# everything inside the jacket (wall and gas bore), not only by the wall solid.
+TCA_ENV = cl.revolve_rz([(0.0, 5.0), (env[0], 5.0)] + [(r, -x) for x, r in zip(px, env)] + [(0.0, -px[-1])]) if INTEGRAL else None
+
+
+def integral_cut(shape):
+    return shape.cut(TCA_ENV) if INTEGRAL else shape
 
 
 def r_outer(x):
@@ -206,40 +225,45 @@ def man_wall(p_Pa, r_in):
 
 p_jk_in = CY["jacket_in_p_Pa"]
 p_jk_out = D["cooling"]["p_out_Pa"]
-ri_om = mm(ducts["jacket_outlet"]) / 2 / math.sqrt(2)       # flow arrives from both sides of the port
+# I2 (integral): a semicircular passage centred on the jacket surface with the same flow area as
+# the round tube, so the arc radius is sqrt(2) times larger and the hoop wall grows with it.
+K_INT = math.sqrt(2.0) if INTEGRAL else 1.0
+ri_om = K_INT * mm(ducts["jacket_outlet"]) / 2 / math.sqrt(2)       # flow arrives from both sides of the port
 w_om = man_wall(p_jk_out, ri_om)
 r_om = ri_om + w_om
 z_om = -t_icf - (0.32 + 0.84) * mm(jic["d_m"]) - 8.0 - max(r_om, mm(ducts["fpb_feed"]) / 2)   # below washer, nut, protrusion
-R_om = r_outer(-z_om) + r_om - 6
+R_om = r_outer(-z_om) + (0.0 if INTEGRAL else r_om - 6)
 man_out = cl.torus_tube(R_om, r_om, w_om).translate(V(0, 0, z_om))
 d_fpb = mm(ducts["fpb_feed"])
 a_om = math.radians(200.0)
 u_om = V(math.cos(a_om), math.sin(a_om), 0)
-stub_out = cl.placed(cl.tube(d_fpb / 2 - w_om, d_fpb / 2, 70), u_om * R_om + V(0, 0, z_om), u_om)
-add(TCA, "Coolant_outlet_manifold", man_out.fuse(stub_out).cut(chamber).removeSplitter(), "Inconel 718", 1,
-    "collects chamber circuit A at the injector end")
-P_om_port = u_om * (R_om + 70 + mm(J["fpb_feed"]["flange_t_m"])) + V(0, 0, z_om)
+L_os = r_om + 40.0 if INTEGRAL else 70.0
+stub_out = cl.placed(cl.tube(d_fpb / 2 - w_om, d_fpb / 2, L_os), u_om * R_om + V(0, 0, z_om), u_om)
+add(TCA, "Coolant_outlet_manifold", integral_cut(man_out.fuse(stub_out).cut(chamber)).removeSplitter(), "Inconel 718", 1,
+    "collects chamber circuit A at the injector end" + ("; D-section printed onto the jacket (I2)" if INTEGRAL else ""))
+P_om_port = u_om * (R_om + L_os + mm(J["fpb_feed"]["flange_t_m"])) + V(0, 0, z_om)
 
-ri_jm = mm(ducts["ch4_discharge"]) / 2 / math.sqrt(2)
+ri_jm = K_INT * mm(ducts["ch4_discharge"]) / 2 / math.sqrt(2)
 w_jm = man_wall(p_jk_in, ri_jm)
 r_jm = ri_jm + w_jm
 z_jm_n = -x_j - t_nf - r_jm - 25
-R_jm_n = r_outer(-z_jm_n) + r_jm - 8
+R_jm_n = r_outer(-z_jm_n) + (0.0 if INTEGRAL else r_jm - 8)
 ri_jc = ri_jm * math.sqrt(1 - D["config"]["cooling"]["nozzle_circuit_fraction"]) / math.sqrt(2)  # fed by 4 jumpers
 w_jc = man_wall(p_jk_in, ri_jc)
 r_jm_c = ri_jc + w_jc
 z_jm_c = -x_j + t_nf + r_jm_c + 25
-R_jm_c = r_outer(-z_jm_c) + r_jm_c - 6
+R_jm_c = r_outer(-z_jm_c) + (0.0 if INTEGRAL else r_jm_c - 6)
 man_in = cl.torus_tube(R_jm_n, r_jm, w_jm).translate(V(0, 0, z_jm_n))
 a_in = math.radians(225)
 d_cd = mm(ducts["ch4_discharge"])
-port_in = cl.tube(d_cd / 2 - w_jm, d_cd / 2, 110).rotate(V(0, 0, 0), V(0, 1, 0), 90).rotate(V(0, 0, 0), V(0, 0, 1), 225)
+L_pin = r_jm + 60.0 if INTEGRAL else 110.0
+port_in = cl.tube(d_cd / 2 - w_jm, d_cd / 2, L_pin).rotate(V(0, 0, 0), V(0, 1, 0), 90).rotate(V(0, 0, 0), V(0, 0, 1), 225)
 port_in = port_in.translate(V(R_jm_n * math.cos(a_in), R_jm_n * math.sin(a_in), z_jm_n))
-add(TCA, "Coolant_inlet_manifold_nozzle", man_in.fuse(port_in).cut(nozzle).removeSplitter(), "Inconel 718", 1,
+add(TCA, "Coolant_inlet_manifold_nozzle", integral_cut(man_in.fuse(port_in).cut(nozzle)).removeSplitter(), "Inconel 718", 1,
     "split-flow inlet at the liner joint (eps 12); feeds circuit B down the nozzle and the jumpers")
-R_port = R_jm_n + 110 + mm(J["ch4_discharge"]["flange_t_m"])
+R_port = R_jm_n + L_pin + mm(J["ch4_discharge"]["flange_t_m"])
 P_jm_port = V(R_port * math.cos(a_in), R_port * math.sin(a_in), z_jm_n)
-add(TCA, "Coolant_distribution_manifold_chamber", cl.torus_tube(R_jm_c, r_jm_c, w_jc).translate(V(0, 0, z_jm_c)).cut(chamber),
+add(TCA, "Coolant_distribution_manifold_chamber", integral_cut(cl.torus_tube(R_jm_c, r_jm_c, w_jc).translate(V(0, 0, z_jm_c)).cut(chamber)),
     "Inconel 718", 1, "feeds circuit A up the copper chamber")
 # four jumpers across the bolted joint, outside the bolt circle; trimmed to the manifold surfaces
 jj = J["coolant_jumper"]
@@ -258,16 +282,19 @@ for k, ang in enumerate([45, 135, 225 + 22, 315]):
     add(TCA, f"Coolant_jumper_{k + 1}", jumper, "Inconel 718", 1, "jumper across nozzle joint")
     add_joint(TCA, f"Jumper_{k + 1}", jj, d_jump, V(R_jump * c, R_jump * s, 0.5 * (z_jm_n + z_jm_c)), V(0, 0, 1))
 
-ri_em = mm(ducts["nozzle_return"]) / 2 / math.sqrt(2)
+ri_em = K_INT * mm(ducts["nozzle_return"]) / 2 / math.sqrt(2)
 w_em = man_wall(p_jk_in, ri_em)
 r_em = ri_em + w_em
 z_em = -x_e + r_em + 25
-R_em = r_outer(-z_em) + r_em - 6
+R_em = r_outer(-z_em) + (0.0 if INTEGRAL else r_em - 6)
 d_nr = mm(ducts["nozzle_return"])
+L_ep = r_em + 40.0 if INTEGRAL else 60.0
 add(TCA, "Coolant_exit_manifold", cl.torus_tube(R_em, r_em, w_em).translate(V(0, 0, z_em)).fuse(
-    cl.tube(d_nr / 2 - w_em, d_nr / 2, 60).rotate(V(0, 0, 0), V(0, 1, 0), -90).translate(V(-R_em, 0, z_em))).cut(nozzle).removeSplitter(),
+    cl.tube(d_nr / 2 - w_em, d_nr / 2, L_ep).rotate(V(0, 0, 0), V(0, 1, 0), -90).translate(V(-R_em, 0, z_em))).cut(nozzle).cut(TCA_ENV).removeSplitter()
+    if INTEGRAL else cl.torus_tube(R_em, r_em, w_em).translate(V(0, 0, z_em)).fuse(
+    cl.tube(d_nr / 2 - w_em, d_nr / 2, L_ep).rotate(V(0, 0, 0), V(0, 1, 0), -90).translate(V(-R_em, 0, z_em))).cut(nozzle).removeSplitter(),
     "Inconel 718", 1, "collects circuit B at the nozzle exit; stiffens the exit lip")
-P_em_port = V(-R_em - 60 - mm(J["nozzle_return"]["flange_t_m"]), 0, z_em)
+P_em_port = V(-R_em - L_ep - mm(J["nozzle_return"]["flange_t_m"]), 0, z_em)
 
 # ---------------------------------------------------------------- injector head
 t_face, z_fp_top, z_ipp_top = 20.0, 240.0, 265.0
@@ -286,8 +313,10 @@ L_istub = 25.0
 L_fstub = mm(jic["flange_od_m"]) / 2 + 12 - R_ib
 fuel_stub = cl.tube(d_fh / 2, d_fh / 2 + 10, L_fstub + 30).rotate(V(0, 0, 0), V(0, 1, 0), -90).translate(V(-R_ib + 30, 0, z_fport))
 inj_body = inj_body.fuse(fuel_stub).cut(cl.cyl(d_fh / 2, L_fstub + 40).rotate(V(0, 0, 0), V(0, 1, 0), -90).translate(V(-R_ib + 40, 0, z_fport)))
-add(INJH, "Injector_body_fuel_plenum", inj_body.removeSplitter(), "Inconel 718", 1,
-    "fuel-rich gas plenum, injector/chamber flange; welded faceplate and posts")
+inj_body = inj_body.removeSplitter()
+if not ONEPIECE:
+    add(INJH, "Injector_body_fuel_plenum", inj_body, "Inconel 718", 1,
+        "fuel-rich gas plenum, injector/chamber flange; welded faceplate and posts")
 P_fport = V(-R_ib - L_fstub - mm(jfh["flange_t_m"]), 0, z_fport)
 
 face = cl.cyl(Rc + 1, t_face)
@@ -299,13 +328,18 @@ for ring in INJ["rings"]:
         holes.append(cl.cyl(mm(INJ["d_annulus_outer_m"]) / 2, t_face + 2, -1).translate(V(x, y, 0)))
         posts.append(cl.tube(mm(INJ["d_ox_post_m"]) / 2, mm(INJ["d_post_outer_m"]) / 2, z_ipp_top - 6, 6).translate(V(x, y, 0)))
 face = face.cut(Part.makeCompound(holes))
-add(INJH, "Injector_faceplate", face, "Inconel 718", 1,
-    f"{INJ['n_elements']} gas-gas coax elements on {len(INJ['rings'])} rings, pitch {mm(INJ['pitch_m']):.1f} mm")
-add(INJH, "Injector_ox_posts", Part.makeCompound(posts), "Inconel 718", INJ["n_elements"],
-    f"ox-rich gas posts, ID {mm(INJ['d_ox_post_m']):.1f} mm, recess 6 mm", clash=False)
 ipp = cl.cyl(R_ib - 29, z_ipp_top - z_fp_top, z_fp_top).cut(
     Part.makeCompound([cl.cyl(mm(INJ["d_post_outer_m"]) / 2, 40, z_fp_top - 5).translate(V(h.BoundBox.Center.x, h.BoundBox.Center.y, 0)) for h in holes]))
-add(INJH, "Injector_interpropellant_plate", ipp, "Inconel 718", 1, "separates fuel plenum and ox dome", clash=False)
+if ONEPIECE:
+    # one L-PBF build: same solids, so the same mass; what goes is 176 parts and 346 brazed or welded joints
+    add(INJH, "Injector_AM_single_piece", Part.makeCompound([inj_body, face, Part.makeCompound(posts), ipp]), "Inconel 718", 1,
+        f"single-piece L-PBF injector (I4): plenum, faceplate, {INJ['n_elements']} posts, interpropellant plate")
+else:
+    add(INJH, "Injector_faceplate", face, "Inconel 718", 1,
+        f"{INJ['n_elements']} gas-gas coax elements on {len(INJ['rings'])} rings, pitch {mm(INJ['pitch_m']):.1f} mm")
+    add(INJH, "Injector_ox_posts", Part.makeCompound(posts), "Inconel 718", INJ["n_elements"],
+        f"ox-rich gas posts, ID {mm(INJ['d_ox_post_m']):.1f} mm, recess 6 mm", clash=False)
+    add(INJH, "Injector_interpropellant_plate", ipp, "Inconel 718", 1, "separates fuel plenum and ox dome", clash=False)
 
 a_d, b_d, t_d = R_ib, 200.0, 26.0
 dome_pts = [(a_d * math.cos(math.radians(t)), body_top + b_d * math.sin(math.radians(t))) for t in range(0, 91, 5)]
@@ -320,10 +354,11 @@ add(INJH, "Ox_dome", dome, "Inconel 718", 1, "ox-rich gas dome, carries thrust t
 P_oport = V(R_ib + L_istub + mm(joh["flange_t_m"]), 0, z_oport)
 z_pad_top = body_top + b_d + 18
 
-# TVC actuator lugs (+/-y)
+# TVC actuator lugs (+/-y), base kept above the injector/chamber bolt heads
+z_lug = max(70.0, t_icf + 0.16 * mm(jic["d_m"]) + 0.7 * mm(jic["d_m"]) + 5.0)
 for sgn, nm in [(1, "TVC_lug_pitch"), (-1, "TVC_lug_yaw")]:
-    lug = Part.makeBox(70, 80, 90, V(-35, sgn * R_ib - (0 if sgn > 0 else 80), 70)).cut(
-        cl.cyl(16, 80).rotate(V(0, 0, 0), V(0, 1, 0), 90).translate(V(-40, sgn * (R_ib + 40), 115)))
+    lug = Part.makeBox(70, 80, 90, V(-35, sgn * R_ib - (0 if sgn > 0 else 80), z_lug)).cut(
+        cl.cyl(16, 80).rotate(V(0, 0, 0), V(0, 1, 0), 90).translate(V(-40, sgn * (R_ib + 40), z_lug + 45)))
     add(INJH, nm, lug, "Inconel 718", 1, "TVC actuator attach lug")
 
 # injector/chamber bolts (through both flanges)
@@ -400,8 +435,20 @@ def build_tpa(side):
     S["bearing_housing"] = (cl.tube(d_sh / 2 + 18, r_bh, L_b, z_b0).fuse(
         cl.tube(d_sh / 2 + 18, r_bh + 30, 14, z_b0)).fuse(cl.tube(d_sh / 2 + 18, r_bh + 30, 14, z_b0 + L_b - 14)),
         "Inconel 718", "bearing housing", 1)
+    btype = BEARINGS.get(side, "steel")
     for k, zb in enumerate([z_b0 + 25, z_b0 + L_b - 45]):
-        S[f"bearing_{k + 1}"] = (cl.tube(d_sh / 2, d_sh / 2 + 16, 22, zb), "A286", "angular-contact bearing (cryogenic, propellant-cooled)", 1)
+        if btype == "hydrostatic":                  # C2: journal sleeve, 0.08 mm radial clearance, 6 supply orifices
+            sleeve = cl.tube(d_sh / 2 + 0.08, d_sh / 2 + 16, 30, zb - 4)
+            for a6 in range(6):
+                orf = cl.cyl(1.5, 20).rotate(V(0, 0, 0), V(0, 1, 0), 90).rotate(V(0, 0, 0), V(0, 0, 1), 60 * a6)
+                sleeve = sleeve.cut(orf.translate(V(0, 0, zb + 11)))
+            S[f"hydrostatic_bearing_{k + 1}"] = (sleeve, "Inconel 718",
+                                                 "hydrostatic journal bearing, fed from CH4 pump discharge (C2)", 1)
+        elif btype == "hybrid_Si3N4":               # C1: M50 rings, Si3N4 balls
+            S[f"bearing_{k + 1}"] = (cl.tube(d_sh / 2, d_sh / 2 + 16, 22, zb), "M50/Si3N4 hybrid",
+                                     "hybrid angular-contact bearing, Si3N4 balls (C1)", 1)
+        else:
+            S[f"bearing_{k + 1}"] = (cl.tube(d_sh / 2, d_sh / 2 + 16, 22, zb), "A286", "angular-contact bearing (cryogenic, propellant-cooled)", 1)
     z_k = z_b0 + L_b + 6
     if side == "ox":
         r_k = 0.32 * mm(pm["D2_m"])
@@ -487,9 +534,15 @@ def build_tpa(side):
         S["preburner_return_port"] = (feed_port, pb_mat, "nozzle-circuit return inlet boss (outboard)", 1)
         P["pb_feed"] = (V(r_pb_out + 50 + mm(jf["flange_t_m"]), 0, z_pbb + 120), V(1, 0, 0))
     z_ig = z_pbb + L_pb * 0.35
-    ig = cl.placed(cl.cyl(22, 128), V(0, -(r_pb_out - 3), z_ig), V(0, -1, 0))
-    tip = cl.placed(cl.cyl(10, 50), V(0, -(r_pb_out + 125), z_ig), V(0, -1, 0))
-    S["torch_igniter"] = (ig.fuse(tip), "Inconel 718", "spark-torch igniter (GOX/GCH4)", 1)
+    if IGNITION == "laser":                         # N2: laser head with a sapphire window, no propellant taps
+        ig = cl.placed(cl.cyl(22, 40), V(0, -(r_pb_out - 3), z_ig), V(0, -1, 0))      # window port boss
+        head = cl.placed(cl.cyl(14, 60), V(0, -(r_pb_out + 37), z_ig), V(0, -1, 0))   # laser spark-plug head, 28 mm
+        S["laser_igniter"] = (ig.fuse(head).removeSplitter(), "Inconel 718",
+                              "laser ignition head, sapphire window, fibre-fed (N2); no GOX/GCH4 supply", 1)
+    else:
+        ig = cl.placed(cl.cyl(22, 128), V(0, -(r_pb_out - 3), z_ig), V(0, -1, 0))
+        tip = cl.placed(cl.cyl(10, 50), V(0, -(r_pb_out + 125), z_ig), V(0, -1, 0))
+        S["torch_igniter"] = (ig.fuse(tip), "Inconel 718", "spark-torch igniter (GOX/GCH4)", 1)
     P["igniter"] = (V(0, -(r_pb_out + 20), z_ig), V(0, -1, 0))
     P["speed_sensor"] = (V(0, r_bh + 30, z_b0 + L_b / 2), V(0, 1, 0))
     P["z_coll"] = z_c
@@ -549,11 +602,21 @@ def run(name, joint_a, joint_b, d_pipe, pts, wall, mat="Inconel 718", note="", b
     da.normalize()
     db = pb_ - V(pts[-2])
     db.normalize()
+    wa = joint_a["name"] in WELDED
+    wb = bool(joint_b) and joint_b["name"] in WELDED
     ta, tb = mm(joint_a["flange_t_m"]), mm(joint_b["flange_t_m"]) if joint_b else 0
-    body = [pa + da * ta] + [V(p) for p in pts[1:-1]] + [pb_ - db * tb]
+    # flanged: the pipe stops at the outer face of its flange; welded: it runs back to the port end
+    body = [pa + da * (-ta if wa else ta)] + [V(p) for p in pts[1:-1]] + [pb_ - db * (-tb if wb else tb)]
     add(PLUMB, name, cl.pipe(body, d_pipe, wall, bend), mat, 1, note)
-    add_joint(PLUMB, f"{name}_A", joint_a, d_pipe, pa, da)
-    if joint_b:
+    if wa:
+        add(PLUMB, f"{name}_A_weld", weld_bead(d_pipe / 2 + wall, pa - da * ta, da), mat, 1,
+            f"{joint_a['name']} butt weld, radiographed (I1/I3)", clash=False)
+    else:
+        add_joint(PLUMB, f"{name}_A", joint_a, d_pipe, pa, da)
+    if joint_b and wb:
+        add(PLUMB, f"{name}_B_weld", weld_bead(d_pipe / 2 + wall, pb_ + db * tb, db), mat, 1,
+            f"{joint_b['name']} butt weld, radiographed (I1/I3)", clash=False)
+    elif joint_b:
         add_joint(PLUMB, f"{name}_B", joint_b, d_pipe, pb_, db)
 
 
@@ -562,8 +625,15 @@ def wall_for(p_Pa, d):
 
 
 # hot-gas spools are the flanged pairs at the injector ports (TPA collectors mate directly)
-add_joint(PLUMB, "Ox_hot_gas_joint", joh, d_oh, P_oport, V(-1, 0, 0))
-add_joint(PLUMB, "Fuel_hot_gas_joint", jfh, d_fh, P_fport, V(1, 0, 0))
+for tag, jhg_, d_hg_, P_hg, d_dir in [("Ox_hot_gas", joh, d_oh, P_oport, V(-1, 0, 0)), ("Fuel_hot_gas", jfh, d_fh, P_fport, V(1, 0, 0))]:
+    if jhg_["name"] in WELDED:                      # I1: welded spool across the former flange-pair gap
+        t_hg = mm(jhg_["flange_t_m"])
+        spool = cl.placed(cl.tube(d_hg_ / 2, d_hg_ / 2 + 10, 2 * t_hg, -t_hg), P_hg, d_dir)
+        spool = spool.fuse([weld_bead(d_hg_ / 2 + 10, P_hg - d_dir * t_hg, d_dir), weld_bead(d_hg_ / 2 + 10, P_hg + d_dir * t_hg, d_dir)])
+        add(PLUMB, f"{tag}_weld", spool.removeSplitter(), "Inconel 718", 1,
+            f"{jhg_['name']}: collector welded to the injector inlet through a short spool (I1)", clash=False)
+    else:
+        add_joint(PLUMB, f"{tag}_joint", jhg_, d_hg_, P_hg, d_dir)
 
 # LOX: inlet flange (vehicle interface), discharge -> MOV -> OPB
 for side, jname, dname in [("ox", "lox_inlet", "lox_inlet"), ("fuel", "ch4_inlet", "ch4_inlet")]:
@@ -673,7 +743,8 @@ DESIGNED = [("impeller1_hub", "impeller1_blades"), ("impeller1_shroud", "impelle
             ("turbine_disk", "turbine_rotor_blades"), ("turbine_stator_vanes", "stator_shrouds"),
             ("inducer_hub", "inducer_blades"), ("exhaust_collector", "turbine_housing"),
             ("preburner_shell", "preburner_crossfeed_port"), ("preburner_shell", "preburner_return_port"),
-            ("preburner_shell", "torch_igniter"), ("pump_casing_flange", "pump_volute_casing")]
+            ("preburner_shell", "torch_igniter"), ("preburner_shell", "laser_igniter"),
+            ("pump_casing_flange", "pump_volute_casing")]
 CASINGS = ("pump_volute_casing", "pump_casing_flange", "inlet_housing", "bearing_housing", "kick_stage_housing", "turbine_housing")
 
 
@@ -747,13 +818,14 @@ with open(os.path.join(OUT, "bom.csv"), "w", newline="", encoding="utf-8") as f:
     w.writerows(BOM)
 
 doc.saveAs(os.path.join(OUT, "MFE280.FCStd"))
-import Import  # noqa: E402
-Import.export([ENGINE], os.path.join(OUT, "MFE280_assembly.step"))
-for a in [TCA, INJH, GIM, PLUMB, TPA["ox"]["asm"], TPA["fuel"]["asm"]]:
-    Import.export([a], os.path.join(OUT, f"MFE280_{a.Name}.step"))
-# hot-gas path (inner contour) for CFD: a solid of revolution of the gas volume
-gas = cl.revolve_rz([(0, 0)] + [(mm(r), -mm(x)) for x, r in CONT] + [(0, -mm(CONT[-1][0]))])
-gas.exportStep(os.path.join(OUT, "MFE280_hot_gas_volume.step"))
+if not os.environ.get("FFSC_NO_STEP"):                 # design-variant screening skips the STEP exports
+    import Import  # noqa: E402
+    Import.export([ENGINE], os.path.join(OUT, "MFE280_assembly.step"))
+    for a in [TCA, INJH, GIM, PLUMB, TPA["ox"]["asm"], TPA["fuel"]["asm"]]:
+        Import.export([a], os.path.join(OUT, f"MFE280_{a.Name}.step"))
+    # hot-gas path (inner contour) for CFD: a solid of revolution of the gas volume
+    gas = cl.revolve_rz([(0, 0)] + [(mm(r), -mm(x)) for x, r in CONT] + [(0, -mm(CONT[-1][0]))])
+    gas.exportStep(os.path.join(OUT, "MFE280_hot_gas_volume.step"))
 print(f"[cad] parts {len(BOM)}, modelled mass {mass_total:.0f} kg, clashes {len(clashes)}, "
       f"envelope {bb.XLength:.0f} x {bb.YLength:.0f} x {bb.ZLength:.0f} mm, {time.time() - T0:.0f} s")
 for c in clashes[:40]:

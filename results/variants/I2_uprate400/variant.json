@@ -1,0 +1,122 @@
+{
+  "mods": {
+    "requirements.pc_bar": 400.0,
+    "propellants.lox.p_inlet_bar": 10.0,
+    "propellants.lch4.p_inlet_bar": 10.0,
+    "cycle.T_opb_K": 900.0,
+    "cycle.eta_turbine_max": 0.87,
+    "cycle.T_fpb_K": 1200.0
+  },
+  "config": {
+    "name": "MFE-280",
+    "description": "Sea-level methalox full-flow staged-combustion engine. Requirements are set to the public Raptor 3 sea-level figures (280 tf, 350 s, ~350 bar, O/F 3.6) so the models can be checked against a known design point.",
+    "requirements": {
+      "thrust_sl_kN": 2746.0,
+      "pc_bar": 400.0,
+      "mixture_ratio": 3.6,
+      "p_ambient_Pa": 101325.0,
+      "throttle_min": 0.4,
+      "isp_sl_target_s": 350.0,
+      "mass_target_kg": 1525.0
+    },
+    "propellants": {
+      "lox": {
+        "T_K": 70.0,
+        "p_inlet_bar": 10.0
+      },
+      "lch4": {
+        "T_K": 95.0,
+        "p_inlet_bar": 10.0
+      }
+    },
+    "efficiencies": {
+      "eta_cstar": 0.99,
+      "eta_cf": 0.98
+    },
+    "chamber": {
+      "contraction_ratio": 3.0,
+      "Lstar_m": 0.8,
+      "convergent_half_angle_deg": 30.0,
+      "R_up_over_Rt": 1.5,
+      "R_dn_over_Rt": 0.382,
+      "R_fillet_over_Rc": 0.6
+    },
+    "nozzle": {
+      "expansion_ratio": 34.0,
+      "bell_fraction": 0.8
+    },
+    "cooling": {
+      "eps_joint": 12.0,
+      "zones": [
+        {
+          "name": "chamber",
+          "material": "GRCop-42",
+          "t_hot_mm": 0.6,
+          "w_max_mm": 1.0,
+          "rib_min_mm": 0.9,
+          "rib_max_mm": 3.0,
+          "Twg_target_K": 880.0,
+          "h_min_mm": 1.5,
+          "h_max_mm": 12.0
+        },
+        {
+          "name": "nozzle",
+          "material": "Inconel 718",
+          "t_hot_mm": 0.6,
+          "w_max_mm": 2.2,
+          "rib_min_mm": 1.0,
+          "rib_max_mm": 3.0,
+          "Twg_target_K": 950.0,
+          "h_min_mm": 1.5,
+          "h_max_mm": 8.0
+        }
+      ],
+      "nozzle_circuit_fraction": 0.5,
+      "bartz_factor": 1.0,
+      "roughness_um": 3.0,
+      "coolant_fraction": 1.0,
+      "closeout_allow_MPa": 520.0,
+      "side_load_frac": 0.05
+    },
+    "cycle": {
+      "T_opb_K": 900.0,
+      "T_fpb_K": 1200.0,
+      "dp_main_inj_frac": 0.1,
+      "dp_pb_inj_frac": 0.12,
+      "dp_hot_gas_duct_frac": 0.015,
+      "dp_line_frac": 0.02,
+      "eta_turbine_max": 0.87,
+      "turbine_reaction": 0.5,
+      "tip_clearance_mm": 0.15
+    },
+    "turbopumps": {
+      "ox": {
+        "stages": 1,
+        "suction_specific_speed_us": 32000,
+        "head_coefficient": 0.55,
+        "shaft_stress_MPa": 250.0,
+        "turbine_tip_speed_max_m_s": 520.0
+      },
+      "fuel": {
+        "stages": 2,
+        "suction_specific_speed_us": 32000,
+        "head_coefficient": 0.55,
+        "shaft_stress_MPa": 250.0,
+        "turbine_tip_speed_max_m_s": 560.0
+      }
+    },
+    "injector": {
+      "thrust_per_element_kN": 18.0,
+      "ring_pitch_factor": 1.8,
+      "bl_mass_fraction": 0.08,
+      "bl_mixture_ratio": 2.0
+    },
+    "structures": {
+      "closeout_allow_MPa": 520.0,
+      "bolt_grade": "A286 (AMS 5737) / Inconel 718",
+      "bolt_proof_MPa": 760.0,
+      "preload_frac_proof": 0.75,
+      "separation_safety": 1.4
+    }
+  }
+}

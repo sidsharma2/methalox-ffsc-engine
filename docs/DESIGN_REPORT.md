@@ -155,8 +155,8 @@ If no ISO bolt pattern fits, the joint is marked welded. That happens for the 76
 
 Figures: `figures/fig01_contour_channels`, `fig02_cooling`, `fig03_pressure_ladder`, `fig08_throttle_separation`.
 
-![contour and channels](../figures/fig01_contour_channels.png)
-![cooling solution](../figures/fig02_cooling.png)
+![contour and channels](../figures/pgf/fig01_contour_channels.png)
+![cooling solution](../figures/pgf/fig02_cooling.png)
 
 Points worth noting:
 
@@ -183,14 +183,14 @@ The modelled mass leaves out harness, controller, actuators and purge lines, so 
 
 Each case reruns the whole chain (`scripts/run_trades.py`, `results/trades.json`).
 
-![mixture ratio and expansion ratio](../figures/fig04_mr_eps.png)
+![mixture ratio and expansion ratio](../figures/pgf/fig04_mr_eps.png)
 
 - Mixture ratio: Sea-level Isp peaks near O/F 3.4 (335.2 s), while bulk-density Isp keeps rising to 3.8. O/F 3.6 is a vehicle-level compromise. The wall-bias penalty grows with O/F because the gap to the wall O/F grows.
 - Expansion ratio: Sea-level Isp is flat between ε 30 and 42 (333.2-333.8 s). Larger ε adds chamber mass (+22 kg from 34 to 38) and lowers the 40 %-throttle separation margin (1.49 at 34, 1.18 at 42). ε 34 is right for this mission.
 - Chamber pressure: 250 and 300 bar close easily. 400 bar does not close at OPB 820 K and FPB 1,100 K: the ox turbine runs out of power first.
 - Wall bias (figure 6): A wall O/F of 2.4 does not close the cycle, because the jacket dP rises too far. Wall O/F 1.6 gives large wall margin. The stream-tube model, however, cannot say whether a thin wall layer survives mixing down to the throat. Bias fractions below about 6 % need a film-decay model before I would trust them.
 
-![sensitivities](../figures/fig05_sensitivity_tornado.png)
+![sensitivities](../figures/pgf/fig05_sensitivity_tornado.png)
 
 - Sensitivities (figure 5), as the change in CH4 pump discharge:
   - Bartz heat flux ×1.2: +213 bar; the hot wall also reaches 922 K. This is the largest model uncertainty.
@@ -202,7 +202,7 @@ Each case reruns the whole chain (`scripts/run_trades.py`, `results/trades.json`
 
 ## 8. Improvements without much added complexity
 
-![improvement chain](../figures/fig07_improvement_chain.png)
+![improvement chain](../figures/pgf/fig07_improvement_chain.png)
 
 | Step (cumulative) | How | LOX / CH4 pump discharge |
 |---|---|---|
@@ -336,20 +336,279 @@ Solver set-up:
 
 Gas: a single equivalent gas with γ = 1.125, cp = 3,217 J/kg K and M = 23.26 kg/kmol. This γ reproduces the shifting-equilibrium exit pressure exactly. c* is within 0.22 % and sea-level Isp within 0.07 %, but exit static temperature is 9 % low. The true frozen chamber properties would give an exit pressure 21 % low, which matters for a separation study.
 
-The flow solver has not been run yet; the estimate is 1 to 4 h on 8 ranks. Its first job is to check the 1-D exit pressure, Isp and throat mass flow. After that, it should check separation at 40 % throttle (`--pc-frac 0.4`).
+The first full run started on 2026-10-31 in the WSL home (`~/runs/mfe280_sl_axi`, 8 ranks), at about 1.2 s per iteration. It failed with a floating-point exception at iteration 2,116, and again at 2,198 after a gentler Courant ramp. A rerun that logged the field extremes every iteration found the cause: the density in one cell on the outer far-field boundary (x = 8.5 m, r = 3.39 m, the r = 5 Re patch) fell from 0.0099 to −0.06 kg/m3 in three iterations. That patch used a total-pressure inflow condition, which sets the static pressure to p0 − ρU²/2. When the plume's starting vortex drove fast entrainment through the boundary, that static pressure went towards vacuum. Both ambient patches now hold the ambient static pressure with a non-reflecting (waveTransmissive) condition and 288 K inflow temperature, and the ramp is 0.1, 0.15, 0.3, 0.5. The I1 run continued from iteration 2,000 and the I2-C run started again. Its first job is to check the 1-D exit pressure, Isp and throat mass flow. After that, it should check separation at 40 % throttle (`--pc-frac 0.4`).
 
-## 13. Limitations and next steps
+## 13. Iteration 2: design options
+
+Iteration 1 is frozen as git tag `iter-1` (commit `3de37cf` on `main`). Iteration 2 work lives on the `iter-2` branch. Every candidate change goes into one register, `config/options.yaml`, with its physics basis, how it is evaluated, its technology readiness level (TRL) for this engine and a development-effort class. `scripts/run_options.py` evaluates each option against the iteration-1 improved engine (1,796 kg, thrust-to-weight 156), and `scripts/run_economics.py` adds its recurring and development cost (section 16).
+
+Evaluation types:
+
+- cycle: rerun the 0-D/1-D chain with new inputs;
+- variant: a full design plus FreeCAD build (`scripts/build_variant.py`), so the mass comes from the CAD roll-up and the clash check covers it;
+- bom: parts removed or resized in the iteration-1 bill of materials. This is an estimate until the option is modelled as geometry;
+- calc: a dedicated calculation (bearing DN, boost pump, alternator, preburner mixing, plasma).
+
+| ID | Option | Mass (kg) | T/W | LOX / CH4 pump (bar) | Unit cost (k$) | Development (M$) | TRL |
+|---|---|---|---|---|---|---|---|
+| C1 | Hybrid Si3N4 bearings, CH4 pump | - | - | - | +21 | 3.4 | 6 |
+| C2 | Hydrostatic bearings, CH4 pump | - | - | - | +27 | 13.6 | 5 |
+| C3 | SX fuel-turbine blades, FPB 1,200 K | - | - | +11 / −60 | +566 | 3.4 | 6 |
+| C4 | Ox-rich hot section to 900 K | - | - | −58 / +6 | +123 | 40.8 | 4 |
+| C5 | Two-stage turbines, η 0.87 | - | - | −41 / −36 | +43 | 3.4 | 7 |
+| I1 | Welded hot-gas joints | −18 | 158 | - | −30 | 0.3 | 7 |
+| I2 | Printed integral coolant manifolds (CAD-measured) | +21 | 154 | - | +12 | 3.4 | 6 |
+| I3 | Welded duct joints after the pumps | −73 | 163 | - | −126 | 0.3 | 8 |
+| I4 | Single-piece printed injector | 0 | 156 | - | −29 | 3.4 | 6 |
+| I5 | Bimetallic chamber + nozzle, no ε 12 joint | −37 | 159 | - | −11 | 13.6 | 5 |
+| K1 | Fuel-rich preburner residence time 4 → 8 ms (CAD-measured) | +27 | 154 | - | +33 | 0.3 | 7 |
+| Y1 | Pump inlet 6 → 10 bar (CAD variant) | −157 | 171 | 691 / 800 | −142 | 0.3 | 8 |
+| Y2 | pc 400 bar with C3-C5 and Y1 (CAD variant) | −180 | 173 | 786 / 951 | +560 | 40.8 | 4 |
+| N1 | Plasma-assisted preburners | - | - | - | not viable | 40.8 | 2 |
+| N2 | Laser or plasma start ignition | −3.5 | 156 | - | +65 | 3.4 | 5 |
+| N3 | Battery-driven boost pumps | +291 to +689 | - | - | +162 | 13.6 | 5 |
+| N4 | Turbine-shaft alternator, 150 kW | +30 | - | - | +34 | 3.4 | 5 |
+| N5 | Lower OPB temperature spread (mixing) | - | - | −49 / +5 | 0 | 13.6 | 4 |
+
+Mass and T/W are changes from, or values for, the improved engine. Costs are P50 for the hybrid build strategy.
+
+![options: benefit against development cost](../figures/pgf/fig13_nre_options.png)
+
+What the register shows:
+
+- Welding the joints that are never opened (I1, I3) is the cheapest gain: 91 kg and 712 fasteners less in the estimate, 95 kg and 692 pieces in the I2-C build, for about $0.6M of development. The cost is serviceability: a valve then comes out by cutting, which is the production choice Raptor 3 made.
+- The biggest single gain is the pump inlet pressure (Y1). Inducer cavitation sets the shaft speed, and 10 bar instead of 6 bar lets both turbopumps run about 50 % faster. In the CAD build the LOX turbopump drops by 103 kg and the CH4 turbopump by 44 kg. The extra pressure is a vehicle requirement (tank pressure), so it needs a vehicle-level trade.
+- The bearings couple to the speed. The CH4 shaft already runs at 2.27 million DN in the improved engine, above the 1.8 million usual for steel cryogenic bearings, so C1 is needed anyway. With a 10 bar inlet the CH4 shaft reaches 3.09 million DN, past hybrid bearings too (3.0), so Y1 brings C2 (hydrostatic bearings) with it.
+- Electric boost pumps (N3) do not pay. Raising the inlet by 4 bar takes 578 kW of shaft power, or 628 kW electric. Motors, inverters, pumps and the power source add 291 kg (shaft alternator) to 689 kg (Li-ion pack), against the 157 kg that Y1 saves.
+- A turbine-shaft alternator (N4) supplies 150 kW for valve actuators, igniters and electronics at about 30 kg, against 125 kg of Li-ion pack for the same 170 s burn.
+- Better mixing in the ox-rich preburner (N5) is worth nearly as much as a new alloy. The turbine metal sees the hottest streak. With a pattern factor of 0.20, the 820 K mean gives a 964 K peak. Halving the pattern factor at the same peak allows a 885 K mean and lowers the LOX pump discharge by 49 bar. Option C4 gets 58 bar by qualifying a new hot-section alloy to 900 K, which is far harder.
+
+`config/iterations.yaml` combines the options into three candidates for iteration 2. `scripts/run_iterations.py` adds up their deltas and writes `docs/ITERATIONS.md`:
+
+| Candidate | Options | Mass (kg) | T/W | Isp SL (s) | Unit cost T1 ($M) | Development ($B) | Lowest TRL |
+|---|---|---|---|---|---|---|---|
+| I2-A integrate and weld | K1 I1 I3 I2 I4 N2 C1 N5 | 1,749 | 160 | 333.7 | 3.31 | 0.46 | 4 |
+| I2-B + 10 bar inlet | I2-A + Y1 C2 | 1,592 | 176 | 333.7 | 3.20 | 0.47 | 4 |
+| I2-C + 400 bar | I2-B with Y2 | 1,570 | 178 | 336.2 | 3.90 | 0.51 | 4 |
+| I2-C as built (section 17) | | 1,576 | 178 | 336.2 | 3.94 | 0.51 | 4 |
+| Raptor 3 (public) | | 1,525 | 184 | | | | |
+
+The deltas are added linearly, so the candidates are estimates until each one is built as its own CAD variant. An earlier version of this table credited the integral manifolds with −55 kg and the one-piece injector with −15 kg; the I2-C build showed both were wrong (section 17), and the estimates now use the measured factors. The I2-C estimate (1,570 kg) and the built engine (1,576 kg) now agree. The modelled mass still leaves out the harness, controller and purge lines, so a T/W of 178 on paper is not a like-for-like comparison with Raptor 3's 184. The remaining gap is integration and inlet pressure.
+
+## 14. Higher pump pressures and chamber pressure
+
+`scripts/run_pc_ceiling.py` sweeps the chamber pressure for the improved engine and for each enabling option. A point counts as feasible when the power balance closes, the hot wall stays at its 880 K design value, and neither pump exceeds an assumed 1,000 bar discharge limit (housings, seals and ducts).
+
+![pump discharge against chamber pressure](../figures/pgf/fig10_pc_ceiling.png)
+
+| Enabler | pc ceiling (bar) | Limit reached |
+|---|---|---|
+| Improved engine | 375 | LOX shaft 11.4 MW short at 400 bar |
+| Pump inlet 10 bar | 375 | CH4 pump 1,192 bar at 400 bar |
+| OPB 900 K | 375 | CH4 shaft 4.2 MW short at 400 bar |
+| Turbine η 0.87 | 375 | LOX shaft 6.2 MW short at 400 bar |
+| FPB 1,200 K | 350 | LOX shaft 4.9 MW short at 375 bar |
+| All four | 400 | CH4 pump 1,119 bar at 425 bar |
+
+No single enabler moves the ceiling, because the two shafts are coupled through the cross-feeds. A hotter OPB needs more methane, which the CH4 turbine then lacks. A hotter FPB needs more oxygen through the kick stage, which the LOX turbine then lacks. All four together reach 400 bar with the pumps at 786 and 951 bar. Sea-level Isp rises by 2.6 s to 336.2 s. The CAD variant at 400 bar (`I2_uprate400`) weighs 1,616 kg, 180 kg less than the improved engine:
+
+| Sub-assembly | Change at 400 bar (kg) | Change with 10 bar inlet only (kg) |
+|---|---|---|
+| Thrust chamber | −27 | −2 |
+| Injector head | −18 | 0 |
+| LOX turbopump | −113 | −103 |
+| CH4 turbopump | −49 | −44 |
+| Plumbing | +28 | −9 |
+
+Most of the saving comes from the faster turbopumps, which the 10 bar inlet already gives at 350 bar. Going from 350 to 400 bar adds only 22 kg of saving and 2.6 s of Isp, for the hardest development item in the register (C4, an ox-rich alloy at 900 K, TRL 4). Higher chamber pressure is therefore a later step. The inlet pressure and integration come first.
+
+Both variants first showed two layout clashes: the CH4 inlet-housing screws hit the volute-cover bolts, and the TVC lugs touched the injector bolt heads. I added a sizing rule to `ffsc/design.py`: the volute-cover bolt circle has to clear the inlet-housing washers by 3 mm. The lugs now start above the bolt heads. Neither change affects iteration 1, and both variants build with 0 clashes.
+
+## 15. Plasma-assisted combustion and the power-source question
+
+The idea: use non-equilibrium plasma (nanosecond repetitively pulsed, NRP, discharges) to assist combustion, and treat its electrical supply as a power source of whatever energy density the job needs, whether next-generation batteries or a small reactor. At 1 atm, NRP discharges make O atoms and heat that extend lean blow-off limits by up to 70 % for less than 1 % of the flame power. The question is whether any of that survives in an engine whose preburners run at 620-630 bar, and what power source it would take.
+
+### 15.1 Model
+
+`ffsc/plasma.py`, run by `scripts/run_pac.py`:
+
+- Each combustor is a perfectly stirred reactor (PSR) in Cantera with GRI-Mech 3.0, at its design pressure and global O/F.
+- The inlet enthalpy is the real one from the cycle model: liquid LOX plus methane warmed in the cooling jacket. Liquid injection cannot be written as a gas inlet temperature (for the LOX-rich case the enthalpy lies below that of the ideal gas at 0 K), so the inlet is gas at 300 K and a heat sink proportional to the mass flow removes the difference. The reactor then finds its own exit temperature from the kinetics.
+- The plasma deposits a specific energy e_p in the inlet. A share α_O makes O atoms at ε_O eV each and the rest heats the gas, so the total enthalpy rises by exactly e_p. The only measured branching is for air: about 35 % to O2 dissociation in an NRP spark (Rusterholtz et al. 2013), which implies 7.3 eV per O atom. That is the nominal case. The optimistic case is α_O = 0.5 at 4.2 eV per atom.
+- tau_ext, the shortest residence time at which the reactor still burns, comes from continuation down the burning branch. Every step starts from the last converged burning state and shrinks near the turning point, so the result does not depend on how the search jumps.
+- The breakdown voltage of a gap is V = (E/N)_b N d, with (E/N)_b ≈ 100 Td and N = p / k_B T.
+
+A first version anchored the heat sink to chemical equilibrium at the design preburner temperature. For the fuel-rich preburner that quietly added about 540 kJ/kg, because equilibrium at 631 bar includes endothermic methane reforming, which the cycle's frozen complete-combustion model does not. That version gave a 0.5 ms extinction time and a large margin. Anchoring to the real inlet enthalpy changes the answer, and everything below uses it.
+
+### 15.2 What the kinetics say
+
+![plasma-assisted combustion screening](../figures/pgf/fig11_pac.png)
+
+| Combustor | Result |
+|---|---|
+| Main chamber, 350 bar | Extinction at 21 ns against a 1.07 ms residence time, a margin of about 52,000. The main chamber is mixing-limited, not kinetics-limited. |
+| Ox-rich preburner, 621 bar | A premixed reactor at 820 K has no burning branch even at 1 s, with or without plasma up to 300 kJ/kg (187 MW). The homogeneous ignition delay at 820 K is 59 ms, against a 3 ms residence time. |
+| Fuel-rich preburner, 631 bar | Burns near 1,000-1,020 K and goes out at 3.72 ms, against a 4 ms design residence time: a margin of 1.08. The ignition delay at 1,000 K is 4.3 ms. |
+
+Both preburners therefore only work as staged diffusion flames: near-stoichiometric zones that burn hot and fast, then dilution to the turbine temperature. That is how real FFSC preburners work. The cycle model only assumed a residence time (3 ms and 4 ms) and never checked it against the chemistry.
+
+Plasma moves the fuel-rich extinction time only at megawatt power:
+
+| e_p (kJ/kg) | Plasma power (MW) | tau_ext, nominal / optimistic (ms) |
+|---|---|---|
+| 0 | 0 | 3.72 / 3.72 |
+| 10 | 2.2 | 3.56 / 3.48 |
+| 30 | 6.5 | 3.19 / 3.06 |
+| 100 | 21.8 | 2.21 / 1.98 |
+
+The cheap fix is geometric: an 8 ms residence time (option K1) gives a margin of 2.15. Doubling the volume doubles the shell (pressure-vessel mass scales with p V), which adds 18 kg.
+
+The same check exposes a cycle-model risk. At its design O/F, the fuel-rich preburner burns near 1,000 K in the reactor, not the 1,100 K that frozen complete combustion gives. If the real preburner delivers 1,000 K, the CH4 pump discharge rises by 131 bar (811 to 942 bar). The fuel-side pressure margin therefore depends on preburner chemistry that the cycle model simplifies. A kinetics-coupled preburner model is the first physics task of iteration 2.
+
+### 15.3 The discharge itself
+
+| Location | Breakdown, 1 mm gap |
+|---|---|
+| Start transient, 5 bar, 300 K | 12 kV |
+| Highest pressure with a shown NRP benefit, 12 bar, 300 K | 29 kV |
+| Main chamber, 350 bar, 1,000 K | 254 kV |
+| Fuel-rich preburner, 631 bar, 1,019 K | 448 kV |
+| Ox-rich preburner, 621 bar, 820 K | 549 kV |
+
+A 30 kV pulser breaks down a 1 mm gap only below about 12 bar. At preburner pressures, gas breakdown needs about half a megavolt per millimetre, far beyond the tens of kV per millimetre that ceramic insulators hold. At this density, quenching and relaxation take picoseconds to a nanosecond, so the deposited energy turns into heat almost at once, and the discharge tends to start at electrode micro-protrusions and become a thermal arc. That removes the non-equilibrium chemistry that makes NRP useful. Laser breakdown behaves the other way, with a threshold that falls as pressure rises, and laser ignition of LOX/methane injectors has been shown.
+
+### 15.4 What the power source would need
+
+The useful form of the power-source question is: how much specific power and energy must the source have for the concept to pay for its own mass? `scripts/run_pac.py` computes this for each plasma or electric concept against the mass it saves or the cheaper alternative it competes with:
+
+| Concept | Power | Mass budget | Source must reach | Today |
+|---|---|---|---|---|
+| Plasma in the FPB, extinction time 3.7 → 2.2 ms | 21.8 MW, 170 s | 18 kg (option K1 does the same) | 1,210 kW/kg and 57,000 Wh/kg | nothing comes close |
+| Electric drive on the LOX shaft, 375 → 400 bar without the C3-C5 enablers | 11.4 MW, 170 s | 355 kg (the whole LOX turbopump) | 32 kW/kg and 1,520 Wh/kg | 16-27 times beyond batteries in power, 6-9 times in energy |
+| Electric boost pumps, inlet 6 → 10 bar | 0.63 MW, 170 s | none: motors and pumps already use up the 157 kg saved | impossible at any power density | - |
+| Plasma or laser start ignition | 4 kW, about 5 s | 3.4 kg (the torch igniters) | 1.2 kW/kg, 1.6 Wh/kg | any battery |
+
+![power density of sources against what each concept needs](../figures/pgf/fig14_power_density.png)
+
+The reference points:
+
+- Li-ion pack: 1.2 kW/kg and 170 Wh/kg (Formula E Gen3 pack level).
+- Next-generation cells: about 2 kW/kg and 240 Wh/kg at pack level.
+- High-speed alternator with SiC inverter: about 5 kW/kg. It converts turbine shaft power, so energy is never the limit.
+- Fission reactor: 0.036 kW/kg (SP-100) or 0.0067 kW/kg (Kilopower), 30 to 180 times heavier than a Li-ion pack for the same power. 1 MW would need about 28 t.
+- This engine's own turbopumps: 88.5 MW of turbine power for 563 kg, or 157 kW/kg. The propellant carries about 3,000 Wh/kg of chemical energy.
+
+The turbines are already the best power source on the vehicle: about 100 times denser in power than a battery and about 4,000 times denser than a reactor. Electrical power on this engine is therefore worth spending only on loads of tens to hundreds of kilowatts, and it should come from a shaft alternator (option N4). Plasma is worth keeping for ignition at low pressure (option N2), where it removes both torch igniters with their GOX/GCH4 taps and valves for a few kilowatts.
+
+### 15.5 Where the novelty lands
+
+The plasma study turned up two improvements that need no plasma at all:
+
+- K1: a fuel-rich preburner sized from its kinetics rather than an assumed residence time.
+- N5: a mixing-optimised ox-rich injector that lowers the temperature spread at the turbine. This gives the uniformity that plasma was meant to give, and is worth 49 bar of LOX pump pressure.
+
+The novel part of the idea that survives the physics is electric start ignition plus an engine-driven electrical bus. An all-electric engine without hydraulic or pneumatic actuation (electromechanical valves, laser ignition, shaft alternator) is a real design simplification, and the numbers above show its electrical loads are small enough to carry.
+
+## 16. Economics
+
+`ffsc/economics.py` prices the engine bottom-up from the CAD bill of materials. Each of the 178 BOM lines falls into one of 23 component groups in `config/components.yaml`. Every group has a route for each build strategy (L-PBF, laser-wire DED, machined forging, vacuum casting, fabricated tube, COTS and so on), and `config/costs.yaml` holds the rates as triangular [low, nominal, high] inputs. A Monte Carlo with 4,000 samples draws each input once per sample, so every part in a sample sees the same shop rate or powder price. Sources for the rates are in section 18. Values without a source are marked "assumed" in the file.
+
+Three build strategies:
+
+- conventional: buy to print from suppliers with a 15-35 % margin, COTS wherever a catalogue part exists, conventional processes (milled channels with electroformed or brazed closeouts, castings, forgings);
+- in-house AM: vertically integrated, with L-PBF and DED wherever they fit, custom valves made in-house, and castings, forged rings and igniters still bought;
+- hybrid: the cheaper of the two routes for each group.
+
+Recurring cost adds inspection (8 %), assembly hours per part, bolted joint and weld, engine integration and one acceptance hot fire. Learning curves follow NASA CEH practice: 85 % for assembly, 90 % for made parts, 87 % for COTS.
+
+![unit cost and learning curve](../figures/pgf/fig12_cost.png)
+
+| | Conventional | In-house AM | Hybrid |
+|---|---|---|---|
+| First unit T1, P10 / P50 / P90 ($M) | 3.95 / 4.68 / 5.53 | 3.07 / 3.62 / 4.26 | 2.86 / 3.37 / 3.98 |
+| Unit 100 / unit 1,000, P50 ($M) | 2.27 / 1.59 | 1.75 / 1.22 | 1.62 / 1.13 |
+| Average of the first 100 ($M) | 2.67 | 2.06 | 1.91 |
+| COTS share of T1 cost | 2.2 % | 2.8 % | 3.0 % |
+| Development, bottom-up, P50 ($B) | 0.43 | 0.43 | 0.43 |
+
+COTS covers 82 of the 178 BOM lines and 1,301 of the 1,974 pieces (fasteners, seals, bearings and sensors), but only about 3 % of the cost. The cost sits in parts nobody sells: the four main valves alone are $1.1-1.4M of the first unit. No catalogue valve combines 700-920 bar with a 100-160 mm bore at cryogenic temperature (the largest COTS cryogenic ball valves are rated near 20 bar). In-house valve development is therefore the largest single cost lever, which matches what the vertically integrated engine programmes did.
+
+AM does not win everywhere (`docs/COMPONENT_SELECTION.md`). It wins clearly for the GRCop-42 chamber ($249k against $685k for a milled and electroformed liner), the DED nozzle ($141k against $539k), the shrouded impellers, the preburner heads and the injector posts. Casting stays cheaper for the pump housings, turbine housings, exhaust collectors and turbine blisks, and machining from forgings for the injector body. The hybrid strategy keeps both.
+
+Development cost, P50:
+
+- bottom-up, about $0.43B: 450,000 design hours, 25 development engines, 500 hot fires at $0.3M each, a $60M test stand, and AM capital or tooling;
+- TRANSCOST 8.2: 277 M^0.48 f1 f2 f3 work-years at $390k, which gives $4.35B (P10-P90 $3.9-4.8B, f1 = 1.3);
+- NASA SVLCM: $3.17B.
+
+The top-down relations are fitted to government-funded engine programmes. Their first-unit cost ($27-41M) is of the same order as the RD-180 price ($23.4M) and far below the RS-25 restart ($104.5M), but 10-40 times the bottom-up figure and the public Raptor numbers (more than $2M for Raptor 1 in 2019, about $1M estimated for Raptor 2, a stated goal near $250k). The bottom-up model lands between them: about $1.1-1.6M at unit 1,000. Reaching the Raptor goal would need the integration options, in-house valves and a much higher production rate than the learning curve alone gives.
+
+![development cost and option map](../figures/pgf/fig13_nre_options.png)
+
+## 17. Iteration 2 build: I2-C
+
+I2-C is the first built iteration (`config/iterations.yaml`, `builds:`). `scripts/build_iteration.py I2-C` applies the cycle overrides to the improved configuration, writes `results/iterations/I2-C/`, and builds the full CAD with STEP export into `cad/iterations/I2-C/`. The integration options are switches in `cad/build_engine.py`, all off by default; a rebuild with no switches reproduces the iteration-1 improved engine exactly (1,795.8 kg).
+
+| Option | How it is modelled |
+|---|---|
+| Y2 (with C3, C4, C5, Y1) | pc 400 bar, pump inlets 10 bar, OPB 900 K mean, FPB 1,200 K, turbine peak η 0.87 |
+| N5 | pattern factor 0.10, so the 900 K OPB mean has a 980 K peak, 16 K above iteration 1's 964 K peak |
+| K1 | fuel-rich preburner sized for 8 ms residence time (13.6 L) |
+| I1, I3 | 18 flange pairs (two hot-gas joints, six duct runs) replaced by butt welds; the hot-gas joints get a short welded spool across the old flange gap; vehicle interfaces stay bolted |
+| I2 | coolant manifolds as D-section shells printed onto the jacket, at the same flow area as the round tubes (arc radius √2 times larger) |
+| I4 | injector body, faceplate, 173 posts and interpropellant plate as one L-PBF part |
+| N2 | laser spark-plug heads (28 mm) in window ports in place of the torch igniters |
+| C1, C2 | LOX bearings M50/Si3N4 hybrid (1.9 million DN at 400 bar); CH4 bearings hydrostatic journal sleeves with 0.08 mm clearance and six supply orifices (3.1 million DN) |
+
+| | I1 (frozen) | 400 bar variant, iteration-1 layout | I2-C built |
+|---|---|---|---|
+| Modelled mass (kg) | 1,868 | 1,616 | 1,576 |
+| Thrust-to-weight | 150 | 173 | 178 |
+| Isp sea level / vacuum (s) | 333.7 / 351.8 | 336.2 / 352.1 | 336.2 / 352.1 |
+| Throat / exit diameter (mm) | 235 / 1,370 | 219 / 1,277 | 219 / 1,277 |
+| Envelope x / y / z (mm) | 2,240 / 1,617 / 3,360 | 2,013 / 1,551 / 3,144 | 2,013 / 1,508 / 3,124 |
+| BOM lines / pieces | 178 / 1,974 | 176 / 1,813 | 131 / 946 |
+| Clashes | 0 | 0 | 0 |
+| First unit, hybrid build, P50 ($M) | 3.37 (improved) | 3.19 (hardware only) | 3.94 |
+
+`scripts/attribute_iteration.py` compares I2-C with the 400 bar variant group by group, so every change below is CAD-measured:
+
+| Option | Mass change (kg) | BOM lines | Pieces |
+|---|---|---|---|
+| I1, I3 welded joints | −94.7 | −42 | −692 |
+| I4 one-piece injector | 0.0 | −3 | −175 |
+| N2 laser ignition | −1.8 | 0 | 0 |
+| C1, C2 bearings | +0.3 | 0 | 0 |
+| K1 larger fuel-rich preburner | +29.4 | 0 | 0 |
+| I2 integral manifolds | +22.6 | 0 | 0 |
+| Knock-on (jumpers, turbine housing) | +3.8 | 0 | 0 |
+
+The build corrected two of my estimates. The integral manifolds were credited with a 45 % mass saving because the D-section shares the jacket closeout as one wall. At the same flow area and hoop stress that saving does not exist: a thin pressure shell weighs about p V / σ, and the D-section's larger arc radius needs a proportionally thicker wall. The CAD shows +17 %, from longer port stubs and from more than half of the torus remaining where the nozzle wall slopes. I2 is now a manufacturing choice (one print, no manifold welds to inspect), not a mass one. The one-piece injector removes 175 pieces and 346 brazed joints but no material. The 8 ms preburner costs 29 kg rather than 18 kg, because its wider shell also needs a larger injector head.
+
+The first unit costs more than the improved engine ($3.94M against $3.37M), mainly because of the single-crystal fuel-turbine blades (C3, 84 blades at an assumed $6k each). Without those three non-BOM premiums the I2-C hardware costs $3.21M, about the same as the 400 bar variant with the iteration-1 layout ($3.19M): the integral manifolds are priced as L-PBF because they are printed onto the jacket, and that takes back what the welds save. Welding does not save assembly time in this model: 16 welds at 8 h each with radiography replace 14 bolted joints at 4 h, so assembly rises from 952 to 1,018 hours per engine. The gain from welding is in parts (−42 lines, −692 pieces), leak paths and mass.
+
+![I1 against the built I2-C at the same scale](../figures/cmp_I1_vs_I2C.png)
+
+Drawings: the I2-C set is issued as revision B under the same drawing numbers in `drawings/I2-C/` (`MFE280-I2-C-DWG-SET.pdf`, 11 sheets: GA-001, TCA-002, INJ-003, TPO-004, TPF-005, JNT-006, VIS-007, VIS-008, MFG-009, VIS-010, VIS-011; `MFE280-I2-C-PID-SET.pdf`, PID-000 to PID-004), built with `drawings/src/build_set.py --iter I2-C`. Every sheet of the iteration-1 set is regenerated from the I2-C model, with weld symbols at the welded joints. The section-view and 3D sheets are extended, and a build-strategy sheet (MFG-009) shows the hybrid route of every part with its cost. The P&ID shows the laser igniters, the hydrostatic bearing supply from the CH4 discharge and the welded lines. The iteration-1 set stays as issued (revision A), with a build-strategy addendum in `drawings/I1-addendum/`.
+
+CFD: both nozzles (I1 and I2-C) run in OpenFOAM, 8 ranks each, from 2026-10-31. `cfd/post_compare.py` turns the exit-plane monitors into thrust and Isp, compares them with the ideal 1-D flow of the same gas, and plots the convergence (`figures/pgf/fig15_cfd_convergence.png`). The ratio of CFD to 1-D thrust is the nozzle efficiency that the cycle model assumes as η_Cf = 0.98.
+
+## 18. Limitations and next steps
 
 - Heat flux: Bartz is uncalibrated, and a ±20 % change moves the fuel-pump discharge by up to 213 bar. Calibrate against hot-fire data or conjugate CFD.
 - Wall layer: The stream-tube wall bias has no film-decay physics. Next: a gaseous film model (Grisson or Simon type) or CFD.
-- Preburners: Ideal gas with frozen complete combustion, while Z ≈ 1.2 at preburner conditions. Next: real-gas turbine expansion (CoolProp mixtures or Peng-Robinson) and a kinetics check of fuel-rich methane products, including soot and coking.
-- Turbines: One stage, parabolic efficiency curve, simple clearance loss. Next: a meanline loss model (Kacker-Okapuu) and a two-stage option for the dense ox-rich gas.
+- Preburners: Ideal gas with frozen complete combustion, while Z ≈ 1.2 at preburner conditions. The reactor check in section 15 shows the fuel-rich preburner burning near 1,000 K rather than 1,100 K at its design O/F; at 1,000 K the CH4 pump discharge rises by 131 bar. Next: a kinetics-coupled preburner model (primary zone plus dilution), real-gas turbine expansion (CoolProp mixtures or Peng-Robinson), and soot and coking of the fuel-rich products.
+- Turbines: One stage, parabolic efficiency curve, simple clearance loss. Next: a meanline loss model (Kacker-Okapuu); option C5 currently stands in for a two-stage turbine with a higher peak efficiency only.
 - Off-design: Throttle is first-order: pc scales with thrust at fixed O/F. A transient start and throttle model with pump maps is needed.
+- Rotordynamics: Not modelled. With a 10 bar inlet the CH4 shaft is 52 mm at 56,000 rpm and the CH4 inducer tip runs at 307-335 m/s (261 m/s today). The cycle model holds the cavitation limit (Nss) but not inducer blade stress or critical speeds, so options Y1 and Y2 need a rotordynamic and inducer stress check before they count.
 - Structures: First-cut checks only. No thermal stress or low-cycle fatigue in the liner. Next: FEA of the liner and ribs with the thermal gradient, and the injector faceplate.
-- CAD: Layout level. Next iteration: integrated manifolds and close-coupled hot gas in the geometry, then a fresh mass roll-up.
+- CAD: Layout level. I1-I4, N2, C1, C2 and K1 are modelled as geometry in the I2-C build; I5 (bimetallic chamber and nozzle) is still a bill-of-materials estimate.
+- Options: Deltas are added linearly to form the iteration-2 candidates; I2-C is built and agrees with its estimate within 6 kg. I2-A and I2-B are not built.
+- Plasma model: GRI-Mech 3.0 is not validated at 350-700 bar or at O/F 54 and 0.27, the PSR is the well-mixed limit, and the energy branching comes from air.
+- Economics: Many rates are assumed (marked in `config/costs.yaml`), the custom-valve cost has no public anchor, the hybrid strategy picks each group independently (it can pair printed injector posts with a machined body), and operations, refurbishment and reuse are not costed.
 - Benchmark data: All Raptor data is public and approximate. No proprietary information was used.
 
-## 14. References
+## 19. References
 
 - Gordon, S., McBride, B. J. (1994, 1996). Computer program for calculation of complex chemical equilibrium compositions and applications. NASA RP-1311.
 - Goodwin, D. G., et al. Cantera: an object-oriented software toolkit for chemical kinetics, thermodynamics and transport processes, v3.2.
@@ -366,3 +625,22 @@ The flow solver has not been run yet; the estimate is 1 to 4 h on 8 ranks. Its f
 - Gradl, P. R., et al. (2019). GRCop-42 development and hot-fire testing using additive manufacturing powder bed fusion for channel-cooled combustion chambers. AIAA 2019-4228.
 - ISO 10628-1 and -2 (P&ID presentation and symbols), ANSI/ISA-5.1 (instrument identification), ISO 5457 (sheet sizes and frame), ISO 7200 (title blocks), ISO 128-20/-40/-44/-50 (lines, views, sections, hatching), ISO 5456-2 (projection methods), ISO 129-1 (dimensioning), ISO 3098 (lettering), ISO 2768-1 (general tolerances).
 - Wikipedia, "SpaceX Raptor" (accessed 2026-10-31), for the public Raptor figures and their original SpaceX and FAA sources.
+- Koelle, D. E. TRANSCOST 8.2 cost model, as reproduced in DLR elib 202157 (https://elib.dlr.de/202157/2/main.pdf) and MDPI Aerospace 6(11):123 (2019).
+- NASA Spacecraft/Vehicle Level Cost Model (SVLCM), via University of Maryland ENAE 483 lecture notes, 2024.
+- NASA Office of Inspector General (2023). NASA's management of the Space Launch System RS-25 engines, IG-23-015.
+- NASA Cost Estimating Handbook (2002), section 7.6, learning curves.
+- Additive Manufacturing Media (2021). Plotting a pathway to profitable AM (L-PBF Inconel 718 part cost).
+- NASA Stennis Space Center test cost data, NTRS 20100026414.
+- Moog cryogenic ball valve datasheet; Parker Autoclave large-bore ball valve datasheet (COTS valve limits).
+- U.S. Bureau of Labor Statistics (2025). Occupational Outlook Handbook: aerospace engineers.
+- Rusterholtz, D. L., et al. (2013). Ultrafast heating and oxygen dissociation in atmospheric pressure air by nanosecond repetitively pulsed discharges. J. Phys. D: Appl. Phys. 46.
+- Shkurenkov, I., Adamovich, I. V. (2016). Plasma Sources Sci. Technol. 25, 015021 (energy partition in nanosecond pulse discharges in air).
+- Popov, N. A. (2016). Plasma Sources Sci. Technol. 25, 043002 (review of plasma-assisted ignition kinetics).
+- Starikovskiy, A., Aleksandrov, N. (2013). Plasma-assisted ignition and combustion. Prog. Energy Combust. Sci. 39, 61-110.
+- Ju, Y., Sun, W. (2015). Plasma assisted combustion: dynamics and chemistry. Prog. Energy Combust. Sci. 48, 21-83.
+- Xu, D. A., Lacoste, D. A., Laux, C. O. (2016). NRP ignition of lean propane-air mixtures up to 10 bar. https://hal-centralesupelec.archives-ouvertes.fr/hal-01244696
+- Deak, N., Bellemans, A., Bisetti, F. (2021). 0-D modelling of NRP ignition of methane-air from 0.5 to 30 atm. Proc. Combust. Inst. https://dipot.ulb.ac.be/dspace/bitstream/2013/324862/5/PCI_Deak2020.pdf
+- Kopecek, H., et al. (2003). Laser ignition of methane-air mixtures at high pressures. Proc. SPIE 5147.
+- Formula E Gen3 battery data; Honeywell 1 MW generator (2022); NASA Kilopower (NTRS 20180000691); SP-100 programme data (power-source specific power and energy).
+- Smith, G. P., et al. GRI-Mech 3.0 (http://combustion.berkeley.edu/gri-mech/).
+

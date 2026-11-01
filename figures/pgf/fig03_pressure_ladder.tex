@@ -1,0 +1,26 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig03_ox.csv}{\ox}
+\pgfplotstableread[col sep=comma]{data/fig03_fuel.csv}{\fu}
+\begin{tikzpicture}
+\begin{axis}[width=15.9cm, height=6.6cm, xmin=-0.72, xmax=5.4075, ymin=0, ymax=1050,
+    xtick=\empty, ylabel={pressure (bar)}, legend style={at={(0.99,0.98)}, anchor=north east}]
+  \addplot[cOx, mark=*, mk] table[x=i, y=p] {\ox};
+  \addlegendentry{oxidiser side}
+  \addplot[cFu, mark=square*, mk] table[x=i, y=p] {\fu};
+  \addlegendentry{fuel side}
+  \node[ann, text=cOx, align=center, anchor=south east, xshift=-3pt, yshift=2pt] at (axis cs:0,6) {pump inlet\\6};
+  \node[ann, text=cOx, align=center, anchor=south east, xshift=-6pt, yshift=1pt] at (axis cs:1,759.862) {LOX pump\\760};
+  \node[ann, text=cOx, align=center, anchor=north east, xshift=-3pt, yshift=-3pt] at (axis cs:2,665.146) {OPB\\665};
+  \node[ann, text=cOx, align=center, anchor=north east, xshift=-3pt, yshift=-3pt] at (axis cs:3,395.5) {ox turbine exit\\396};
+  \node[ann, text=cOx, align=center, anchor=north east, xshift=-3pt, yshift=-3pt] at (axis cs:4,350) {chamber\\350};
+  \node[ann, text=cFu, align=center, anchor=south west, xshift=9pt, yshift=1pt] at (axis cs:0.15,6) {pump inlet\\6};
+  \node[ann, text=cFu, align=center, anchor=south west, xshift=4pt, yshift=3pt] at (axis cs:1.15,915.585) {CH$_4$ pump\\916};
+  \node[ann, text=cFu, align=center, anchor=south west, xshift=4pt, yshift=3pt] at (axis cs:2.15,785.847) {jacket out\\786};
+  \node[ann, text=cFu, align=center, anchor=south west, xshift=4pt, yshift=3pt] at (axis cs:3.15,696.632) {FPB\\697};
+  \node[ann, text=cFu, align=center, anchor=south west, xshift=4pt, yshift=3pt] at (axis cs:4.15,395.5) {fuel turbine exit\\396};
+  \node[ann, text=cFu, align=center, anchor=north, xshift=0pt, yshift=-4pt] at (axis cs:5.15,350) {chamber\\350};
+\end{axis}
+\end{tikzpicture}
+\end{document}

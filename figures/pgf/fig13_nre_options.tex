@@ -1,0 +1,63 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig13a_bar_design.csv}{\nrea}
+\pgfplotstableread[col sep=comma]{data/fig13a_bar_dev_hardware.csv}{\nreb}
+\pgfplotstableread[col sep=comma]{data/fig13a_bar_hot_fire_tests.csv}{\nrec}
+\pgfplotstableread[col sep=comma]{data/fig13a_bar_test_stand.csv}{\nred}
+\pgfplotstableread[col sep=comma]{data/fig13a_bar_tooling_or_am_capex.csv}{\nree}
+\pgfplotstableread[col sep=comma]{data/fig13a_topdown_bars.csv}{\topdown}
+\pgfplotstableread[col sep=comma]{data/fig13a_transcost_err.csv}{\tcerr}
+\pgfplotstableread[col sep=comma]{data/fig13b_integration.csv}{\optintegration}
+\pgfplotstableread[col sep=comma]{data/fig13b_cycle.csv}{\optcycle}
+\pgfplotstableread[col sep=comma]{data/fig13b_novel.csv}{\optnovel}
+\begin{tikzpicture}
+\begin{axis}[name=A, width=6.2cm, height=4.9cm, xmin=0, xmax=5.02072, ymin=-0.6, ymax=4.6,
+    ytick={0,...,4}, yticklabels={{Conventional\\(bottom-up)},{In-house AM\\(bottom-up)},{Hybrid\\(bottom-up)},
+    {NASA SVLCM},{TRANSCOST 8.2}}, yticklabel style={align=right},
+    xlabel={development cost (USD billion, P50)}, title={(a) development cost},
+    legend style={at={(0.98,0.03)}, anchor=south east}]
+  \addplot[fill=cOx, draw=white, line width=0.3pt, area] table[x=x, y=y] {\nrea};
+  \addlegendentry{design hours}
+  \addplot[fill=cIn, draw=white, line width=0.3pt, area] table[x=x, y=y] {\nreb};
+  \addlegendentry{development engines}
+  \addplot[fill=cR, draw=white, line width=0.3pt, area] table[x=x, y=y] {\nrec};
+  \addlegendentry{hot-fire tests}
+  \addplot[fill=cK, draw=white, line width=0.3pt, area] table[x=x, y=y] {\nred};
+  \addlegendentry{test stand}
+  \addplot[fill=cCu, draw=white, line width=0.3pt, area] table[x=x, y=y] {\nree};
+  \addlegendentry{tooling / AM capital}
+  \addplot[fill=cBench, draw=none, forget plot] table[x=x, y=y] {\topdown};
+  \addplot[draw=none, mark=none, forget plot, error bars/.cd, x dir=both, x explicit,
+      error bar style={cK, line width=0.6pt}, error mark options={rotate=90, mark size=2.2pt, cK, line width=0.6pt}]
+      table[x=p50, y=y, x error plus=ep, x error minus=em] {\tcerr};
+\end{axis}
+\begin{axis}[at={($(A.south east)+(1.35cm,0)$)}, anchor=south west, width=6.35cm, height=4.9cm,
+    xmode=log, xmin=0.253206, xmax=51.9197, ymin=-2.48932, ymax=18.2897,
+    xlabel={development cost of the option (USD million, P50)}, ylabel={change in thrust-to-weight},
+    title={(b) options: benefit vs development cost (colour: TRL)},
+    legend style={at={(0.98,0.5)}, anchor=east}]
+  \draw[cK, line width=0.45pt] (axis cs:0.253206,0) -- (axis cs:51.9197,0);
+  \addplot[scatter, only marks, mark=square*, mark size=2.1pt, scatter src=explicit symbolic, scatter/classes={2={fill=cTRLii,draw=cTRLii},4={fill=cTRLiv,draw=cTRLiv},5={fill=cTRLv,draw=cTRLv},6={fill=cTRLvi,draw=cTRLvi},7={fill=cTRLvii,draw=cTRLvii},8={fill=cTRLviii,draw=cTRLviii},x={fill=cTRLx,draw=cTRLx}}, forget plot] table[x=nre_MUSD, y=d_tw, meta=trl] {\optintegration};
+  \addplot[scatter, only marks, mark=diamond*, mark size=2.6pt, scatter src=explicit symbolic, scatter/classes={2={fill=cTRLii,draw=cTRLii},4={fill=cTRLiv,draw=cTRLiv},5={fill=cTRLv,draw=cTRLv},6={fill=cTRLvi,draw=cTRLvi},7={fill=cTRLvii,draw=cTRLvii},8={fill=cTRLviii,draw=cTRLviii},x={fill=cTRLx,draw=cTRLx}}, forget plot] table[x=nre_MUSD, y=d_tw, meta=trl] {\optcycle};
+  \addplot[scatter, only marks, mark=triangle*, mark size=2.6pt, scatter src=explicit symbolic, scatter/classes={2={fill=cTRLii,draw=cTRLii},4={fill=cTRLiv,draw=cTRLiv},5={fill=cTRLv,draw=cTRLv},6={fill=cTRLvi,draw=cTRLvi},7={fill=cTRLvii,draw=cTRLvii},8={fill=cTRLviii,draw=cTRLviii},x={fill=cTRLx,draw=cTRLx}}, forget plot] table[x=nre_MUSD, y=d_tw, meta=trl] {\optnovel};
+  \addlegendimage{only marks, mark=*, cKey, mark size=1.9pt}
+  \addlegendentry{component}
+  \addlegendimage{only marks, mark=square*, cKey, mark size=1.9pt}
+  \addlegendentry{integration}
+  \addlegendimage{only marks, mark=diamond*, cKey, mark size=2.4pt}
+  \addlegendentry{cycle}
+  \addlegendimage{only marks, mark=triangle*, cKey, mark size=2.4pt}
+  \addlegendentry{novel}
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:0.322521,1.592) {I1};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:3.39677,0) {I2};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:0.322521,6.58618) {I3};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:3.39677,0) {I4};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:13.5871,3.26835) {I5};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:0.322521,14.9795) {Y1};
+  \node[ann, anchor=east, xshift=-4pt, yshift=0pt] at (axis cs:40.7613,17.3452) {Y2};
+  \node[ann, anchor=south west, xshift=3pt, yshift=1pt] at (axis cs:0.322521,-1.54482) {K1};
+  \node[ann, anchor=south west, xshift=3pt, yshift=-1pt] at (axis cs:3.39677,0.301001) {N2};
+\end{axis}
+\end{tikzpicture}
+\end{document}

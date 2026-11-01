@@ -2,20 +2,27 @@
 
 Every P&ID sheet and every register (line list, valve list, instrument index) is
 generated from these records, so tags and data cannot drift apart. Numbers come from
-results/design.json. Loop numbering: 1xx chamber and thrust control, 2xx oxidiser side,
-3xx fuel side, 4xx purge. Line designation: <ID mm>-<fluid code>-<line no.>-<piping class>.
+design.json of the selected iteration (itercfg). Loop numbering: 1xx chamber and thrust control,
+2xx oxidiser side, 3xx fuel side, 4xx purge. Line designation: <ID mm>-<fluid code>-<line no.>-<piping class>.
+
+Iteration switches (config "cad", all off for iteration 1): laser ignition removes the torch
+igniters, their GOX / GCH4 supply lines 403 / 404 and valves XV-206/207/306/307 and adds the ignition
+commands XC-206 / XC-306 (electrical signal from ECU-100); hydrostatic CH4 bearings add BRG-301,
+the bearing supply line 309 through orifice FO-309 from the P-301 discharge and the drain line 310
+back to the P-301 suction, with PT-309; welded duct joints are listed in WELDED_LINES.
 """
 
-import json
-from pathlib import Path
+import math
 
-ROOT = Path(__file__).resolve().parents[2]
-D = json.load(open(ROOT / "results" / "design.json", encoding="utf-8"))
+import itercfg as IT
+
+D = IT.DESIGN
 CY, DU, CO = D["cycle"], D["ducts"], D["cooling"]
 P = D["performance"]
 bar = lambda pa: pa / 1e5
 idm = lambda key: round(DU[key] * 1000)
 PROOF = 1.2
+LASER, HYDRO = IT.LASER, IT.HYDRO_FUEL
 
 FLUIDS = {
     "LOX": "liquid oxygen (subcooled)",
@@ -27,6 +34,19 @@ FLUIDS = {
     "GCH4": "gaseous methane pressurant / torch supply",
     "GHE": "gaseous helium purge",
 }
+if LASER:
+    FLUIDS["GOX"], FLUIDS["GCH4"] = "gaseous oxygen pressurant", "gaseous methane pressurant"
+
+# duct joints welded in this iteration (options I1, I3) -> line numbers (no flanged break)
+JOINT_LINE = {"lox_discharge": "202", "ox_crossfeed": "203", "ox_hot_gas": "205", "ch4_discharge": "302",
+              "fuel_crossfeed": "303", "fpb_feed": "304", "nozzle_return": "305", "fuel_hot_gas": "306"}
+WELDED_LINES = sorted({JOINT_LINE[j] for j in IT.WELDED if j in JOINT_LINE})
+BEARING_BLEED = 0.03          # hydrostatic bearing supply, fraction of the P-301 flow (option C2: "a few percent")
+
+
+def krpm_range(n_rpm):
+    """Speed range about 1.3 x normal, rounded up to 5 krpm (iterations after the first)."""
+    return f"0-{5 * math.ceil(1.3 * n_rpm / 5000.0)} krpm"
 
 CLASSES = [
     # code, service, material, design pressure (bar), design temperature, notes
@@ -40,6 +60,8 @@ CLASSES = [
     ("P1", "pressurant and torch supply", "316L", 60, "-196 / +450 C", "downstream of restriction orifices"),
     ("H1", "GHe purge", "316L", 60, "-60 / +80 C", "relief PSV-402 set 50 bar"),
 ]
+if LASER:
+    CLASSES[6] = ("P1", "pressurant", "316L", 60, "-196 / +450 C", "downstream of restriction orifices")
 CLASS_P = {c[0]: c[3] for c in CLASSES}
 
 EQUIPMENT = [
@@ -63,6 +85,20 @@ EQUIPMENT = [
     ("IG-301", "FPB spark-torch igniter", "GOX / GCH4 torch, spark exciter EX-301"),
     ("ECU-100", "engine control unit", "computer functions PIC-101, TIC-203, TIC-303, interlock UZ-100"),
 ]
+if LASER:
+    EQUIPMENT[10] = ("IG-201", "OPB laser igniter", "laser head with window on the OPB, fired by XC-206 (ECU-100)")
+    EQUIPMENT[11] = ("IG-301", "FPB laser igniter", "laser head with window on the FPB, fired by XC-306 (ECU-100)")
+    EQUIPMENT[12] = ("ECU-100", "engine control unit",
+                     "computer functions PIC-101, TIC-203, TIC-303, XC-206, XC-306, interlock UZ-100")
+if HYDRO:
+    EQUIPMENT.insert(6, ("BRG-301", "CH4 turbopump hydrostatic bearings",
+                         "2 on the P-301 shaft; supply line 309 via FO-309, drain line 310"))
+if not IT.IS_I1:                  # pump stage counts from the design (iteration-1 wording kept as issued)
+    for i, (tag, side) in enumerate((("P-201", "ox_pump"), ("P-301", "fuel_pump"))):
+        k = next(j for j, e in enumerate(EQUIPMENT) if e[0] == tag)
+        pm, n = CY[side], CY[side]["stages"]
+        EQUIPMENT[k] = (tag, EQUIPMENT[k][1], f"{n} stage{'s' if n > 1 else ''} + inducer, {pm['mdot']:.0f} kg/s, "
+                        f"{bar(pm['p_out']):.0f} bar, {pm['N_rpm']:.0f} rpm, {pm['power_W'] / 1e6:.1f} MW")
 
 # line no.: (fluid, ID mm, class, from, to, operating p bar, operating T K, flow kg/s)
 LINES = {
@@ -94,6 +130,15 @@ LINES = {
     "403": ("GOX", 8, "P1", "vehicle torch supply", "IG-201, IG-301 via XV-206, XV-306", 30.0, 290, 0.05),
     "404": ("GCH4", 8, "P1", "vehicle torch supply", "IG-201, IG-301 via XV-207, XV-307", 30.0, 290, 0.02),
 }
+if LASER:                          # no torch propellants: lines 403, 404 removed
+    del LINES["403"], LINES["404"]
+if HYDRO:
+    _b = BEARING_BLEED * CY["fuel_pump"]["mdot"]
+    LINES["309"] = ("LCH4", 15, "F1", "line 302 tap (P-301 discharge)", "BRG-301 via FO-309", bar(CY["p_fuel_discharge_Pa"]),
+                    CY["fuel_pump"]["T_out_K"], _b)
+    LINES["310"] = ("LCH4", 20, "F1", "BRG-301 drain", "P-301 suction (line 301)", bar(CY["fuel_pump"]["p_in"]),
+                    CY["fuel_pump"]["T_out_K"], _b)
+    LINES = dict(sorted(LINES.items()))
 
 
 def line_tag(no):
@@ -127,6 +172,11 @@ VALVES = [
     ("PV-V01", "LOX prevalve", "ball, on/off", "pneumatic", "201", "FC", "vehicle side (not engine scope)"),
     ("PV-V02", "CH4 prevalve", "ball, on/off", "pneumatic", "301", "FC", "vehicle side (not engine scope)"),
 ]
+if LASER:
+    VALVES = [v for v in VALVES if v[0] not in ("XV-206", "XV-207", "XV-306", "XV-307")]
+if HYDRO:
+    k = next(i for i, v in enumerate(VALVES) if v[0] == "FO-304") + 1
+    VALVES.insert(k, ("FO-309", "", "restriction orifice", "-", "309", "-", "sets the BRG-301 bearing supply flow"))
 
 INSTRUMENTS = [
     # tag, service, type, range, normal value, signal / destination
@@ -157,3 +207,16 @@ INSTRUMENTS = [
     ("PT-401", "purge header pressure", "transmitter", "0-60 bar", "30 bar", "ECU-100"),
     ("UZ-100", "engine shutdown interlock", "ECU logic", "-", "-", "all fail-closed valves"),
 ]
+if not IT.IS_I1:                  # speed ranges follow the turbopump speeds of the iteration
+    for i, (t, sv, ty, rg, nv, dest) in enumerate(INSTRUMENTS):
+        if t in ("ST-204", "ST-304"):
+            INSTRUMENTS[i] = (t, sv, ty, krpm_range(CY["ox_pump" if t == "ST-204" else "fuel_pump"]["N_rpm"]), nv, dest)
+if LASER:
+    k = next(i for i, r in enumerate(INSTRUMENTS) if r[0] == "VT-205") + 1
+    INSTRUMENTS.insert(k, ("XC-206", "OPB ignition command", "ECU computer function", "on / off", "-", "IG-201 (electric)"))
+    k = next(i for i, r in enumerate(INSTRUMENTS) if r[0] == "VT-305") + 1
+    INSTRUMENTS.insert(k, ("XC-306", "FPB ignition command", "ECU computer function", "on / off", "-", "IG-301 (electric)"))
+if HYDRO:
+    k = next(i for i, r in enumerate(INSTRUMENTS) if r[0] == "TT-306") + 1
+    INSTRUMENTS.insert(k, ("PT-309", "CH4 bearing supply pressure", "transmitter", "0-1200 bar",
+                           f"{bar(CY['p_fuel_discharge_Pa']):.0f} bar", "ECU-100 / UZ-100"))

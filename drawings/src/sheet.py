@@ -9,7 +9,9 @@ ISO 6433 / ISO 7573.
 """
 
 import math
+import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import ezdxf
 from ezdxf.enums import TextEntityAlignment
@@ -97,6 +99,7 @@ class Sheet:
         self.msp = self.doc.modelspace()
         self.fx0, self.fy0 = 20.0, 10.0
         self.fx1, self.fy1 = self.W - 10.0, self.H - 10.0
+        self.images = []                 # raster placements, see image() / embed_images()
 
     # ------------------------------------------------------------------ primitives
     def line(self, p, q, layer="THIN"):
@@ -368,6 +371,36 @@ class Sheet:
         self.text(t.projection, (X + 2.0, r_top1 - 7.0), 2.5, "TOP_LEFT")
         if "THIRD" in t.projection:
             self.projection_symbol(X + 14.0, y0 + 7.0, 1.2)
+
+    # ------------------------------------------------------------------ raster images
+    def image(self, path, x, y, w=None, h=None):
+        """Raster image (PNG) with its lower-left corner at (x, y), width w or height h in mm, aspect kept.
+
+        Only recorded here. render.publish attaches it natively in AutoCAD (accoreconsole cannot
+        resolve IMAGE entities read from a DXF) and embed_images() writes it to the DXF."""
+        from PIL import Image
+        px, py = Image.open(path).size
+        if w is None:
+            w = h * px / py
+        h = w * py / px
+        self.images.append({"path": Path(path).resolve(), "x": x, "y": y, "w": w, "h": h, "px": (px, py)})
+        return w, h
+
+    def embed_images(self, dxf_dir):
+        """Write the recorded images as IMAGEDEF / IMAGE entities, paths relative to dxf_dir, drawn first."""
+        if not self.images:
+            return
+        if "IMAGE" not in self.doc.layers:
+            self.doc.layers.add("IMAGE", lineweight=18, color=7)
+        self.doc.set_raster_variables(frame=0, quality=1, units="mm")
+        order = []
+        for k, im in enumerate(self.images):
+            rel = os.path.relpath(im["path"], dxf_dir)
+            idef = self.doc.add_image_def(filename=rel, size_in_pixel=im["px"], name=im["path"].stem)
+            e = self.msp.add_image(idef, insert=(im["x"], im["y"]), size_in_units=(im["w"], im["h"]), rotation=0,
+                                   dxfattribs={"layer": "IMAGE"})
+            order.append((e.dxf.handle, f"{k + 1:X}"))
+        self.msp.set_redraw_order(order)      # low sort handles: images behind every vector entity
 
     # ------------------------------------------------------------------ output
     def save(self, path_dxf):

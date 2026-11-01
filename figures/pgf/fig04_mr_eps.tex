@@ -1,0 +1,33 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig04_mixture_ratio.csv}{\mr}
+\pgfplotstableread[col sep=comma]{data/fig04_expansion_ratio.csv}{\eps}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=2.75cm},
+    width=6.1cm, height=4.9cm, ytick pos=left]
+\nextgroupplot[xmin=2.95, xmax=4.05, ymin=324.842, ymax=354.893,
+    xlabel={mixture ratio O/F}, ylabel={$I_{sp}$ (s)},
+    legend style={at={(0.98,0.35)}, anchor=south east}]
+  \addplot[cK, mark=*, mk] table[x=mr, y=isp_sl] {\mr};
+  \addlegendentry{$I_{sp}$ sea level}
+  \addplot[cK, dashed, mark=square*, mk] table[x=mr, y=isp_vac] {\mr};
+  \addlegendentry{$I_{sp}$ vacuum}
+  \draw[cK, refline] (axis cs:3.6,324.842) -- (axis cs:3.6,354.893);
+\nextgroupplot[xmin=23.95, xmax=47.05, ymin=331.854, ymax=333.893,
+    xlabel={expansion ratio $\varepsilon$}, ylabel={$I_{sp}$ sea level (s)}]
+  \addplot[cK, mark=*, mk] table[x=eps, y=isp_sl] {\eps};
+  \draw[cK, refline] (axis cs:34,331.854) -- (axis cs:34,333.893);
+\end{groupplot}
+\begin{axis}[twin=cG, at={(group c1r1.south west)}, anchor=south west, width=6.1cm, height=4.9cm,
+    xmin=2.95, xmax=4.05, ymin=284.499, ymax=299.138,
+    ylabel={$\rho_{\mathrm{bulk}} I_{sp}$ (t\,s\,m$^{-3}$)}]
+  \addplot[cG, mark=triangle*, mkt] table[x=mr, y=disp] {\mr};
+\end{axis}
+\begin{axis}[twin=cR, at={(group c2r1.south west)}, anchor=south west, width=6.1cm, height=4.9cm,
+    xmin=23.95, xmax=47.05, ymin=0.945275, ymax=2.14923, ylabel={Schmucker margin at 40\,\%}]
+  \addplot[cR, mark=square*, mk] table[x=eps, y=sep40] {\eps};
+  \draw[cR, refline] (axis cs:23.95,1) -- (axis cs:47.05,1);
+\end{axis}
+\end{tikzpicture}
+\end{document}

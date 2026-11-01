@@ -1,0 +1,612 @@
+{
+  "baseline": {
+    "name": "I1 improved",
+    "mass_kg": 1795.82,
+    "thrust_to_weight": 155.92546696424984,
+    "feasible": true,
+    "isp_sl": 333.68247606773224,
+    "isp_vac": 351.82308227093336,
+    "mdot": 839.1632529929462,
+    "rho_bulk": 893.1976917883364,
+    "density_isp_sl": 298.04441741391526,
+    "bl_penalty_s": 4.551198469213318,
+    "Tc": 3785.1435824311743,
+    "Dt_mm": 234.89120679131995,
+    "De_mm": 1369.6393273223464,
+    "L_total_m": 2.049986260740254,
+    "p_ox_dis_bar": 709.5258020068167,
+    "p_fu_dis_bar": 810.5472401360487,
+    "p_opb_bar": 621.0835101600286,
+    "p_fpb_bar": 630.7445422967551,
+    "PR_ox": 1.5915016275721423,
+    "PR_fu": 1.6162576356098786,
+    "P_ox_MW": 47.28506150060743,
+    "P_fu_MW": 41.12497249786185,
+    "N_ox_rpm": 15733.155943498694,
+    "N_fu_rpm": 37865.93508967006,
+    "eta_t_ox": 0.7985401742290413,
+    "eta_t_fu": 0.7949042481622491,
+    "Dm_ox_mm": 365.85232407714955,
+    "Dm_fu_mm": 240.03375948671447,
+    "D2_ox_mm": 390.2263202949441,
+    "D2_fu_mm": 204.22543967164748,
+    "R_env_ox_tpa_mm": 346.1761849768169,
+    "R_env_fu_tpa_mm": 272.9533961249803,
+    "dp_jacket_bar": 88.22026962376043,
+    "Q_MW": 93.19943261351767,
+    "Twg_max_K": 880.8443317661008,
+    "q_max_MW_m2": 120.18596229130846,
+    "T_jacket_out_K": 303.24721910503706,
+    "liner_ratio": 0.8467381038044444,
+    "rib_ratio": 0.6869343976944307,
+    "tca_mass_kg": 350.50206394059035,
+    "sep_margin_100": 3.669800112010487,
+    "sep_margin_40": 1.4902317218917922,
+    "pe_over_pa_40": 0.48313613358278457
+  },
+  "options": [
+    {
+      "id": "C1",
+      "name": "Hybrid ceramic (Si3N4 ball) bearings on the CH4 turbopump",
+      "category": "component",
+      "trl": 6,
+      "nre": "M",
+      "make_buy": "buy (modified COTS precision bearing)",
+      "physics": "Rolling-bearing speed is limited by DN (bore mm x rpm). The CH4 shaft runs near 2.5 million DN, above the usual range for steel 440C cryogenic bearings. Silicon nitride balls are 60 % lighter, so the centrifugal ball load and the heat generation drop.",
+      "result": {
+        "rows": [
+          {
+            "case": "I1 improved",
+            "pump": "ox",
+            "d_shaft_mm": 85.0,
+            "N_rpm": 15733.155943498694,
+            "DN_million": 1.337318255197389
+          },
+          {
+            "case": "I1 improved",
+            "pump": "fuel",
+            "d_shaft_mm": 60.0,
+            "N_rpm": 37865.93508967006,
+            "DN_million": 2.2719561053802035
+          },
+          {
+            "case": "I2_inlet10",
+            "pump": "ox",
+            "d_shaft_mm": 75.0,
+            "N_rpm": 23148.66185404793,
+            "DN_million": 1.7361496390535947
+          },
+          {
+            "case": "I2_inlet10",
+            "pump": "fuel",
+            "d_shaft_mm": 55.0,
+            "N_rpm": 56103.48501307149,
+            "DN_million": 3.085691675718932
+          },
+          {
+            "case": "I2_uprate400",
+            "pump": "ox",
+            "d_shaft_mm": 80.0,
+            "N_rpm": 23236.9532220104,
+            "DN_million": 1.858956257760832
+          },
+          {
+            "case": "I2_uprate400",
+            "pump": "fuel",
+            "d_shaft_mm": 55.0,
+            "N_rpm": 56317.46945288478,
+            "DN_million": 3.097460819908663
+          }
+        ],
+        "limits_million_DN": {
+          "steel_440C_cryogenic": 1.8,
+          "hybrid_Si3N4": 3.0,
+          "hydrostatic": null
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "name": "Hydrostatic bearings on the CH4 turbopump",
+      "category": "component",
+      "trl": 5,
+      "nre": "L",
+      "make_buy": "make (in-house design and test)",
+      "physics": "A propellant-fed hydrostatic bearing has no DN limit and no rolling contact, so life is set by start/stop rubs only. It costs a bleed flow of a few percent of the pump flow at discharge pressure.",
+      "result": {
+        "rows": [
+          {
+            "case": "I1 improved",
+            "pump": "ox",
+            "d_shaft_mm": 85.0,
+            "N_rpm": 15733.155943498694,
+            "DN_million": 1.337318255197389
+          },
+          {
+            "case": "I1 improved",
+            "pump": "fuel",
+            "d_shaft_mm": 60.0,
+            "N_rpm": 37865.93508967006,
+            "DN_million": 2.2719561053802035
+          },
+          {
+            "case": "I2_inlet10",
+            "pump": "ox",
+            "d_shaft_mm": 75.0,
+            "N_rpm": 23148.66185404793,
+            "DN_million": 1.7361496390535947
+          },
+          {
+            "case": "I2_inlet10",
+            "pump": "fuel",
+            "d_shaft_mm": 55.0,
+            "N_rpm": 56103.48501307149,
+            "DN_million": 3.085691675718932
+          },
+          {
+            "case": "I2_uprate400",
+            "pump": "ox",
+            "d_shaft_mm": 80.0,
+            "N_rpm": 23236.9532220104,
+            "DN_million": 1.858956257760832
+          },
+          {
+            "case": "I2_uprate400",
+            "pump": "fuel",
+            "d_shaft_mm": 55.0,
+            "N_rpm": 56317.46945288478,
+            "DN_million": 3.097460819908663
+          }
+        ],
+        "limits_million_DN": {
+          "steel_440C_cryogenic": 1.8,
+          "hybrid_Si3N4": 3.0,
+          "hydrostatic": null
+        }
+      }
+    },
+    {
+      "id": "C3",
+      "name": "Single-crystal fuel-turbine blades, FPB 1100 -> 1200 K",
+      "category": "component",
+      "trl": 6,
+      "nre": "M",
+      "make_buy": "buy (SX casting supplier) + make (blisk machining)",
+      "physics": "More turbine inlet temperature gives more specific work per kg of FPB gas, so less pump pressure is needed for the same power. Cast MAR-M-247 limits the inlet near 1,100 K in fuel-rich gas.",
+      "result": {
+        "d_isp_sl_s": 0.0,
+        "d_p_ox_bar": 11.335758637004687,
+        "d_p_fu_bar": -60.332293219438725,
+        "p_ox_bar": 720.8615606438213,
+        "p_fu_bar": 750.21494691661,
+        "N_ox_rpm": 15733.155943498694,
+        "N_fu_rpm": 37865.93508967006
+      }
+    },
+    {
+      "id": "C4",
+      "name": "Ox-rich hot-section alloy or coating qualified to 900 K",
+      "category": "component",
+      "trl": 4,
+      "nre": "XL",
+      "make_buy": "make (alloy/coating development and promoted-ignition testing)",
+      "physics": "The ox-rich turbine inlet temperature is limited by burn resistance of the metal in hot dense oxygen, not by strength. A burn-resistant alloy or coating lets the OPB run hotter.",
+      "result": {
+        "d_isp_sl_s": 0.0,
+        "d_p_ox_bar": -57.558127576604306,
+        "d_p_fu_bar": 5.9716423932433145,
+        "p_ox_bar": 651.9676744302124,
+        "p_fu_bar": 816.518882529292,
+        "N_ox_rpm": 15733.155943498694,
+        "N_fu_rpm": 37865.93508967006
+      }
+    },
+    {
+      "id": "C5",
+      "name": "Two-stage turbines (peak efficiency 0.82 -> 0.87)",
+      "category": "component",
+      "trl": 7,
+      "nre": "M",
+      "make_buy": "make",
+      "physics": "Dense preburner gas gives short blades and a large tip-clearance loss. Two stages lower the loading per stage and allow longer blades at the same speed.",
+      "result": {
+        "d_isp_sl_s": 0.0,
+        "d_p_ox_bar": -40.847692075340774,
+        "d_p_fu_bar": -35.78723363128029,
+        "p_ox_bar": 668.6781099314759,
+        "p_fu_bar": 774.7600065047684,
+        "N_ox_rpm": 15733.155943498694,
+        "N_fu_rpm": 37865.93508967006
+      }
+    },
+    {
+      "id": "I1",
+      "name": "Welded hot-gas joints (turbine collector welded to the injector inlets)",
+      "category": "integration",
+      "trl": 7,
+      "nre": "S",
+      "make_buy": "make",
+      "physics": "Removes two flange pairs at 395 bar and 820-1,100 K, with their bolts, nuts and seals, and the leak paths in hot oxygen-rich gas.",
+      "result": {
+        "d_mass_kg": -18.15,
+        "d_parts": -6,
+        "d_fasteners": -168,
+        "d_bolted_joints": -2,
+        "removed": [
+          "Ox_hot_gas_joint_flanges",
+          "Ox_hot_gas_joint_seal",
+          "Ox_hot_gas_joint_bolts",
+          "Ox_hot_gas_joint_nuts_washers",
+          "Fuel_hot_gas_joint_flanges",
+          "Fuel_hot_gas_joint_seal",
+          "Fuel_hot_gas_joint_bolts",
+          "Fuel_hot_gas_joint_nuts_washers"
+        ],
+        "thrust_to_weight": 157.5174650434215
+      }
+    },
+    {
+      "id": "I2",
+      "name": "Coolant manifolds printed integral with the chamber and nozzle jackets",
+      "category": "integration",
+      "trl": 6,
+      "nre": "M",
+      "make_buy": "make (L-PBF, large-format machine)",
+      "physics": "An integral D-section passage shares the closeout as one wall, but at the same flow area its arc radius is sqrt(2) times larger and the hoop wall grows with it, so the shell mass of a pressure vessel (~ p V / sigma) stays the same. The I2-C CAD build measured +17 %: longer port stubs, and more than half of the torus remains where the jacket wall slopes. The case for I2 is manufacturing only (one print, no manifold welds to inspect), not mass.",
+      "result": {
+        "d_mass_kg": 20.609550000000006,
+        "d_parts": 0,
+        "d_fasteners": 0,
+        "d_bolted_joints": 0,
+        "removed": [],
+        "thrust_to_weight": 154.15630740192438
+      }
+    },
+    {
+      "id": "I3",
+      "name": "Welded duct joints downstream of the pumps (keep the vehicle interfaces bolted)",
+      "category": "integration",
+      "trl": 8,
+      "nre": "S",
+      "make_buy": "make",
+      "physics": "Removes 12 flange pairs at 400-920 bar. Each pair adds flange rings, bolts and a seal; a butt weld at the same pressure needs none of these. Valves then come out by cutting, so this suits a production engine, not a test article.",
+      "result": {
+        "d_mass_kg": -72.78,
+        "d_parts": -36,
+        "d_fasteners": -544,
+        "d_bolted_joints": -12,
+        "removed": [
+          "LOX_discharge_duct_A_flanges",
+          "LOX_discharge_duct_A_seal",
+          "LOX_discharge_duct_A_bolts",
+          "LOX_discharge_duct_A_nuts_washers",
+          "LOX_discharge_duct_B_flanges",
+          "LOX_discharge_duct_B_seal",
+          "LOX_discharge_duct_B_bolts",
+          "LOX_discharge_duct_B_nuts_washers",
+          "CH4_discharge_duct_A_flanges",
+          "CH4_discharge_duct_A_seal",
+          "CH4_discharge_duct_A_bolts",
+          "CH4_discharge_duct_A_nuts_washers",
+          "CH4_discharge_duct_B_flanges",
+          "CH4_discharge_duct_B_seal",
+          "CH4_discharge_duct_B_bolts",
+          "CH4_discharge_duct_B_nuts_washers",
+          "FPB_feed_duct_A_flanges",
+          "FPB_feed_duct_A_seal",
+          "FPB_feed_duct_A_bolts",
+          "FPB_feed_duct_A_nuts_washers",
+          "FPB_feed_duct_B_flanges",
+          "FPB_feed_duct_B_seal",
+          "FPB_feed_duct_B_bolts",
+          "FPB_feed_duct_B_nuts_washers",
+          "Nozzle_return_duct_A_flanges",
+          "Nozzle_return_duct_A_seal",
+          "Nozzle_return_duct_A_bolts",
+          "Nozzle_return_duct_A_nuts_washers",
+          "Nozzle_return_duct_B_flanges",
+          "Nozzle_return_duct_B_seal",
+          "Nozzle_return_duct_B_bolts",
+          "Nozzle_return_duct_B_nuts_washers",
+          "Ox_crossfeed_line_A_flanges",
+          "Ox_crossfeed_line_A_seal",
+          "Ox_crossfeed_line_A_bolts",
+          "Ox_crossfeed_line_A_nuts_washers",
+          "Ox_crossfeed_line_B_flanges",
+          "Ox_crossfeed_line_B_seal",
+          "Ox_crossfeed_line_B_bolts",
+          "Ox_crossfeed_line_B_nuts_washers",
+          "Fuel_crossfeed_line_A_flanges",
+          "Fuel_crossfeed_line_A_seal",
+          "Fuel_crossfeed_line_A_bolts",
+          "Fuel_crossfeed_line_A_nuts_washers",
+          "Fuel_crossfeed_line_B_flanges",
+          "Fuel_crossfeed_line_B_seal",
+          "Fuel_crossfeed_line_B_bolts",
+          "Fuel_crossfeed_line_B_nuts_washers"
+        ],
+        "thrust_to_weight": 162.5116492267963
+      }
+    },
+    {
+      "id": "I4",
+      "name": "Single-piece printed main injector (posts, faceplate, plates and plenum)",
+      "category": "integration",
+      "trl": 6,
+      "nre": "M",
+      "make_buy": "make",
+      "physics": "176 parts and 346 brazed or welded post joints become one print. The solids are the same, so the mass is the same; the gain is part count, joint inspection and assembly hours.",
+      "result": {
+        "d_mass_kg": 0.0,
+        "d_parts": -175,
+        "d_fasteners": 0,
+        "d_bolted_joints": 0,
+        "removed": [],
+        "thrust_to_weight": 155.92546696424984
+      }
+    },
+    {
+      "id": "I5",
+      "name": "Bimetallic chamber and nozzle in one piece (no bolted eps-12 joint)",
+      "category": "integration",
+      "trl": 5,
+      "nre": "L",
+      "make_buy": "make",
+      "physics": "A GRCop-42 to Inconel 718 transition built by DED or bimetallic L-PBF removes the 40-bolt nozzle joint, its two flange rings and the four coolant jumpers that cross it.",
+      "result": {
+        "d_mass_kg": -36.86932700941267,
+        "d_parts": -16,
+        "d_fasteners": -256,
+        "d_bolted_joints": -5,
+        "removed": [
+          "Nozzle_joint_bolts",
+          "Nozzle_joint_nuts_washers",
+          "Coolant_jumper_1",
+          "Jumper_1_flanges",
+          "Jumper_1_seal",
+          "Jumper_1_bolts",
+          "Jumper_1_nuts_washers",
+          "Coolant_jumper_2",
+          "Jumper_2_flanges",
+          "Jumper_2_seal",
+          "Jumper_2_bolts",
+          "Jumper_2_nuts_washers",
+          "Coolant_jumper_3",
+          "Jumper_3_flanges",
+          "Jumper_3_seal",
+          "Jumper_3_bolts",
+          "Jumper_3_nuts_washers",
+          "Coolant_jumper_4",
+          "Jumper_4_flanges",
+          "Jumper_4_seal",
+          "Jumper_4_bolts",
+          "Jumper_4_nuts_washers"
+        ],
+        "thrust_to_weight": 159.1938173045274
+      }
+    },
+    {
+      "id": "Y1",
+      "name": "Pump inlet pressure 6 -> 10 bar",
+      "category": "cycle",
+      "trl": 8,
+      "nre": "S",
+      "make_buy": "vehicle (tank pressure) or option N3",
+      "physics": "Inducer cavitation (Nss) caps shaft speed. More inlet pressure allows a faster, smaller turbopump: LOX shaft speed 15,700 -> 23,100 rpm.",
+      "result": {
+        "d_mass_kg": -157.39999999999895,
+        "mass_kg": 1638.4199999999994,
+        "clashes": 0,
+        "d_isp_sl_s": 0.0042511539353427,
+        "p_ox_bar": 691.2782250299384,
+        "p_fu_bar": 800.1663363480282,
+        "d_p_ox_bar": -18.247576976878236,
+        "d_p_fu_bar": -10.380903788020532,
+        "N_ox_rpm": 23148.66185404793,
+        "N_fu_rpm": 56103.48501307149,
+        "Dt_mm": 234.89117290133376,
+        "by_assembly_d_kg": {
+          "Thrust_Chamber": -1.7199999999999704,
+          "Injector_Head": -0.009999999999990905,
+          "Gimbal": 0.0,
+          "LOX_Turbopump": -102.68999999999994,
+          "CH4_Turbopump": -43.61000000000007,
+          "Plumbing": -9.370000000000061,
+          "Instrumentation": 0.0
+        },
+        "envelope_mm": [
+          2028.0128801582941,
+          1650.84759154044,
+          3262.3594299063257
+        ],
+        "ref_envelope_mm": [
+          2216.049955905396,
+          1650.9355782768184,
+          3354.4764898945905
+        ],
+        "thrust_to_weight": 170.90494017635217
+      }
+    },
+    {
+      "id": "Y2",
+      "name": "Chamber pressure 350 -> 400 bar (enablers C3, C4, C5, Y1 together)",
+      "category": "cycle",
+      "trl": 4,
+      "nre": "XL",
+      "make_buy": "make",
+      "physics": "Higher pc shrinks the throat at fixed thrust and raises sea-level Isp; the cost is pump pressure and turbine power. The cycle closes at 400 bar only with all four enablers.",
+      "result": {
+        "d_mass_kg": -179.76999999999975,
+        "mass_kg": 1616.0499999999986,
+        "clashes": 0,
+        "d_isp_sl_s": 2.5545361504266566,
+        "p_ox_bar": 786.3385513005136,
+        "p_fu_bar": 950.5882899427693,
+        "d_p_ox_bar": 76.81274929369692,
+        "d_p_fu_bar": 140.0410498067206,
+        "N_ox_rpm": 23236.9532220104,
+        "N_fu_rpm": 56317.46945288478,
+        "Dt_mm": 219.02068120187823,
+        "by_assembly_d_kg": {
+          "Thrust_Chamber": -27.12999999999994,
+          "Injector_Head": -17.940000000000055,
+          "Gimbal": 0.0,
+          "LOX_Turbopump": -113.01999999999995,
+          "CH4_Turbopump": -49.38000000000005,
+          "Plumbing": 27.69999999999999,
+          "Instrumentation": 0.0
+        },
+        "envelope_mm": [
+          2012.6662843597971,
+          1551.1665950270956,
+          3144.2158686400326
+        ],
+        "ref_envelope_mm": [
+          2216.049955905396,
+          1650.9355782768184,
+          3354.4764898945905
+        ],
+        "thrust_to_weight": 173.2706736077096
+      }
+    },
+    {
+      "id": "K1",
+      "name": "Fuel-rich preburner residence time 4 -> 8 ms",
+      "category": "cycle",
+      "trl": 7,
+      "nre": "S",
+      "make_buy": "make",
+      "physics": "A well-stirred reactor at the real FPB inlet enthalpy (liquid LOX, jacket-heated CH4) burns near 1,000 K and blows out at 3.8 ms, so the 4 ms design has almost no kinetic margin. Doubling the residence time doubles the volume; a pressure vessel's mass scales with p V, so the shell doubles (measured x2.00), and the wider preburner grows its injector head (x1.49).",
+      "result": {
+        "d_mass_kg": 27.2819,
+        "d_parts": 0,
+        "d_fasteners": 0,
+        "d_bolted_joints": 0,
+        "removed": [],
+        "thrust_to_weight": 153.59211247804586
+      }
+    },
+    {
+      "id": "N1",
+      "name": "Plasma-assisted combustion (NRP discharges) in the preburners",
+      "category": "novel",
+      "trl": 2,
+      "nre": "XL",
+      "make_buy": "make",
+      "physics": "Non-equilibrium discharges make O atoms and heat that shorten ignition and extend extinction limits. Assessed with Cantera PSR kinetics plus breakdown-voltage scaling (ffsc/plasma.py).",
+      "result": {
+        "main_chamber_kinetic_margin": 51805.733043238055,
+        "fpb_tau_ext_ms_no_plasma": 3.7162722343835033,
+        "fpb_tau_ext_ms_10kJkg_optimistic": 3.482458570612165,
+        "fpb_tau_ext_ms_100kJkg_nominal": 2.209708691207961,
+        "fpb_design_tau_ms": 4.0,
+        "fpb_burning_T_K": 1018.6136966675673,
+        "fpb_power_MW_at_100kJkg": 21.75102385306516,
+        "opb_premixed_burns_with_plasma": false,
+        "opb_ignition_delay_ms_820K": 59.00446371251462,
+        "breakdown_kV_per_mm_OPB": 548.5962868399594,
+        "pulser_30kV_max_p_bar": 12.425841000000004,
+        "fpb_fix_shell_kg": 17.97,
+        "engine_turbomachinery_kW_per_kg": 157.29605571090423,
+        "verdict": "Not viable in steady combustion. The main chamber has a kinetic margin of about 50,000. A premixed ox-rich preburner has no burning branch with or without plasma. The fuel-rich preburner is kinetically marginal, but plasma needs MW to move it, while a longer residence time fixes it for about 18 kg. Breakdown at 600 bar needs hundreds of kV per mm. Viable for start ignition at low pressure (N2)."
+      }
+    },
+    {
+      "id": "N2",
+      "name": "Plasma or laser ignition at start (replaces both spark-torch igniters and their GOX/GCH4 supply)",
+      "category": "novel",
+      "trl": 5,
+      "nre": "M",
+      "make_buy": "buy (laser or pulser unit) + make (window or electrode port)",
+      "physics": "Ignition happens at low pressure during the start transient, where non-equilibrium discharges work and laser breakdown is easy. The torch igniters, their propellant taps, valves and lines go.",
+      "result": {
+        "d_mass_kg": -3.46,
+        "d_parts": -2,
+        "d_fasteners": -8,
+        "d_bolted_joints": 0,
+        "removed": [
+          "LOX_torch_igniter",
+          "CH4_torch_igniter",
+          "OX_igniter_bolts",
+          "FUEL_igniter_bolts"
+        ],
+        "thrust_to_weight": 156.2264679437943
+      }
+    },
+    {
+      "id": "N3",
+      "name": "Battery-driven electric boost pumps (inlet 6 -> 10 bar without tank pressure)",
+      "category": "novel",
+      "trl": 5,
+      "nre": "L",
+      "make_buy": "buy (motor, inverter, cells) + make (pump)",
+      "physics": "Boost power = mdot * dp / (rho * eta). The power source mass is set by power or by energy over the burn, whichever is larger, and is compared with the turbopump mass saved in variant Y1.",
+      "result": {
+        "shaft_power_kW": 578.1458510157809,
+        "electric_power_kW": 628.4194032780226,
+        "burn_s": 170.0,
+        "motor_inverter_kg": 125.68388065560453,
+        "pump_hardware_kg": 40.0,
+        "sources": {
+          "li_ion_high_power": {
+            "source_kg": 523.6828360650189,
+            "total_added_kg": 689.3667167206235
+          },
+          "next_gen_cells": {
+            "source_kg": 314.2097016390113,
+            "total_added_kg": 479.89358229461584
+          },
+          "shaft_alternator": {
+            "source_kg": 125.68388065560453,
+            "total_added_kg": 291.36776131120905
+          },
+          "fission_microreactor": {
+            "source_kg": 17456.09453550063,
+            "total_added_kg": 17621.778416156234
+          }
+        },
+        "turbopump_mass_saved_kg": 157.39999999999895
+      }
+    },
+    {
+      "id": "N4",
+      "name": "Turbine-shaft alternator for engine electrical power",
+      "category": "novel",
+      "trl": 5,
+      "nre": "M",
+      "make_buy": "buy (high-speed PM machine) + make (integration)",
+      "physics": "The turbines deliver about 100 MW; tapping 100-200 kW for valve actuators, igniters and electronics removes the engine's dependence on vehicle batteries for long burns.",
+      "result": {
+        "power_kW": 150.0,
+        "alternator_kg": 30.0,
+        "battery_equivalent": {
+          "li_ion_high_power": 125.0,
+          "next_gen_cells": 75.0,
+          "shaft_alternator": 30.0,
+          "fission_microreactor": 4166.666666666667
+        }
+      }
+    },
+    {
+      "id": "N5",
+      "name": "Lower OPB temperature spread through injector mixing (pattern factor)",
+      "category": "novel",
+      "trl": 4,
+      "nre": "L",
+      "make_buy": "make",
+      "physics": "The turbine metal sees the hottest streak, not the mean. At a fixed peak temperature a lower pattern factor allows a higher mean OPB temperature. Plasma cannot provide the uniformity at 665 bar (option N1), so the route is the preburner injector itself.",
+      "result": {
+        "T_peak_K": 964.0,
+        "T_mean_baseline_K": 820.0,
+        "T_mean_allowed_K": 885.4545454545454,
+        "d_isp_sl_s": 0.0,
+        "d_p_ox_bar": -49.42443058853951,
+        "d_p_fu_bar": 4.859511116373824,
+        "p_ox_bar": 660.1013714182772,
+        "p_fu_bar": 815.4067512524225,
+        "N_ox_rpm": 15733.155943498694,
+        "N_fu_rpm": 37865.93508967006
+      }
+    }
+  ]
+}

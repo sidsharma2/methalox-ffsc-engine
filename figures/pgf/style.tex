@@ -1,0 +1,68 @@
+% Shared style for the MFE-280 report figures. Written by scripts/make_pgf_figures.py.
+% pdflatex, STIX Two (Type 1) text and maths, pgfplots 1.18.
+\usepackage[T1]{fontenc}
+\usepackage{stix2}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\usetikzlibrary{calc}
+
+% ---------------------------------------------------------------- colours (as in scripts/figstyle.py)
+\definecolor{cK}{HTML}{222222}   % black lines
+\definecolor{cCu}{HTML}{B5651D}  % GRCop-42 / copper
+\definecolor{cIn}{HTML}{6B6F7A}  % Inconel / neutral grey
+\definecolor{cOx}{HTML}{1F5FA8}  % oxidiser side
+\definecolor{cFu}{HTML}{A8641F}  % fuel side
+\definecolor{cG}{HTML}{2E7D32}   % green
+\definecolor{cR}{HTML}{B71C1C}   % red
+\definecolor{cP}{HTML}{6A3D9A}   % purple
+\definecolor{cCl}{HTML}{9AA0AA}  % closeout grey
+\definecolor{cAmber}{HTML}{E0A030}
+\definecolor{cGrey}{HTML}{9E9E9E}
+\definecolor{cSand}{HTML}{C9B38A}
+\definecolor{cBench}{HTML}{BBBBBB}
+\definecolor{cKey}{HTML}{777777}
+\definecolor{cTRLii}{HTML}{B71C1C}
+\definecolor{cTRLiv}{HTML}{E65100}
+\definecolor{cTRLv}{HTML}{F9A825}
+\definecolor{cTRLvi}{HTML}{7CB342}
+\definecolor{cTRLvii}{HTML}{2E7D32}
+\definecolor{cTRLviii}{HTML}{1B5E20}
+\definecolor{cTRLx}{HTML}{999999}
+
+% ---------------------------------------------------------------- axis style
+\pgfplotsset{
+  every axis/.append style={
+    scale only axis,
+    enlargelimits=false,
+    clip mode=individual,
+    tick align=inside,
+    major tick length=3pt,
+    minor tick length=1.6pt,
+    tick style={line width=0.4pt, black},
+    axis line style={line width=0.5pt},
+    tick label style={font=\footnotesize},
+    label style={font=\small},
+    title style={font=\small, yshift=-2pt},
+    legend style={font=\footnotesize, draw=none, fill=white, inner sep=1.5pt, row sep=-1.5pt},
+    max space between ticks=27,
+    legend cell align=left,
+    every axis plot/.append style={line width=0.9pt},
+    scaled ticks=false,
+    /pgf/number format/1000 sep={},
+    unbounded coords=jump,
+    xlabel shift=-1pt, ylabel shift=-2pt,
+  },
+  every axis legend/.append style={/tikz/every even column/.append style={column sep=5pt}},
+  area/.style={legend image code/.code={\fill[##1] (0cm,-0.09cm) rectangle (0.45cm,0.13cm);}},
+  twin/.style={axis x line=none, axis y line*=right, ylabel style={text=#1},
+               yticklabel style={text=#1}, ytick style={#1}},
+}
+\tikzset{
+  mk/.style={mark size=1.8pt, mark options={solid}},
+  mkt/.style={mark size=2.3pt, mark options={solid}},
+  refline/.style={line width=0.45pt, densely dotted},
+  ann/.style={font=\footnotesize, inner sep=1pt},
+}

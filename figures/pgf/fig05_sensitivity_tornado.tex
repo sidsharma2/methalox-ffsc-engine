@@ -1,0 +1,18 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig05_bars_ch4.csv}{\fu}
+\pgfplotstableread[col sep=comma]{data/fig05_bars_lox.csv}{\ox}
+\begin{tikzpicture}
+\begin{axis}[width=12.75cm, height=6cm, xmin=-152.852, xmax=230.468, ymin=-0.6, ymax=6.6,
+    ytick={0,...,6}, yticklabels={{OPB 800--900 K},{turbine tip clearance 0.15--0.25 mm},{pump inlet 5--10 bar},{channel roughness 3--15\,\textmu m},{coolant split 0.2--0.5},{Bartz heat flux $\times$0.8--1.2},{FPB 1050--1300 K}}, ytick style={draw=none}, xtick distance=50,
+    xlabel={change in pump discharge pressure from baseline (bar); baseline LOX 760, CH$_4$ 916 bar},
+    legend style={at={(0.99,0.03)}, anchor=south east}]
+  \addplot[draw=none, fill=cFu, area] table[x=x, y=y] {\fu};
+  \addlegendentry{CH$_4$ pump discharge}
+  \addplot[draw=none, fill=cOx, area] table[x=x, y=y] {\ox};
+  \addlegendentry{LOX pump discharge}
+  \draw[cK, line width=0.6pt] (axis cs:0,-0.6) -- (axis cs:0,6.6);
+\end{axis}
+\end{tikzpicture}
+\end{document}

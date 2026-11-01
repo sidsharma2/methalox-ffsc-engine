@@ -1,0 +1,5 @@
+row,key,kW_per_kg,Wh_per_kg
+0,fissionmicroreactor,0.036,nan
+1,liionhighpower,1.2,170
+2,nextgencells,2,240
+3,shaftalternator,5,nan

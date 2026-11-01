@@ -1,0 +1,196 @@
+{
+  "frozen": [
+    {
+      "id": "I1",
+      "mass_kg": 1868.369999999998,
+      "thrust_to_weight": 149.87078152814453,
+      "isp_sl_s": 333.68247606773224,
+      "pc_bar": 350.0,
+      "p_ox_bar": 759.8622784661164,
+      "p_fu_bar": 915.584583483833
+    },
+    {
+      "id": "I1-imp",
+      "mass_kg": 1795.82,
+      "thrust_to_weight": 155.92546696424984,
+      "isp_sl_s": 333.68247606773224,
+      "pc_bar": 350.0,
+      "p_ox_bar": 709.5258020068167,
+      "p_fu_bar": 810.5472401360487,
+      "unit_cost_T1_P50": 3367001.7877287823,
+      "nre_P50": 430289608.4267216
+    }
+  ],
+  "candidates": [
+    {
+      "id": "I2-A",
+      "name": "Integrate and weld (low risk)",
+      "options": [
+        "K1",
+        "I1",
+        "I3",
+        "I2",
+        "I4",
+        "N2",
+        "C1",
+        "N5"
+      ],
+      "why": "Everything here is TRL 4 or higher and costs little to develop. K1 and C1 are corrections the physics asks for anyway: the fuel-rich preburner has almost no kinetic margin at 4 ms, and the CH4 bearings already run at 2.3 million DN.",
+      "mass_kg": 1749.3214499999997,
+      "thrust_to_weight": 160.07010723142915,
+      "isp_sl_s": 333.68247606773224,
+      "pc_bar": 350.0,
+      "p_ox_bar": 660.1013714182772,
+      "p_fu_bar": 815.4067512524225,
+      "unit_cost_T1_P50": 3313703.0998759596,
+      "unit_cost_delta_P10_P90": [
+        -150087.3972631106,
+        51978.64915297325
+      ],
+      "nre_P50": 458431349.72678757,
+      "min_trl": 4,
+      "cost_per_kN_T1": 1206.7382009744936
+    },
+    {
+      "id": "I2-B",
+      "name": "I2-A plus 10 bar pump inlet",
+      "options": [
+        "K1",
+        "I1",
+        "I3",
+        "I2",
+        "I4",
+        "N2",
+        "C1",
+        "N5",
+        "Y1",
+        "C2"
+      ],
+      "why": "Faster, smaller turbopumps. The CH4 shaft then reaches 3.1 million DN, beyond hybrid bearings, so hydrostatic bearings (C2) come with it. The inlet pressure is a vehicle requirement (tank pressure), not an engine part.",
+      "mass_kg": 1591.9214500000007,
+      "thrust_to_weight": 175.89691506684517,
+      "isp_sl_s": 333.6867272216676,
+      "pc_bar": 350.0,
+      "p_ox_bar": 641.8537944413989,
+      "p_fu_bar": 805.025847464402,
+      "unit_cost_T1_P50": 3198777.5084114955,
+      "unit_cost_delta_P10_P90": [
+        -304170.75388258137,
+        -21898.44605565066
+      ],
+      "nre_P50": 472340959.77997935,
+      "min_trl": 4,
+      "cost_per_kN_T1": 1164.8862011695176
+    },
+    {
+      "id": "I2-C",
+      "name": "I2-B uprated to 400 bar",
+      "options": [
+        "K1",
+        "I1",
+        "I3",
+        "I2",
+        "I4",
+        "N2",
+        "C1",
+        "N5",
+        "C2",
+        "Y2"
+      ],
+      "why": "Highest thrust-to-weight. Needs the 900 K ox-rich hot section (C4, TRL 4) and SX fuel-turbine blades and two-stage turbines; Y2 already includes those and the 10 bar inlet.",
+      "mass_kg": 1569.55145,
+      "thrust_to_weight": 178.40388225804202,
+      "isp_sl_s": 336.2370122181589,
+      "pc_bar": 400.0,
+      "p_ox_bar": 736.9141207119741,
+      "p_fu_bar": 955.4478010591431,
+      "unit_cost_T1_P50": 3899797.3297793893,
+      "unit_cost_delta_P10_P90": [
+        232191.30347070371,
+        901820.365712831
+      ],
+      "nre_P50": 512779705.1648248,
+      "min_trl": 4,
+      "cost_per_kN_T1": 1420.1738273049489
+    }
+  ],
+  "built": [
+    {
+      "id": "I2-C",
+      "name": "Iteration 2, candidate C",
+      "options": [
+        "K1",
+        "I1",
+        "I3",
+        "I2",
+        "I4",
+        "N2",
+        "C1",
+        "N5",
+        "C2",
+        "Y2"
+      ],
+      "rev": "B",
+      "mass_kg": 1575.6,
+      "thrust_to_weight": 177.71900995413756,
+      "isp_sl_s": 336.2370122181589,
+      "isp_vac_s": 352.1298205781658,
+      "pc_bar": 400.0,
+      "p_ox_bar": 786.3385513005136,
+      "p_fu_bar": 950.5882899427693,
+      "unit_cost_T1_P50": 3939677.878083011,
+      "clashes": 0,
+      "envelope_mm": [
+        2012.6662843597971,
+        1508.1850128715494,
+        3124.396115500379
+      ],
+      "bom_items": 131,
+      "pieces": 946,
+      "nre_P50": 512779705.1648248,
+      "min_trl": 4,
+      "estimate_mass_kg": 1569.55145,
+      "by_option": {
+        "C1/C2": {
+          "d_mass_kg": 0.3400000000000001,
+          "d_items": 0,
+          "d_pieces": 0
+        },
+        "I2": {
+          "d_mass_kg": 22.589999999999975,
+          "d_items": 0,
+          "d_pieces": 0
+        },
+        "I1/I3": {
+          "d_mass_kg": -94.66999999999997,
+          "d_items": -42,
+          "d_pieces": -692
+        },
+        "cycle/other": {
+          "d_mass_kg": 3.7900000000000116,
+          "d_items": 0,
+          "d_pieces": 0
+        },
+        "N2": {
+          "d_mass_kg": -1.8399999999999999,
+          "d_items": 0,
+          "d_pieces": 0
+        },
+        "I4": {
+          "d_mass_kg": -0.010000000000019327,
+          "d_items": -3,
+          "d_pieces": -175
+        },
+        "K1": {
+          "d_mass_kg": 29.35000000000001,
+          "d_items": 0,
+          "d_pieces": 0
+        }
+      }
+    }
+  ],
+  "raptor3_public": {
+    "mass_kg": 1525.0,
+    "thrust_to_weight": 183.6157849729437
+  }
+}

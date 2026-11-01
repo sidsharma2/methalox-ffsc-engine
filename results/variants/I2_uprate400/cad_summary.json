@@ -1,0 +1,19 @@
+{
+  "name": "I2_uprate400",
+  "mass_kg": 1616.0499999999986,
+  "by_assembly_kg": {
+    "Thrust_Chamber": 458.24999999999994,
+    "Injector_Head": 269.36,
+    "Gimbal": 28.2,
+    "LOX_Turbopump": 241.49000000000004,
+    "CH4_Turbopump": 158.61,
+    "Plumbing": 459.53999999999985,
+    "Instrumentation": 0.6
+  },
+  "clashes": 0,
+  "envelope_mm": [
+    2012.6662843597971,
+    1551.1665950270956,
+    3144.2158686400326
+  ]
+}

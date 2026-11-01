@@ -1,0 +1,20 @@
+{
+  "id": "I2-C",
+  "mass_kg": 1575.5999999999976,
+  "by_assembly_kg": {
+    "Thrust_Chamber": 483.0799999999999,
+    "Injector_Head": 269.35,
+    "Gimbal": 28.2,
+    "LOX_Turbopump": 240.41000000000003,
+    "CH4_Turbopump": 189.09,
+    "Plumbing": 364.8699999999999,
+    "Instrumentation": 0.6
+  },
+  "clashes": 0,
+  "clash_list": [],
+  "envelope_mm": [
+    2012.6662843597971,
+    1508.1850128715494,
+    3124.396115500379
+  ]
+}

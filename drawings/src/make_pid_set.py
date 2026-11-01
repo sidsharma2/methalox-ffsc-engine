@@ -2,16 +2,22 @@
 equipment and valve list (PID-003), instrument index (PID-004). Every tag and number
 comes from pid_data (itself from results/design.json).
 
-Run: .venv\\Scripts\\python.exe drawings\\src\\make_pid_set.py
+Run: .venv\\Scripts\\python.exe drawings\\src\\make_pid_set.py [--iter ID]
+
+Iteration 1 (default): drawings/, merged into drawings/MFE280-PID-SET.pdf as issued.
+--iter ID: data from results/iterations/<ID>/design.json and the config cad switches, output in
+drawings/<ID>/, merged into drawings/<ID>/MFE280-<ID>-PID-SET.pdf.
 """
 
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import itercfg as IT  # noqa: E402  (first: parses --iter)
 import pid_lib as L  # noqa: E402
 import render  # noqa: E402
-from pid_data import CLASSES, EQUIPMENT, FLUIDS, INSTRUMENTS, LINES, VALVES, line_tag, D  # noqa: E402
+from pid_data import (CLASSES, EQUIPMENT, FLUIDS, INSTRUMENTS, LINES, VALVES, WELDED_LINES, BEARING_BLEED, line_tag,  # noqa: E402
+                      D, LASER, HYDRO)
 from sheet import Sheet, TitleInfo  # noqa: E402
 from pid_engine import engine_pid  # noqa: E402
 
@@ -22,7 +28,7 @@ PID_STRIP = ["SYMBOLS ISO 10628-2   IDENTIFICATION ANSI/ISA-5.1   PRESENTATION I
 
 def info(no, title, doc_type, sheet_no, scale="NONE"):
     return TitleInfo(dwg_no=f"MFE280-PID-{no:03d}", title=title, doc_type=doc_type, sheet=f"{sheet_no}/{N_SHEETS}",
-                     scale=scale, projection="", strip=PID_STRIP, tech_ref="PID DB v1, IT. 1")
+                     scale=scale, projection="", strip=PID_STRIP, tech_ref=IT.PID_TECH_REF, rev=IT.REV)
 
 
 # ============================================================================ PID-000 legend (A3)
@@ -80,12 +86,19 @@ def legend():
     yc = s.table(x3, 258, [("CL.", 8), ("SERVICE", 44), ("MATERIAL", 30), ("DES. P", 13), ("DES. T", 22)],
                  [[c[0], c[1].upper(), c[2].upper(), f"{c[3]:.0f}", c[4].upper()] for c in CLASSES], row_h=4.6, text_h=2.0)
     s.notes(x3, yc - 4, [n.upper() for n in [c[0] + ": " + c[5] for c in CLASSES if c[5]]], h=1.9, gap=1.2, numbered=False)
-    s.notes(x3, yc - 46, [
+    notes = [
         "LINE No. FIRST DIGIT = LOOP GROUP: 1 CHAMBER, 2 OXIDISER, 3 FUEL, 4 PURGE/IGNITION.",
         "SIZES ARE INSIDE DIAMETERS (CUSTOM AEROSPACE TUBE, NOT PIPE SCHEDULES).",
         "DESIGN PRESSURE = 1.2 x MAXIMUM EXPECTED OPERATING PRESSURE (PROOF).",
         "EQUIPMENT TAGS: P PUMP, T TURBINE, B PREBURNER, TC THRUST CHAMBER, HX HEAT EXCHANGER, IG IGNITER.",
-    ], h=1.9, gap=1.3)
+    ]
+    if LASER:
+        notes[0] = "LINE No. FIRST DIGIT = LOOP GROUP: 1 CHAMBER, 2 OXIDISER, 3 FUEL, 4 PURGE."
+    if HYDRO:
+        notes[3] = notes[3][:-1] + ", BRG BEARING."
+    if WELDED_LINES:
+        notes.append("WELDED LINE: NO FLANGED BREAK, BUTT WELDS ONLY (SEE PID-001 NOTE).")
+    s.notes(x3, yc - 46, notes, h=1.9, gap=1.3)
     return s
 
 
@@ -106,12 +119,20 @@ def line_list():
     cols = [("No.", 9), ("DESIGNATION", 30), ("FLUID", 11), ("ID", 8), ("CL.", 7), ("FROM", 58), ("TO", 78), ("OP. P", 11),
             ("OP. T K", 12), ("kg/s", 11), ("DES. P", 12)]
     s = register(2, ["MFE-280 ENGINE", "P&ID", "LINE LIST"], "LINE LIST", 3, [(25, 270, "LINE LIST", cols, rows, 5.4)])
-    s.notes(25, 270 - 5.4 * (len(rows) + 1) - 6, [
-        "OPERATING VALUES AT 100 % THRUST, SEA LEVEL, FROM RESULTS/DESIGN.JSON. PRESSURES bar(a).",
+    notes = [
+        f"OPERATING VALUES AT 100 % THRUST, SEA LEVEL, FROM {IT.RES_TXT}DESIGN.JSON. PRESSURES bar(a).",
         "DESIGN P = 1.2 x MEOP OF THE PIPING CLASS (MFE280-PID-000).",
         "LINES 204, 206, 307: PRESSURANT FLOWS ARE NOMINAL, SET BY FO-204 / FO-304 TO VEHICLE DEMAND.",
         "LINES 207, 308: CHILL-DOWN BLEED, NO FLOW AT MAINSTAGE.",
-    ])
+    ]
+    if HYDRO:
+        notes.append(f"LINES 309, 310: BEARING FLOW NOMINAL, {BEARING_BLEED:.0%} OF THE P-301 FLOW (OPTION C2, "
+                     "ASSUMED); SIZES NOMINAL, SET BY FO-309.")
+    if WELDED_LINES:
+        notes.append("WELDED, NO FLANGED BREAKS (OPTIONS I1, I3): LINES " + ", ".join(WELDED_LINES) + ".")
+    if LASER:
+        notes.append("LINES 403, 404 (TORCH GOX / GCH4) REMOVED: LASER IGNITION (OPTION N2).")
+    s.notes(25, 270 - 5.4 * (len(rows) + 1) - 6, notes)
     return s
 
 
@@ -128,10 +149,15 @@ def instrument_index():
     rows = [[t, sv.upper(), ty.upper(), rg, nv, dest.upper()] for t, sv, ty, rg, nv, dest in INSTRUMENTS]
     cols = [("TAG", 17), ("SERVICE", 62), ("TYPE", 44), ("RANGE", 22), ("NORMAL", 24), ("SIGNAL TO", 38)]
     s = register(4, ["MFE-280 ENGINE", "P&ID", "INSTRUMENT INDEX"], "INSTRUMENT INDEX", 5, [(25, 270, "INSTRUMENT INDEX", cols, rows, 5.0)])
-    s.notes(25, 270 - 5.0 * (len(rows) + 1) - 6, [
+    notes = [
         "RANGES ARE PRELIMINARY: ABOUT 1.3 x NORMAL, ROUNDED. REDUNDANCY (DUAL PT-101, TRIPLE ST) NOT SHOWN.",
         "TIC-203 AND TIC-303 TRIM THE PREBURNER VALVES; PIC-101 SETS THRUST THROUGH PV-101A/B AT FIXED O/F.",
-    ])
+    ]
+    if LASER:
+        notes.append("XC-206 AND XC-306 FIRE THE LASER IGNITERS IG-201, IG-301 IN THE START SEQUENCE (ELECTRIC SIGNAL).")
+    if HYDRO:
+        notes.append("PT-309 LOW TRIPS UZ-100: LOSS OF CH4 BEARING SUPPLY.")
+    s.notes(25, 270 - 5.0 * (len(rows) + 1) - 6, notes)
     return s
 
 
@@ -141,5 +167,6 @@ if __name__ == "__main__":
             render.publish(line_list(), "MFE280-PID-002"),
             render.publish(equipment_valves(), "MFE280-PID-003"),
             render.publish(instrument_index(), "MFE280-PID-004")]
-    render.merge(pdfs, render.OUT / "MFE280-PID-SET.pdf")
-    print("P&ID set written:", render.OUT / "MFE280-PID-SET.pdf")
+    if not IT.DXF_ONLY:
+        render.merge(pdfs, IT.SET_PID)
+        print("P&ID set written:", IT.SET_PID)

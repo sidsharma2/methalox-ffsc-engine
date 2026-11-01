@@ -11,3 +11,8 @@ cfd/cases/**/processor*/
 picogk/output/*.stl
 cfd/cases/**/constant/polyMesh/
 *.tmp
+cad/variants/
+results/variants/*/contour.csv
+cad/iterations/*/mesh/
+cad/iterations/*/*.FCBak
+*.log

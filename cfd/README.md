@@ -19,7 +19,7 @@ design models in `ffsc/`:
 | Inlet | total pressure 350 bar, total temperature 3785.1 K |
 | Ambient | 101 325 Pa, 288 K, same gas |
 
-Status: case generated, meshed and initialised. The flow solver has not been run.
+Status: two runs in the Ubuntu-22.04 ext4 home, 8 ranks each, since 2026-10-31: `~/runs/mfe280_sl_axi` (iteration 1) and `~/runs/mfe280_I2C_sl_axi` (iteration 2, I2-C, generated with `--results results/iterations/I2-C`). Each takes about 1.2 s per iteration with both running, so about 13 h for 40,000 iterations. `post_compare.py` reads the exit-plane monitors of both and compares thrust and Isp with the 1-D model.
 
 ## Files
 
@@ -50,7 +50,7 @@ wsl -d Ubuntu-22.04 -e bash -lc "bash /mnt/d/Research/projects/methalox-ffsc-eng
 .venv\Scripts\python.exe cfd\make_case.py --init-only
 ```
 
-Run the solver from a WSL shell. The run lasts 1 to 4 hours, so detach it:
+Run the solver from a WSL shell. On 8 ranks the run takes about 11 h (about 1 s per iteration), so detach it:
 
 ```bash
 cd /mnt/d/Research/projects/methalox-ffsc-engine/cfd/cases/mfe280_sl_axi
@@ -205,7 +205,7 @@ The resulting Prandtl number is 0.73; Cantera gives 0.64 for the frozen mixture.
 | `inlet` | `totalPressure` 350 bar (isentropic, psi, gamma) | `pressureInletOutletVelocity` | `totalTemperature` 3785.1 K | 5 % intensity (k = 236 m2/s2) / mixing length 1.9 mm, 0.07 x injector element pitch (omega = 1.5e4 1/s) | calculated |
 | `wall_chamber`, `wall_bell` | zeroGradient | noSlip | zeroGradient (adiabatic) | `kqRWallFunction` / `omegaWallFunction` | `nutUSpaldingWallFunction` / `compressible::alphatJayatillekeWallFunction` (Prt 0.85) |
 | `lip`, `wall_outer` | zeroGradient | noSlip | zeroGradient | wall functions | wall functions |
-| `ambient_inlet` (x = 1.023 m, outside the nozzle), `ambient_side` (r = 5 Re) | `totalPressure` 101 325 Pa | `pressureInletOutletVelocity` | `inletOutletTotalTemperature` 288 K | `inletOutlet` k = 0.01, omega = 154 (nu_t/nu = 5) | calculated |
+| `ambient_inlet` (x = 1.023 m, outside the nozzle), `ambient_side` (r = 5 Re) | `waveTransmissive` 101 325 Pa | `pressureInletOutletVelocity` | `inletOutlet` 288 K | `inletOutlet` k = 0.01, omega = 154 (nu_t/nu = 5) | calculated |
 | `outlet` (x = 18.49 m) | `waveTransmissive`, relaxes to 101 325 Pa over lInf = 16.4 m | `inletOutlet` | `inletOutlet` 288 K | `inletOutlet` | calculated |
 | `axis` | empty (0 faces) | | | | |
 | `front`, `back` | wedge | | | | |
@@ -227,7 +227,8 @@ supersonic.
   time unit is one iteration. `rDeltaTSmoothingCoeff 0.2` limits the ratio of local time
   steps between neighbouring cells to 1.2. That is about the mesh growth rate, so the
   small wall cells do not slow down the core.
-- CFL ramp in `Allrun`: maxCo 0.1 to iteration 2000, 0.25 to 6000, then 0.5 to 40 000.
+- CFL ramp in `Allrun`: maxCo 0.1 to iteration 2,000, 0.15 to 8,000, 0.3 to 16,000, then 0.5 to 40,000.
+- Far field: `ambient_inlet` and `ambient_side` hold the ambient static pressure (`waveTransmissive`, 101,325 Pa) with `inletOutlet` 288 K. The first runs used `totalPressure` / `inletOutletTotalTemperature`, which set p = p0 − ρU²/2 on inflow. The plume's starting vortex drove fast entrainment through the r = 5 Re patch near x = 8.5 m, the static pressure there went towards vacuum, and the density turned negative (floating-point exception at iterations 2,116 and 2,198).
   `Allrun` edits `maxCo` and `endTime` with `foamDictionary`. This removes the comments
   from `controlDict` and expands its `$` macros; the result is the same.
 - Initial field (`make_case.py --init-only`): the 1-D isentropic solution in the nozzle,

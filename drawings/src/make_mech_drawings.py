@@ -1,16 +1,30 @@
-"""MFE-280 mechanical drawing set (A3, ISO, third-angle), sheets 1-6.
+"""MFE-280 mechanical drawing set (A3, ISO, third-angle).
 
-    .venv\\Scripts\\python.exe drawings\\src\\make_mech_drawings.py [ga tca inj tpo tpf jnt]
+    .venv\\Scripts\\python.exe drawings\\src\\make_mech_drawings.py [--iter ID] [--addendum] [sheet keys]
 
-Needs drawings/build/*.json from extract_views.py (FreeCAD). Writes DXF, DWG, PDF and a PNG
-preview per sheet through render.publish and merges the PDFs into drawings/MFE280-DWG-SET.pdf.
+Iteration 1 (no --iter / FFSC_ITER): sheets 1-8 (ga tca inj tpo tpf jnt vis1 vis2) into drawings/,
+merged into drawings/MFE280-DWG-SET.pdf, exactly as issued at tag iter-1.
+Later iterations (--iter I2-C): sheets 1-11 (the eight above + mfg vis3 vis4) into drawings/<ID>/,
+merged into drawings/<ID>/MFE280-<ID>-DWG-SET.pdf.
+--addendum (iteration 1 only): the build-strategy sheet MFE280-MFG-009 alone, sheet 1/1, in
+drawings/I1-addendum/.
+
+Needs <out>/build/*.json from extract_views.py (FreeCAD) and, for the pictorial sheets, the renders
+from scripts/render_sections.py, scripts/render_cad.py and scripts/render_mfg.py in the iteration's
+figures folder (cropped copies go to <out>/img). Writes DXF, DWG, PDF and a PNG preview per sheet
+through render.publish.
 """
 
+import json
 import math
 import sys
+import textwrap
 from pathlib import Path
 
+from PIL import Image
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import itercfg as IT  # noqa: E402  (first: parses --iter / --addendum)
 import channel_detail  # noqa: E402
 import mech_lib as ml  # noqa: E402
 from mech_lib import fmt, mm  # noqa: E402
@@ -21,13 +35,40 @@ D, G, INJ, CY = ml.DESIGN, ml.DESIGN["geometry"], ml.DESIGN["injector"], ml.DESI
 PERF = ml.DESIGN["performance"]
 J, JI = ml.JOINTS, ml.IJOINTS
 DATE = "2026-10-31"
-NSHEETS = 6
-STATUS_NOTE = "ITERATION 1: LAYOUT-LEVEL CAD (FREECAD MFE280.FCSTD), NOT FOR MANUFACTURE."
+ORDER_I1 = ["ga", "tca", "inj", "tpo", "tpf", "jnt", "vis1", "vis2"]
+ORDER = ["mfg"] if IT.ADDENDUM else (ORDER_I1 if IT.IS_I1 else ORDER_I1 + ["mfg", "vis3", "vis4"])
+NSHEETS = len(ORDER)
+STATUS_NOTE = f"{IT.LABEL}: LAYOUT-LEVEL CAD (FREECAD MFE280.FCSTD), NOT FOR MANUFACTURE."
+SHORT_NOTE = f"{IT.LABEL} LAYOUT CAD, NOT FOR MANUFACTURE."
 LOM_COLS = [("ITEM", 9), ("QTY", 9), ("PART NO.", 57), ("DESCRIPTION", 67), ("MATERIAL", 26), ("SHEET", 12)]
+WELD_NOTE = ("WELDS: ISO 2553 SYMBOLS. SINGLE-V BUTT, ALL ROUND, PROCESS 141 (ISO 4063, ORBITAL TIG), "
+             "QUALITY LEVEL B (ISO 5817), 100 % RT. WELD BEADS FILLED BLACK IN SECTION.")
+
+
+def sheet_no_of(key):
+    return ORDER.index(key) + 1
 
 
 def title(sheet_no, dwg, lines, doc_type="ASSEMBLY DRAWING", scale="AS NOTED"):
-    return TitleInfo(dwg_no=dwg, title=lines, doc_type=doc_type, date=DATE, sheet=f"{sheet_no}/{NSHEETS}", scale=scale)
+    return TitleInfo(dwg_no=dwg, title=lines, doc_type=doc_type, date=DATE, sheet=f"{sheet_no}/{NSHEETS}", scale=scale,
+                     rev=IT.REV, tech_ref=IT.TECH_REF)
+
+
+def bom_mat(part, default="INCONEL 718"):
+    return ml.mat_label(ml.bom_row(part)["material"]) if ml.in_bom(part) else default
+
+
+def weld_symbols(s, v, places, tail="141"):
+    """ISO 2553 symbols for the weld beads of view v. places: {weld part name: (paper dx, dy, side,
+    pick)}: offset of the reference-line start from the target, reference-line side and the model
+    direction that picks the target point on the bead; beads not listed get (10, 10, +1, None)."""
+    pick = {n: pl[3] for n, pl in places.items() if len(pl) > 3 and pl[3]}
+    for n, q in ml.weld_marks(v, pick):
+        pl = places.get(n, (10.0, 10.0, 1))
+        dx, dy, side = pl[:3]
+        t = v.P(q)
+        ml.weld_symbol(s, t, (t[0] + dx, t[1] + dy), side=side, tail=pl[4] if len(pl) > 4 else tail,
+                       length=pl[5] if len(pl) > 5 else 16.0)
 
 
 def lom_rows(items):
@@ -127,26 +168,30 @@ def sheet_tca():
 
     # ---- channel geometry table (5 stations)
     prof = ml.PROFILE
-    st = [0, i_t, next(i for i, r in enumerate(prof) if r["N"] > 400 and r["zone"] == 0),
-          next(i for i, r in enumerate(prof) if r["zone"] == 1), len(prof) - 1]
-    names = ["INJECTOR FACE", "THROAT", "CU, N DOUBLED", "NOZZLE START", "NOZZLE EXIT"]
+    i_dbl = next((i for i, r in enumerate(prof) if r["N"] > 1.5 * prof[0]["N"] and r["zone"] == 0), None) if not IT.IS_I1 \
+        else next(i for i, r in enumerate(prof) if r["N"] > 400 and r["zone"] == 0)
+    st = [0, i_t] + ([i_dbl] if i_dbl is not None else []) + [next(i for i, r in enumerate(prof) if r["zone"] == 1),
+                                                              len(prof) - 1]
+    names = ["INJECTOR FACE", "THROAT"] + (["CU, N DOUBLED"] if i_dbl is not None else []) + ["NOZZLE START", "NOZZLE EXIT"]
     rows = [[nm, fmt(mm(prof[i]["x"]), 1), fmt(mm(prof[i]["r"]), 1), str(int(prof[i]["N"])), fmt(mm(prof[i]["W"]), 2),
              fmt(mm(prof[i]["rib"]), 2), fmt(mm(prof[i]["H"]), 2), fmt(mm(prof[i]["t_hot"]), 2),
              fmt(mm(prof[i]["t_closeout"]), 2)] for nm, i in zip(names, st)]
     yb_t = s.table(299, 112.0, [("STATION", 24), ("x", 13), ("r", 12), ("N", 9), ("W", 9), ("RIB", 9), ("H", 11),
                                 ("t HOT", 11), ("t CLOSE", 12)], rows, title="CHANNEL GEOMETRY (mm)", row_h=4.0, text_h=1.9)
-    s.notes(299, yb_t - 1.5, ["x FROM THE INJECTOR FACE. LINER GRCOP-42 TO x 976.1, THEN IN718.",
+    s.notes(299, yb_t - 1.5, [f"x FROM THE INJECTOR FACE. LINER GRCOP-42 TO x {fmt(xj, 1)}, THEN IN718.",
                               "RIB WIDTH AT THE CHANNEL FLOOR. CHANNELS: PICOGK/README.MD."], h=1.9, gap=1.3, numbered=False)
 
     # ---- list of material
     gl = ml.grade_label
+    eps_j, eps = D["config"]["cooling"]["eps_joint"], D["config"]["nozzle"]["expansion_ratio"]
+    integ = ", INTEGRAL" if IT.INTEGRAL_MAN else ""
     items = [
         ["1", "CHAMBER_GRCOP42_REGEN", "REGEN CHAMBER: L-PBF LINER + RIBS, IN718 CLOSEOUT", "GRCOP-42", "2"],
-        ["1", "NOZZLE_IN718_REGEN", "CHANNEL-WALL NOZZLE, EPS 12 - 34, JOINT FLANGE", "INCONEL 718", "2"],
-        ["1", "COOLANT_OUTLET_MANIFOLD", "COLLECTS CIRCUIT A AT THE INJECTOR END", "INCONEL 718", "2"],
-        ["1", "COOLANT_DISTRIBUTION_MANIFOLD_CHAMBER", "FEEDS CIRCUIT A UP THE CHAMBER", "INCONEL 718", "2"],
-        ["1", "COOLANT_INLET_MANIFOLD_NOZZLE", "SPLIT-FLOW INLET AT THE JOINT (EPS 12)", "INCONEL 718", "2"],
-        ["1", "COOLANT_EXIT_MANIFOLD", "COLLECTS CIRCUIT B AT THE NOZZLE EXIT", "INCONEL 718", "2"],
+        ["1", "NOZZLE_IN718_REGEN", f"CHANNEL-WALL NOZZLE, EPS {fmt(eps_j)} - {fmt(eps)}, JOINT FLANGE", "INCONEL 718", "2"],
+        ["1", "COOLANT_OUTLET_MANIFOLD", "COLLECTS CIRCUIT A AT THE INJECTOR END" + integ, "INCONEL 718", "2"],
+        ["1", "COOLANT_DISTRIBUTION_MANIFOLD_CHAMBER", "FEEDS CIRCUIT A UP THE CHAMBER" + integ, "INCONEL 718", "2"],
+        ["1", "COOLANT_INLET_MANIFOLD_NOZZLE", f"SPLIT-FLOW INLET AT THE JOINT (EPS {fmt(eps_j)})" + integ, "INCONEL 718", "2"],
+        ["1", "COOLANT_EXIT_MANIFOLD", "COLLECTS CIRCUIT B AT THE NOZZLE EXIT" + integ, "INCONEL 718", "2"],
         ["4", "COOLANT_JUMPER_1 ... 4", "JUMPER ACROSS THE NOZZLE JOINT, %%c45 X 5", "INCONEL 718", "2"],
         ["8", "JUMPER_1 ... 4_FLANGES", f"JUMPER FLANGE %%c{fmt(mm(jj['flange_od_m']))} X {fmt(t_j)}", "INCONEL 718", "2"],
         ["4", "JUMPER_1 ... 4_SEAL", f"METALLIC C-SEAL %%c{fmt(mm(jj['D_seal_m']))}", "IN718 + PTFE", "6"],
@@ -156,7 +201,8 @@ def sheet_tca():
         [str(jn["n_bolts"]), b12["bolt"], f"HEX BOLT, NOZZLE JOINT, BCD %%c{fmt(mm(jn['bcd_m']))}", gl(jn["grade"]), "6"],
         [str(jn["n_bolts"]), b12["nut"], "HEX NUT", gl(jn["grade"]), "6"],
         [str(2 * jn["n_bolts"]), b12["washer"], "PLAIN WASHER", gl(jn["grade"]), "6"],
-        ["1", "MFE280-INJ-003", "MAIN INJECTOR HEAD + OX DOME (SUB-ASSEMBLY)", "INCONEL 718", "3"],
+        ["1", "MFE280-INJ-003", ("SINGLE-PIECE INJECTOR + OX DOME (SUB-ASSY)" if IT.SINGLE_INJ
+                                 else "MAIN INJECTOR HEAD + OX DOME (SUB-ASSEMBLY)"), "INCONEL 718", "3"],
         [str(jic["n_bolts"]), b27["bolt"], f"HEX BOLT, INJECTOR / CHAMBER, BCD %%c{fmt(bcd)}", gl(jic["grade"]), "6"],
         [str(jic["n_bolts"]), b27["nut"], "HEX NUT", gl(jic["grade"]), "6"],
         [str(2 * jic["n_bolts"]), b27["washer"], "PLAIN WASHER", gl(jic["grade"]), "6"],
@@ -172,10 +218,28 @@ def sheet_tca():
         "WALLS SHOWN SOLID. CHANNELS: DETAIL C, COOLING_PROFILE.CSV, PICOGK (PICOGK/README.MD).",
         "DIMENSIONS FROM DESIGN.JSON. THE CAD WALL IS A B-SPLINE THROUGH EVERY POINT OF RESULTS/CONTOUR.CSV.",
     ]
-    s.notes(24, 136.0, notes, h=2.0, gap=1.5)
+    if not IT.IS_I1:
+        notes[-1] = "DIMENSIONS FROM DESIGN.JSON. THE CAD WALL IS A B-SPLINE THROUGH EVERY POINT OF CONTOUR.CSV."
+        if "Injector_ox_posts" not in d["parts"]:
+            notes[1] = ("VISIBLE EDGES BEYOND THE CUT SHOWN (EXACT HLR), WITH THE POSTS OF THE SINGLE-PIECE INJECTOR "
+                        "(SHEET 3).")
+        if IT.INTEGRAL_MAN:
+            notes.append("MANIFOLDS 3-6: D-SECTION SHELLS PRINTED INTEGRAL WITH THE JACKET CLOSEOUT.")
+        if ml.weld_marks(v):
+            notes.append(WELD_NOTE)
+            weld_symbols(s, v, TCA_WELDS)
+    if IT.IS_I1:
+        s.notes(24, 136.0, notes, h=2.0, gap=1.5)
+    else:
+        ml.wrapped_notes(s, 24, 146.0, notes, chars=106, h=2.0, gap=1.5)
     s.boxed_note(22, 107.5, 146, STATUS_NOTE, h=2.2)
     s.publish_name = "MFE280-TCA-002"
     return s
+
+
+# weld bead -> (paper dx, dy, side, model pick direction) of its ISO 2553 symbol on sheet 2
+# (view x = -z along the engine axis, view y = global x)
+TCA_WELDS = {"Ox_hot_gas_weld": (-9.0, 10.0, 1, (1.0, 1.0)), "Fuel_hot_gas_weld": (-6.0, 2.0, -1, (-1.0, -1.0))}
 
 
 # ============================================================================ sheet 3: main injector
@@ -191,7 +255,10 @@ def sheet_inj():
 
     # ---- VIEW C: faceplate from the chamber side, 1:4 (HLR, viewer at -z; sheet up = -y)
     fv = ml.load_view("inj_face")
-    R_fp = max(q[0] for f in ml.load_view("inj")["parts"]["Injector_faceplate"]["faces"] for q in f["outer"])
+    single = "Injector_faceplate" not in ml.load_view("inj")["parts"]      # single-piece L-PBF injector (I4)
+    R_fp = (mm(G["Rc_m"]) + 1.0 if single else
+            max(q[0] for f in ml.load_view("inj")["parts"]["Injector_faceplate"]["faces"] for q in f["outer"]))
+    body = "Injector_AM_single_piece" if single else "Injector_body_fuel_plenum"
     vc = ml.View(s, fv, 4.0, at=(100.0, 194.0))
 
     def in_bore(pl):                     # edges seen through the post bores (dome interior): omitted
@@ -231,20 +298,28 @@ def sheet_inj():
     s.centerline(P(0, -12), P(0, 525), ext=0)
     s.view_title(219, 285, "SECTION B-B", "SCALE 1 : 5")
     zmax = max(q[1] for f in d["parts"]["Ox_dome"]["faces"] for q in f["outer"])
-    zbody = max(q[1] for f in d["parts"]["Injector_body_fuel_plenum"]["faces"] for q in f["outer"])
+    zbody = max(q[1] for f in d["parts"][body]["faces"] for q in f["outer"])
     s.dim_linear(P(-od / 2, 0), P(-110, zmax), base=P(-345, 0), angle=90, scale=5.0)
-    s.dim_linear(P(-od / 2, 0), P(-R_fp - 31, zbody), base=P(-318, 0), angle=90, scale=5.0)
+    if IT.IS_I1:
+        s.dim_linear(P(-od / 2, 0), P(-R_fp - 31, zbody), base=P(-318, 0), angle=90, scale=5.0)
+    else:                                  # text above the welded fuel-gas spool that the line crosses
+        ml.dim_lin(s, P(-od / 2, 0), P(-R_fp - 31, zbody), base=P(-318, 0), angle=90, scale=5.0,
+                   shift=0.5 * v.L(zbody) - 4.0)
     s.arrowhead(P(-150, -2), P(-150, -30), 3.5, 1.2)
     s.line(P(-150, -2), P(-150, -30), "THIN")
     s.text("C", (P(-150, -30)[0] - 3.5, P(-150, -30)[1]), 5.0, "MIDDLE_CENTER")
     s.leader(P(-295, 150 + mm(D["ducts"]["fuel_hot_gas"]) / 2), (182.0, 246.0),
              ["FUEL-RICH GAS", f"%%c{fmt(mm(D['ducts']['fuel_hot_gas']))}"], h=2.0)
     s.leader(P(200, 395 + mm(D["ducts"]["ox_hot_gas"]) / 2), (282.0, 276.0), ["OX-RICH GAS", f"%%c{fmt(mm(D['ducts']['ox_hot_gas']))}"], h=2.0)
-    s.balloon((214.0, 262.0), "5", ml.face_extreme(v, "Ox_dome", 0, (-1, 1)))
-    s.balloon((214.0, 150.0), "1", P(-265, 0))
-    s.balloon((240.0, 150.0), "2", P(-60, 0))
-    s.balloon((256.0, 150.0), "3", P(-27 - d_p / 2, 6))
-    s.balloon((272.0, 150.0), "4", P(120, 240))
+    if single:
+        s.balloon((214.0, 262.0), "2", ml.face_extreme(v, "Ox_dome", 0, (-1, 1)))
+        s.balloon((214.0, 150.0), "1", P(-265, 0))
+    else:
+        s.balloon((214.0, 262.0), "5", ml.face_extreme(v, "Ox_dome", 0, (-1, 1)))
+        s.balloon((214.0, 150.0), "1", P(-265, 0))
+        s.balloon((240.0, 150.0), "2", P(-60, 0))
+        s.balloon((256.0, 150.0), "3", P(-27 - d_p / 2, 6))
+        s.balloon((272.0, 150.0), "4", P(120, 240))
     s.detail_circle(P(27.0 + 0.5, 9.0), v.L(16.0), "D")
 
     # ---- DETAIL D: one coaxial element, 5:1 (ring 1 element at x = pitch, in the plane)
@@ -296,24 +371,42 @@ def sheet_inj():
     s.table(232, 113.0, cols, e1, title="ELEMENT DATA", row_h=4.0, text_h=1.9)
     s.table(321, 113.0, cols, e2, title="", row_h=4.0, text_h=1.9)
 
-    items = [["1", "INJECTOR_BODY_FUEL_PLENUM", "FUEL-RICH GAS PLENUM, CHAMBER FLANGE", "INCONEL 718", "3"],
-             ["1", "INJECTOR_FACEPLATE", f"FACEPLATE, {INJ['n_elements']} HOLES %%c{fmt(d_a, 2)}", "INCONEL 718", "3"],
-             [str(INJ["n_elements"]), "INJECTOR_OX_POSTS", f"OX POST %%c{fmt(d_b, 2)} / %%c{fmt(d_p, 2)}", "INCONEL 718", "3"],
-             ["1", "INJECTOR_INTERPROPELLANT_PLATE", "SEPARATES FUEL PLENUM AND OX DOME", "INCONEL 718", "3"],
-             ["1", "OX_DOME", "OX-RICH GAS DOME, GIMBAL PAD", "INCONEL 718", "3"],
-             ["1", "TVC_LUG_PITCH", "TVC ACTUATOR LUG, +Y", "INCONEL 718", "3"],
-             ["1", "TVC_LUG_YAW", "TVC ACTUATOR LUG, -Y", "INCONEL 718", "3"]]
+    if single:
+        items = [["1", "INJECTOR_AM_SINGLE_PIECE", f"SINGLE-PIECE L-PBF INJECTOR, {INJ['n_elements']} ELEMENTS",
+                  bom_mat("Injector_AM_single_piece"), "3"],
+                 ["1", "OX_DOME", "OX-RICH GAS DOME, GIMBAL PAD", bom_mat("Ox_dome"), "3"],
+                 ["1", "TVC_LUG_PITCH", "TVC ACTUATOR LUG, +Y", bom_mat("TVC_lug_pitch"), "3"],
+                 ["1", "TVC_LUG_YAW", "TVC ACTUATOR LUG, -Y", bom_mat("TVC_lug_yaw"), "3"]]
+        lug_p, lug_y = "3", "4"
+    else:
+        items = [["1", "INJECTOR_BODY_FUEL_PLENUM", "FUEL-RICH GAS PLENUM, CHAMBER FLANGE", "INCONEL 718", "3"],
+                 ["1", "INJECTOR_FACEPLATE", f"FACEPLATE, {INJ['n_elements']} HOLES %%c{fmt(d_a, 2)}", "INCONEL 718", "3"],
+                 [str(INJ["n_elements"]), "INJECTOR_OX_POSTS", f"OX POST %%c{fmt(d_b, 2)} / %%c{fmt(d_p, 2)}", "INCONEL 718", "3"],
+                 ["1", "INJECTOR_INTERPROPELLANT_PLATE", "SEPARATES FUEL PLENUM AND OX DOME", "INCONEL 718", "3"],
+                 ["1", "OX_DOME", "OX-RICH GAS DOME, GIMBAL PAD", "INCONEL 718", "3"],
+                 ["1", "TVC_LUG_PITCH", "TVC ACTUATOR LUG, +Y", "INCONEL 718", "3"],
+                 ["1", "TVC_LUG_YAW", "TVC ACTUATOR LUG, -Y", "INCONEL 718", "3"]]
+        lug_p, lug_y = "6", "7"
     s.table(22, 110.0, [("ITEM", 9), ("QTY", 9), ("PART NO.", 50), ("DESCRIPTION", 64), ("MATERIAL", 22), ("SHEET", 11)],
             lom_rows(items), title="LIST OF MATERIAL", row_h=4.0, text_h=1.9)
-    s.balloon((126.0, 116.0), "6", vc.P(9, -300))
-    s.balloon((126.0, 272.0), "7", vc.P(9, 300))
+    s.balloon((126.0, 116.0), lug_p, vc.P(9, -300))
+    s.balloon((126.0, 272.0), lug_y, vc.P(9, 300))
     notes = ["VIEW C FROM -Z. ELEMENT k OF A RING AT 360 k / n DEG FROM +X (DESIGN.JSON).",
              "SECTION B-B: PLANE Y = 0, SEEN FROM -Y. EDGES BEYOND THE CUT BY HLR.",
              "FACEPLATE AND POSTS WELDED TO THE BODY (MODEL NOTE).",
              f"OUTER RING: WALL LAYER, BL MASS FRACTION {fmt(D['config']['injector']['bl_mass_fraction'], 2)}.",
              "FLANGE BOLTING: SHEET 2 DETAIL B AND SHEET 6."]
-    s.notes(112, 69.0, notes, h=1.9, gap=1.4)
-    s.boxed_note(112, 13.0, 116, "ITERATION 1 LAYOUT CAD, NOT FOR MANUFACTURE.", h=2.0)
+    if single:
+        notes[2] = ("SINGLE-PIECE L-PBF INJECTOR (OPTION I4): PLENUM, FACEPLATE, POSTS AND INTERPROPELLANT PLATE IN "
+                    "ONE PRINT; FLANGE FACES AND SEAL GROOVE MACHINED.")
+    if ml.weld_marks(v):
+        notes.append("HOT-GAS DUCT SPOOLS BUTT-WELDED TO THE PORTS (BEADS FILLED BLACK). WELD SYMBOLS: SHEET 2, "
+                     "SECTION A-A; JOINTS: SHEET 6.")
+    if IT.IS_I1:
+        s.notes(112, 69.0, notes, h=1.9, gap=1.4)
+    else:
+        ml.wrapped_notes(s, 112, 69.0, notes, chars=88, h=1.9, gap=1.4)
+    s.boxed_note(112, 13.0, 116, SHORT_NOTE, h=2.0)
     s.publish_name = "MFE280-INJ-003"
     return s
 
@@ -417,8 +510,14 @@ def sheet_tpa(side):
         add(["1", pre + "KICK_STAGE_HOUSING", f"KICK STAGE, +{fmt(CY['p_kick_rise_Pa'] / 1e5)} bar TO THE FPB",
              m("kick_stage_housing"), str(sheet_no)], 1, top_pt("kick_stage_housing"))
     add(["1", pre + "BEARING_HOUSING", "BEARING HOUSING", m("bearing_housing"), str(sheet_no)], -1, top_pt("bearing_housing", -1))
-    add(["2", pre + "BEARING_1, _2", "ANGULAR-CONTACT BEARING, PROPELLANT-COOLED", m("bearing_1"), str(sheet_no)], 1,
-        top_pt("bearing_1"))
+    hydro = (pre + "hydrostatic_bearing_1") in parts
+    if hydro:
+        add(["2", pre + "HYDROSTATIC_BEARING_1, _2", "HYDROSTATIC BEARING, FED FROM PUMP DISCHARGE (P&ID LINE 309)",
+             m("hydrostatic_bearing_1"), str(sheet_no)], 1, top_pt("hydrostatic_bearing_1"))
+    else:
+        b_desc = ("HYBRID ANGULAR-CONTACT BEARING, SI3N4 BALLS" if ox and IT.HYBRID_OX
+                  else "ANGULAR-CONTACT BEARING, PROPELLANT-COOLED")
+        add(["2", pre + "BEARING_1, _2", b_desc, m("bearing_1"), str(sheet_no)], 1, top_pt("bearing_1"))
     add(["1", pre + "SHAFT", f"SHAFT %%c{fmt(math.ceil(mm(sh['D_m']) / 5) * 5)} (DESIGN %%c{fmt(mm(sh['D_m']))})",
          m("shaft"), str(sheet_no)], -1, top_pt("shaft", -1, (0.2, -1)))
     add(["1", pre + "EXHAUST_COLLECTOR", "TURBINE EXHAUST COLLECTOR", m("exhaust_collector"), str(sheet_no)], 1,
@@ -448,8 +547,12 @@ def sheet_tpa(side):
         s.circle(c_rp, r_rp, layer="PHANTOM")
         add(["1", pre + "PREBURNER_RETURN_PORT", f"NOZZLE-CIRCUIT RETURN BOSS (IN FRONT OF {letter}-{letter})", m("preburner_return_port"),
              str(sheet_no)], -1, (c_rp[0] + 0.5 * r_rp, c_rp[1] - 0.866 * r_rp))
-    add(["1", pre + "TORCH_IGNITER", "SPARK-TORCH IGNITER (GOX / GCH4)", m("torch_igniter"), str(sheet_no)], 1,
-        top_pt("torch_igniter", 1, (0, 1)))
+    if (pre + "laser_igniter") in parts:
+        add(["1", pre + "LASER_IGNITER", "LASER IGNITER: LASER HEAD WITH WINDOW, NO PROPELLANT TAPS", m("laser_igniter"),
+             str(sheet_no)], 1, top_pt("laser_igniter", 1, (0, 1)))
+    else:
+        add(["1", pre + "TORCH_IGNITER", "SPARK-TORCH IGNITER (GOX / GCH4)", m("torch_igniter"), str(sheet_no)], 1,
+            top_pt("torch_igniter", 1, (0, 1)))
     joints = [(f"{side}_pump_inlet_housing", "INLET HOUSING"), (f"{side}_bearing_housing", "BEARING HOUSING"),
               (f"{side}_pump_volute_cover", "VOLUTE COVER"), (f"{side}_turbine_housing", "TURBINE HOUSING")]
     k = 0
@@ -481,7 +584,7 @@ def sheet_tpa(side):
     ml.balloon_rows(s, top, bot, yt, yb, allowed(x_lo, x_hi), allowed(x_lo, x_hi), pitch=9.5)
 
     # ---- list of material (bottom left)
-    lom_top = yb - 10.5
+    lom_top = yb - (10.5 if IT.IS_I1 else 12.5)
     cols = [("ITEM", 9), ("QTY", 9), ("PART NO.", 52), ("DESCRIPTION", 76), ("MATERIAL", 22), ("SHEET", 11)]
     rh = min(4.0, (lom_top - 13.0) / (len(items) + 1))
     s.table(22, lom_top, cols, lom_rows(items), title="LIST OF MATERIAL",
@@ -513,7 +616,7 @@ def sheet_tpa(side):
     y = s.table(xT, y, cw, pump, title="PUMP DATA", row_h=3.8, text_h=1.8) - 8.0
     y = s.table(xT, y, cw, turb, title="TURBINE DATA", row_h=3.8, text_h=1.8) - 8.0
     y = s.table(xT, y, cw, pbr, title=("OX" if ox else "FUEL") + "-RICH PREBURNER", row_h=3.8, text_h=1.8)
-    s.text("VALUES FROM RESULTS/DESIGN.JSON (CYCLE).", (xT, y - 1.5), 1.8, "TOP_LEFT", width=0.9)
+    s.text(f"VALUES FROM {IT.RES_TXT}DESIGN.JSON (CYCLE).", (xT, y - 1.5), 1.8, "TOP_LEFT", width=0.9)
 
     # ---- notes
     notes = [f"SECTION {letter}-{letter}: PLANE THROUGH THE TURBOPUMP AXIS (LOCAL X = 0, CUT ON SHEET 1), SEEN FROM "
@@ -523,15 +626,27 @@ def sheet_tpa(side):
              "SHAFT, IGNITER AND SCREWS NOT HATCHED (ISO 128-44); SCREWS ROTATED INTO THE PLANE. BEARINGS: ISO 8826-1 "
              "GENERAL SIMPLIFIED REPRESENTATION.",
              "SCREW LENGTH OPEN: THE TAPPED-HOLE DEPTH IS NOT MODELLED. WELDED JOINTS: SHEET 6."]
+    if hydro:
+        notes[2] = ("SHAFT, IGNITER AND SCREWS NOT HATCHED (ISO 128-44); SCREWS ROTATED INTO THE PLANE. HYDROSTATIC "
+                    "BEARINGS HATCHED AS PLAIN BEARINGS; SUPPLY AND DRAIN: MFE280-PID-001.")
     for jn, lab in joints:
         if JI[jn]["welded"]:
             why = JI[jn].get("reason", "").split(": ")[-1].upper()
             notes.append(f"{lab} JOINT WELDED, NO SCREWS" + (f" ({why})" if why else "") + ".")
+    if ml.weld_marks(v):
+        notes.append("DUCT JOINTS AT THE PORTS BUTT-WELDED (OPTIONS I1, I3). " + WELD_NOTE)
+        weld_symbols(s, v, TPA_WELDS.get(side, {}))
     xn = 232.0
     ml.wrapped_notes(s, xn, min(yb - 6.5, y - 8.0), notes, chars=150, h=1.8, gap=1.2)
-    s.boxed_note(xn, 78.0, 176.0, "ITERATION 1 LAYOUT CAD, NOT FOR MANUFACTURE.", h=2.0)
+    s.boxed_note(xn, 78.0, 176.0, SHORT_NOTE, h=2.0)
     s.publish_name = dwg
     return s
+
+
+# weld bead -> (paper dx, dy, side, model pick direction, tail, reference-line length) on sheets 4, 5
+TPA_WELDS = {"ox": {"Ox_crossfeed_line_A_weld": (6.0, 14.0, 1, (1.0, 1.0), None, 12.0),
+                    "Fuel_crossfeed_line_B_weld": (-8.0, -8.0, -1, (-1.0, -1.0))},
+             "fuel": {}}
 
 
 # ============================================================================ sheet 1: general arrangement
@@ -556,10 +671,19 @@ def sheet_ga():
     for v in (vf, vs, vt):
         v.visible()
     X_lox, X_ch4 = ml.LAYOUT["X_lox_tpa_mm"], ml.LAYOUT["X_ch4_tpa_mm"]
+
+    def grp_bb(d, group):
+        bbs = [p["bbox"] for p in d["parts"].values() if p.get("group") == group and p.get("bbox")]
+        return (min(b[0] for b in bbs), min(b[1] for b in bbs), max(b[2] for b in bbs), max(b[3] for b in bbs))
+    if IT.IS_I1:
+        tpa_z = ((X_lox, (-560, 1300)), (X_ch4, (-560, 900)))
+    else:
+        tpa_z = tuple((xa, (grp_bb(fr, g)[1] - 30, grp_bb(fr, g)[3] + 30))
+                      for xa, g in ((X_lox, "LOX_Turbopump"), (X_ch4, "CH4_Turbopump")))
     # centre lines: engine axis, turbopump axes
     s.centerline(vf.P(0, fz0 - 30), vf.P(0, fz1 + 30), ext=0)
     s.centerline(vs.P(0, fz0 - 30), vs.P(0, fz1 + 30), ext=0)
-    for xa, (z0, z1) in ((X_lox, (-560, 1300)), (X_ch4, (-560, 900))):
+    for xa, (z0, z1) in tpa_z:
         s.centerline(vf.P(xa, z0), vf.P(xa, z1), ext=0)
         s.centerline(vt.P(xa, -420), vt.P(xa, 790), ext=0)
     s.centerline(vt.P(0, -790), vt.P(0, 790), ext=0)
@@ -583,7 +707,8 @@ def sheet_ga():
     s.dim_linear(vs.P(0, z_bot), vs.P(sy0 * 0 - 120, z_flange), base=(xl, 0), angle=90, scale=den, text="(<>)")
     s.dim_linear(vs.P(0, piv), vs.P(Re, -xe), base=(vs.P(sy1, 0)[0] + 7.0, 0), angle=90, scale=den, text="(<>)")
     s.dim_linear(vf.P(fx0, 0), vf.P(fx1, 0), base=(0, vf.P(0, fz0)[1] - 8.0), angle=0, scale=den, text="(<>)")
-    s.dim_linear(vs.P(sy0, -1990), vs.P(sy1, -1990), base=(0, vs.P(0, fz0)[1] - 14.0), angle=0, scale=den, text="(<>)")
+    z_env = -1990 if IT.IS_I1 else -(xe - 60.0)
+    s.dim_linear(vs.P(sy0, z_env), vs.P(sy1, z_env), base=(0, vs.P(0, fz0)[1] - 14.0), angle=0, scale=den, text="(<>)")
     s.dim_linear(vs.P(-Re, -xe), vs.P(Re, -xe), base=(0, vs.P(0, fz0)[1] - 6.0), angle=0, scale=den, text="(%%c<>)")
     yd = vt.P(0, ty1)[1] + 8.0
     s.dim_linear(vt.P(X_ch4, 790), vt.P(0, 790), base=(0, yd), angle=0, scale=den, text="(<>)")
@@ -592,14 +717,41 @@ def sheet_ga():
 
     # ---- balloons (sub-assemblies)
     P = vf.P
-    s.balloon((30.0, P(0, 150)[1] + 6), "5", P(-895, 150))
-    s.balloon((30.0, P(0, 418)[1] + 14), "7", P(-850, 418))
-    s.balloon((30.0, P(0, -1000)[1]), "6", P(-956, -1000))
-    s.balloon((vs.P(sy0, 0)[0] - 13.0, P(0, -1500)[1]), "1", P(ml.wall_mid(1500) + 15, -1500))
-    yb = vf.P(0, fz1)[1] + 9.5
-    s.balloon((P(0, 0)[0] + 7, yb), "3", P(0, 738))
-    s.balloon((P(0, 0)[0] + 17, yb), "2", P(200, 440))
-    s.balloon((P(X_lox, 0)[0] + 9, yb), "4", P(776, 1150))
+    if IT.IS_I1:
+        s.balloon((30.0, P(0, 150)[1] + 6), "5", P(-895, 150))
+        s.balloon((30.0, P(0, 418)[1] + 14), "7", P(-850, 418))
+        s.balloon((30.0, P(0, -1000)[1]), "6", P(-956, -1000))
+        s.balloon((vs.P(sy0, 0)[0] - 13.0, P(0, -1500)[1]), "1", P(ml.wall_mid(1500) + 15, -1500))
+        yb = vf.P(0, fz1)[1] + 9.5
+        s.balloon((P(0, 0)[0] + 7, yb), "3", P(0, 738))
+        s.balloon((P(0, 0)[0] + 17, yb), "2", P(200, 440))
+        s.balloon((P(X_lox, 0)[0] + 9, yb), "4", P(776, 1150))
+    else:
+        # targets snapped to the nearest vertex of the visible outline near a point of the sub-assembly
+        verts = [q for pl in fr["visible"] for q in pl]
+
+        def snap(pt, d=None):
+            d = d or fr
+            vv = verts if d is fr else [q for pl in d["visible"] for q in pl]
+            return min(vv, key=lambda q: (q[0] - pt[0]) ** 2 + (q[1] - pt[1]) ** 2)
+
+        def at(group, fx, fz):
+            b = grp_bb(fr, group)
+            return snap((b[0] + fx * (b[2] - b[0]), b[1] + fz * (b[3] - b[1])))
+        t_tpf, t_ins, t_plb = at("CH4_Turbopump", 0.0, 0.45), at("Instrumentation", 0.0, 0.5), at("Plumbing", 0.0, 0.3)
+        t_tca = snap((ml.wall_mid(0.75 * xe) + 15, -0.75 * xe))
+        t_gim, t_inj, t_tpo = at("Gimbal", 0.5, 1.0), at("Injector_Head", 1.0, 0.6), at("LOX_Turbopump", 0.75, 0.85)
+        lefts = sorted([("5", t_tpf), ("7", t_ins), ("6", t_plb)], key=lambda t: -t[1][1])
+        y_prev = 1e9
+        for lab, t in lefts:                          # left column, top to bottom, at least 12 mm apart
+            y = min(P(t)[1] + 6.0, y_prev - 12.0)
+            s.balloon((30.0, y), lab, P(t))
+            y_prev = y
+        s.balloon((vs.P(sy0, 0)[0] - 13.0, P(t_tca)[1]), "1", P(t_tca))
+        yb = vf.P(0, fz1)[1] + 6.5                    # clear of the cut-plane letters of the top view
+        s.balloon((P(0, 0)[0] + 7, yb), "3", P(t_gim))
+        s.balloon((P(0, 0)[0] + 17, yb), "2", P(t_inj))
+        s.balloon((P(X_lox, 0)[0] + 9, yb), "4", P(t_tpo))
 
     # ---- list of material (sub-assembly level) and key data
     asm = [("1", "MFE280-TCA", "THRUST CHAMBER: CHAMBER, NOZZLE, MANIFOLDS, JUMPERS", "Thrust_Chamber", "2"),
@@ -609,6 +761,13 @@ def sheet_ga():
            ("1", "MFE280-TPF", "CH4 TURBOPUMP + FUEL-RICH PREBURNER", "CH4_Turbopump", "5"),
            ("1", "MFE280-PLB", "DUCTS, MOV / MFV / FPOV / OPFV, DUCT JOINTS", "Plumbing", "6"),
            ("5", "MFE280-INS", "PRESSURE AND SPEED TRANSDUCERS (PID-001)", "Instrumentation", "-")]
+    if not IT.IS_I1:
+        n_ins = sum(int(r["qty"]) for r in ml.BOM if r["assembly"] == "Instrumentation")
+        asm[1] = ("1", "MFE280-INJ", ("SINGLE-PIECE L-PBF INJECTOR" if IT.SINGLE_INJ else "MAIN INJECTOR HEAD")
+                  + ", OX DOME, CHAMBER-JOINT BOLTS", "Injector_Head", "3")
+        asm[5] = ("1", "MFE280-PLB", "DUCTS" + (" (WELDED)" if IT.WELDED else "") + ", MOV / MFV / FPOV / OPFV, JOINTS",
+                  "Plumbing", "6")
+        asm[6] = (str(n_ins), "MFE280-INS", "PRESSURE AND SPEED TRANSDUCERS (PID-001)", "Instrumentation", "-")
     rows = [[str(i + 1), q, pn, de, fmt(ml.asm_mass(a), 1), sh] for i, (q, pn, de, a, sh) in enumerate(asm)]
     rows.append(["", "", "TOTAL (BOM.CSV)", "MODELLED MASS", fmt(sum(ml.asm_mass(a[3]) for a in asm), 1), ""])
     yb_lom = s.table(232, 278.0, [("ITEM", 9), ("QTY", 9), ("PART NO.", 26), ("DESCRIPTION", 92), ("MASS kg", 17),
@@ -635,7 +794,11 @@ def sheet_ga():
              + f". Y ENVELOPE FROM THE EXACT SILHOUETTE (LAYOUT.JSON LISTS "
              f"{fmt(ml.LAYOUT['envelope_width_y_mm'], 1)} FROM A LOOSE BOUNDING BOX OF THE EXIT MANIFOLD).",
              "GIMBAL PIVOT: CROSSING OF THE PITCH AND YAW PIN AXES. CUTS A-A, E-E, F-F: SHEETS 2, 4, 5.",
-             "MASSES FROM CAD/OUTPUT/BOM.CSV; PERFORMANCE FROM RESULTS/DESIGN.JSON."]
+             f"MASSES FROM {IT.CAD_TXT}BOM.CSV; PERFORMANCE FROM {IT.RES_TXT}DESIGN.JSON.",
+             "PICTORIAL SECTIONS (SHADED RENDERS, REFERENCE ONLY): SHEETS 7, 8."]
+    if not IT.IS_I1:
+        notes[-1] = ("SHADED RENDERS, REFERENCE ONLY: PICTORIAL SECTIONS SHEETS 7, 8; EXTERIOR VIEWS SHEETS 10, 11. "
+                     "BUILD STRATEGY (HYBRID): SHEET 9.")
     ml.wrapped_notes(s, 232.0, yk - 4.0, notes, chars=140, h=1.9, gap=1.3)
     s.boxed_note(232.0, 78.0, 176.0, STATUS_NOTE, h=2.0)
     s.publish_name = "MFE280-GA-001"
@@ -661,7 +824,9 @@ TAPPED = {"igniter", "ox_pump_inlet_housing", "fuel_pump_inlet_housing", "fuel_p
 
 def sheet_jnt():
     s = Sheet("A3")
-    s.frame(title(6, "MFE280-JNT-006", ["MFE-280 ENGINE", "BOLTED-JOINT SCHEDULE", "TYPICAL FLANGED JOINT"],
+    weld_any = bool(IT.WELDED)
+    s.frame(title(6, "MFE280-JNT-006", ["MFE-280 ENGINE", "JOINT SCHEDULE" if weld_any else "BOLTED-JOINT SCHEDULE",
+                                        "TYPICAL JOINTS" if weld_any else "TYPICAL FLANGED JOINT"],
                   doc_type="REFERENCE DWG", scale="NONE"))
     cols = [("JOINT", 10), ("LOCATION", 66), ("NO.", 8), ("MEOP bar", 16), ("SEAL %%c", 15), ("FASTENER", 36),
             ("QTY", 10), ("GRADE", 13), ("BCD", 15), ("SP / d", 12), ("F SEP kN", 16), ("PRELOAD kN", 18),
@@ -671,7 +836,14 @@ def sheet_jnt():
     for i, (j, internal) in enumerate(allj):
         n = j["name"]
         loc, nj = JOINT_INFO[n]
+        if n == "igniter" and IT.LASER:
+            loc = "PREBURNER LASER IGNITERS"
         tag = f"J{i + 1:02d}"
+        if not internal and IT.welded(n):                   # duct joints welded in this iteration (options I1, I3)
+            welded_tags.setdefault("NOT SERVICEABLE", []).append(tag)
+            rows.append([tag, loc, str(nj), fmt(j["p_meop_Pa"] / 1e5, 1), "-", "WELDED, 141",
+                         "-", "-", "-", "-", "-", "-", "-", "-", "-", IT.WELD_REASON])
+            continue
         if j.get("welded"):
             why = "NO TOOL ACCESS" if "tool access" in j.get("reason", "") else "NO ISO SIZE FITS"
             welded_tags.setdefault(why, []).append(tag)
@@ -688,7 +860,8 @@ def sheet_jnt():
                      fmt(j["F_sep_proof_N"] / 1e3, 1), fmt(j["preload_N"] / 1e3, 1), fmt(ml.torque_Nm(j["preload_N"], j["d_m"]), 0),
                      fmt(j["bolt_stress_ratio"], 3), f"{fmt(mm(j['flange_od_m']), 1)} X {fmt(mm(j['flange_t_m']), 1)}",
                      "METALLIC C-SEAL"])
-    yb = s.table(22, 278.0, cols, rows, title="BOLTED-JOINT SCHEDULE", row_h=4.5, text_h=1.95)
+    yb = s.table(22, 278.0, cols, rows, title="JOINT SCHEDULE (BOLTED AND WELDED)" if weld_any else "BOLTED-JOINT SCHEDULE",
+                 row_h=4.5, text_h=1.95)
 
     # ---- typical flanged joint (generic, symbolic), half section, pipe axis vertical
     s.view_title(24, yb - 6.0, "TYPICAL FLANGED JOINT", "NOT TO SCALE   HALF SECTION, SYMBOLIC DIMENSIONS")
@@ -772,17 +945,465 @@ def sheet_jnt():
         "ALL BOLTED JOINTS SEAL WITH A METALLIC C-SEAL AT D SEAL. WELDED: "
         + "; ".join(f"{' AND '.join(t)} ({w})" for w, t in welded_tags.items())
         + ". NO TOOL ACCESS = BOLT CIRCLE UNDER THE TURBINE EXHAUST COLLECTOR.",
-        "QTY = BOLTS PER JOINT X NO. OF JOINTS. MEOP, F SEP, PRELOAD AND FLANGE SIZES FROM RESULTS/DESIGN.JSON.",
+        f"QTY = BOLTS PER JOINT X NO. OF JOINTS. MEOP, F SEP, PRELOAD AND FLANGE SIZES FROM {IT.RES_TXT}DESIGN.JSON.",
     ]
-    ml.wrapped_notes(s, 162.0, yb - 8.0, notes, chars=128, h=1.9, gap=1.4)
-    s.boxed_note(162.0, 82.0, 246.0, "JOINT SIZING: FIRST-ORDER (ITERATION 1), SUBJECT TO UPDATE.", h=2.0)
+    if weld_any:
+        wt = welded_tags.get("NOT SERVICEABLE", [])
+        notes[6] = ("ALL BOLTED JOINTS SEAL WITH A METALLIC C-SEAL AT D SEAL. WELDED: "
+                    + "; ".join(f"{', '.join(t)} ({w})" for w, t in welded_tags.items())
+                    + ". NO TOOL ACCESS = BOLT CIRCLE UNDER THE TURBINE EXHAUST COLLECTOR.")
+        if wt:
+            nums = [int(t[1:]) for t in wt]
+            span = f"{wt[0]}-{wt[-1]}" if nums == list(range(nums[0], nums[0] + len(nums))) else ", ".join(wt)
+            notes.append(f"{span}: DUCT JOINTS NEVER OPENED IN SERVICE, BUTT-WELDED (OPTIONS I1, I3): NO FLANGES, "
+                         "BOLTS OR SEALS. TYPICAL WELDED DUCT JOINT AT RIGHT; WELD SYMBOLS ON SHEETS 2 TO 5 WHERE "
+                         "THE JOINT IS SHOWN.")
+    ml.wrapped_notes(s, 162.0, yb - 8.0, notes, chars=106 if weld_any else 128, h=1.9, gap=1.4)
+    if weld_any:
+        typical_weld(s, 312.0, yb - 8.0)
+    s.boxed_note(162.0, 82.0, 246.0, f"JOINT SIZING: FIRST-ORDER ({IT.LABEL}), SUBJECT TO UPDATE.", h=2.0)
     s.publish_name = "MFE280-JNT-006"
     return s
 
 
-SHEETS = {"ga": sheet_ga, "tca": sheet_tca, "inj": sheet_inj, "tpo": lambda: sheet_tpa("ox"), "tpf": lambda: sheet_tpa("fuel"), "jnt": sheet_jnt}
+def typical_weld(s, x0, y_top):
+    """Typical butt-welded duct joint, half section, not to scale: two tube walls with a single-V
+    groove (60 deg) filled by the weld bead (solid), and its ISO 2553 symbol. Occupies x0 .. x0 + 94,
+    y_top .. y_top - 62."""
+    s.text("TYPICAL WELDED DUCT JOINT", (x0, y_top), 3.5, "TOP_LEFT", width=1.1)
+    s.text("NOT TO SCALE   HALF SECTION", (x0, y_top - 5.5), 2.2, "TOP_LEFT")
+    xw, t, L = x0 + 22.0, 9.0, 18.0                    # inner wall surface x, wall thickness, tube length shown
+    yj = y_top - 14.0 - L                              # joint plane
+    g = t * 0.577                                      # half-opening of the 60 deg groove at the outer surface
+    for sg, ang in ((1, 45.0), (-1, 135.0)):           # tube above and below the joint plane
+        wall = [(xw, yj + sg * 0.8), (xw + 1.2, yj + sg * 0.8), (xw + t, yj + sg * (0.8 + g)), (xw + t, yj + sg * L),
+                (xw, yj + sg * L)]
+        ml.hatch_loops(s, [wall], angle=ang, spacing=2.0)
+        s.poly(wall, "VISIBLE", closed=True)
+        ml.break_line(s, (xw - 2.5, yj + sg * L), (xw + t + 2.5, yj + sg * L), amp=1.0)
+    bead = [(xw - 0.7, yj), (xw, yj - 0.8), (xw + 1.2, yj - 0.8), (xw + t, yj - 0.8 - g), (xw + t + 1.2, yj - 0.8 - 0.8 * g),
+            (xw + t + 1.2, yj + 0.8 + 0.8 * g), (xw + t, yj + 0.8 + g), (xw + 1.2, yj + 0.8), (xw, yj + 0.8)]
+    s.hatch([bead], solid=True, layer="HATCH")
+    s.poly(bead, "VISIBLE", closed=True)
+    s.centerline((x0 + 4.0, yj + L + 2.0), (x0 + 4.0, yj - L - 2.0), ext=0)
+    s.text("DUCT AXIS", (x0 + 5.5, yj - L - 1.5), 1.9, "TOP_LEFT", width=0.9)
+    s.text("BORE", (xw - 2.0, yj + 5.0), 1.9, "BOTTOM_RIGHT", width=0.9)
+    s.text("60%%d", (xw + t + 2.0, yj + 0.8 + g + 0.5), 1.9, "BOTTOM_LEFT", width=0.9)
+    s.text("WALL t", (xw + t + 2.0, yj + L - 3.0), 1.9, "TOP_LEFT", width=0.9)
+    ml.weld_symbol(s, (xw + t + 1.2, yj - 3.0), (xw + t + 14.0, yj - 10.0), side=1, tail="141")
+    s.text("SINGLE-V BUTT WELD, ALL ROUND", (xw + t + 14.0, yj - 14.0), 1.9, "TOP_LEFT", width=0.9)
+    s.text("ORBITAL TIG (141), ISO 5817-B,", (xw + t + 14.0, yj - 17.3), 1.9, "TOP_LEFT", width=0.9)
+    s.text("100 % RT (ISO 17636-2)", (xw + t + 14.0, yj - 20.6), 1.9, "TOP_LEFT", width=0.9)
 
-ORDER = ["ga", "tca", "inj", "tpo", "tpf", "jnt"]
+
+# ============================================================================ sheets 7 and 8: pictorial sections
+FIG, IMG = IT.FIG, IT.IMG
+CAP_H, CAP_W, CAP_GAP = 2.0, 0.9, 1.3            # caption lettering: height, width factor, line gap
+NOTE_H, NOTE_GAP = 1.9, 1.3
+VIS_NOTES = [
+    f"SHADED RENDERS OF THE MFE280.FCSTD TESSELLATION ({IT.CAD_TXT}MESH/*.STL) BY SCRIPTS/RENDER_SECTIONS.PY.",
+    "REFERENCE ONLY, NOT TO SCALE. GEOMETRY, DIMENSIONS AND PART LISTS: SHEETS 1 TO 6.",
+    "CUT FACES HATCHED AT 45 DEG IN THE PART COLOUR.",
+    "PARTS WITH UNCLOSED TESSELLATION SHOWN OPEN (CUT FACE NOT CAPPED).",
+    "CUTTING PLANES IN mm IN THE GLOBAL FRAME OF SHEET 1: Z UP, INJECTOR FACE AT Z = 0, LOX TURBOPUMP AT +X, "
+    "CH4 TURBOPUMP AT -X.",
+    "COLOURS: GRCOP-42 COPPER, IN718 GREY, SX500 BLUE-GREY (LOX TURBINE, OX-RICH PREBURNER), MAR-M-247 BROWN "
+    "(CH4 TURBINE). DUCTS: LOX AND OX-RICH BLUE, CH4 AND FUEL-RICH AMBER.",
+]
+
+
+def crop_render(stem, pad=12, white=245):
+    """Copy of figures/<stem>.png with the white margin cut down to pad px, in drawings/img (no DPI tag)."""
+    im = Image.open(FIG / f"{stem}.png").convert("RGB")
+    x0, y0, x1, y1 = im.convert("L").point(lambda v: 255 if v < white else 0).getbbox()
+    im = im.crop((max(0, x0 - pad), max(0, y0 - pad), min(im.width, x1 + pad), min(im.height, y1 + pad)))
+    IMG.mkdir(parents=True, exist_ok=True)
+    out = IMG / f"{stem}.png"
+    im.save(out, optimize=True)
+    return out
+
+
+def aspect(path):
+    w, h = Image.open(path).size
+    return w / h
+
+
+def wrap_mm(text, width, h=CAP_H, wf=CAP_W):
+    """Wrap to a paper width in mm (ISOCPEUR advance about 0.75 h per character at width factor 1)."""
+    return textwrap.wrap(text, max(16, int(width / (0.75 * h * wf))))
+
+
+def note_chars(width):
+    return int(width / (0.75 * NOTE_H * 0.9))
+
+
+def note_lines(notes, width):
+    """Line count of ml.wrapped_notes for this paper width."""
+    return sum(len(textwrap.wrap(n, note_chars(width) - 4)) for n in notes)
+
+
+def pic_view(s, path, x, y_top, title, plane, caption, h, cap_x=None, cap_w=None):
+    """View title + plane line at y_top, the render below it (height h), caption under the image or,
+    with cap_x, to its right from the image top. Returns (image width, lowest y used)."""
+    s.view_title(x, y_top, title, f"NOT TO SCALE   {plane}")
+    w = h * aspect(path)
+    y_img = y_top - 14.0 - h
+    s.image(path, x, y_img, w=w)
+    if cap_x is None:
+        cap_x, y0, lines = x, y_img - 2.5, wrap_mm(caption, cap_w or w)
+    else:
+        y0, lines = y_top - 14.0, wrap_mm(caption, cap_w)
+    for i, ln in enumerate(lines):
+        s.text(ln, (cap_x, y0 - i * (CAP_H + CAP_GAP)), CAP_H, "TOP_LEFT", width=CAP_W)
+    return w, y0 - len(lines) * (CAP_H + CAP_GAP)
+
+
+def vis_title(sheet_no, dwg, k):
+    t = title(sheet_no, dwg, ["MFE-280 ENGINE", "PICTORIAL SECTIONS", f"SHEET {k} OF 2"], doc_type="REFERENCE DWG",
+              scale="NTS")
+    t.projection = "PICTORIAL VIEWS"
+    return t
+
+
+def sheet_vis1():
+    """Sheet 7: quarter cutaway and the two longitudinal sections through the chamber axis."""
+    s = Sheet("A3")
+    s.frame(vis_title(7, "MFE280-VIS-007", 1))
+    q, xz, yz = (crop_render(n) for n in ("sec_quarter_cutaway", "sec_xz_full", "sec_yz_full"))
+    y_top, y_img_top = 285.0, 271.0
+
+    # quarter cutaway: full height on the left
+    wq, _ = pic_view(s, q, 24.0, y_top, "QUARTER CUTAWAY", "PLANES X = 0 AND Y = 0",
+                     "QUADRANT X > 0, Y < 0 REMOVED. SEEN FROM +X, -Y AND ABOVE, PERSPECTIVE.", h=245.0)
+
+    # notes and status box above the title block; the two sections fill the space above them
+    xn, wn = 232.0, 174.0
+    y_box = 78.0
+    y_notes = y_box + 6.4 + 3.0 + note_lines(VIS_NOTES, wn) * (NOTE_H + NOTE_GAP)
+    caps = ("CUT ON THE CHAMBER AXIS AND BOTH TURBOPUMP AXES (PLANE OF SECTION A-A, SHEETS 1, 2). HALF Y < 0 "
+            "REMOVED. SEEN FROM -Y, SLIGHTLY FROM +X AND ABOVE, PERSPECTIVE.",
+            "CUT ON THE CHAMBER AXIS. LOX SIDE (X > 0) REMOVED, CH4 SIDE KEPT. SEEN FROM +X, SLIGHTLY FROM +Y AND "
+            "ABOVE, PERSPECTIVE.")
+    x0, x1, gap = 24.0 + wq + 10.0, 406.0, 10.0
+    a1, a2 = aspect(xz), aspect(yz)
+    h = (x1 - x0 - gap) / (a1 + a2)
+    while True:                                   # largest height whose captions clear the notes
+        ncap = max(len(wrap_mm(caps[0], h * a1)), len(wrap_mm(caps[1], h * a2)))
+        if y_img_top - h - 2.5 - ncap * (CAP_H + CAP_GAP) >= y_notes + 4.0:
+            break
+        h -= 1.0
+    xa = x0 + 0.5 * (x1 - x0 - gap - h * (a1 + a2))
+    w1, _ = pic_view(s, xz, xa, y_top, "SECTION X-Z", "PLANE Y = 0", caps[0], h=h)
+    pic_view(s, yz, xa + w1 + gap, y_top, "SECTION Y-Z", "PLANE X = 0", caps[1], h=h)
+
+    ml.wrapped_notes(s, xn, y_notes, VIS_NOTES, chars=note_chars(wn), h=NOTE_H, gap=NOTE_GAP)
+    s.boxed_note(xn, y_box, wn, STATUS_NOTE, h=2.0)
+    s.publish_name = "MFE280-VIS-007"
+    return s
+
+
+def sheet_vis2():
+    """Sheet 8: turbopump sections on their shaft axes, horizontal cut at z = +480, injector face."""
+    s = Sheet("A3")
+    s.frame(vis_title(8, "MFE280-VIS-008", 2))
+    lox, ch4, z480, face = (crop_render(n) for n in ("sec_lox_tpa", "sec_ch4_tpa", "sec_z480_pumps", "sec_injector_face"))
+    X_lox, X_ch4 = ml.LAYOUT["X_lox_tpa_mm"], ml.LAYOUT["X_ch4_tpa_mm"]
+    y_top, y_img_top = 285.0, 271.0
+
+    # left column: horizontal section on top, injector face below it with caption, notes and status box beside
+    xl, wl = 24.0, 202.0
+    _, yb = pic_view(s, z480, xl, y_top, "HORIZONTAL SECTION", "PLANE Z = +480",
+                     "PART ABOVE THE PLANE REMOVED. SEEN FROM ABOVE AND SLIGHTLY FROM -Y, +X TO THE RIGHT, "
+                     "PERSPECTIVE. THRUST CHAMBER NOT SHOWN.", h=wl / aspect(z480))
+    y2, y_bot = yb - 5.0, 22.0                    # y_bot: image and status box bottom, clear of the centring mark
+    hf = y2 - 14.0 - y_bot
+    wf = hf * aspect(face)
+    xc = xl + wf + 6.0
+    _, yc = pic_view(s, face, xl, y2, "INJECTOR FACE", "PLANE Z = -30",
+                     "30 mm BELOW THE INJECTOR FACE, SEEN FROM -Z (FROM INSIDE THE CHAMBER), ORTHOGRAPHIC, +Y UP, "
+                     "+X TO THE LEFT. THRUST CHAMBER AND INJECTOR HEAD ONLY. LINE VIEW: VIEW C, SHEET 3.",
+                     h=hf, cap_x=xc, cap_w=xl + wl - xc)
+    wn = xl + wl - xc
+    ml.wrapped_notes(s, xc, yc - 5.0, VIS_NOTES, chars=note_chars(wn), h=NOTE_H, gap=NOTE_GAP)
+    s.boxed_note(xc, y_bot, wn, STATUS_NOTE, h=2.0)
+
+    # right: the two turbopumps side by side above the title block
+    caps = (f"CUT ON THE SHAFT AXIS (X = +{fmt(X_lox, 1)}), SEEN FROM -Y, ORTHOGRAPHIC. TPO AND OX-RICH PREBURNER "
+            "PARTS ONLY.",
+            f"CUT ON THE SHAFT AXIS (X = {fmt(X_ch4, 1)}), SEEN FROM -Y, ORTHOGRAPHIC. TPF AND FUEL-RICH PREBURNER "
+            "PARTS ONLY.")
+    x0, x1, gap = 234.0, 406.0, 8.0
+    a1, a2 = aspect(lox), aspect(ch4)
+    h = (x1 - x0 - gap) / (a1 + a2)
+    while True:                                   # captions must clear the standards strip (y = 74)
+        ncap = max(len(wrap_mm(caps[0], h * a1)), len(wrap_mm(caps[1], h * a2)))
+        if y_img_top - h - 2.5 - ncap * (CAP_H + CAP_GAP) >= 74.0 + 4.0:
+            break
+        h -= 1.0
+    w1, _ = pic_view(s, lox, x0, y_top, "LOX TURBOPUMP", "PLANE Y = 0", caps[0], h=h)
+    pic_view(s, ch4, x0 + w1 + gap, y_top, "CH4 TURBOPUMP", "PLANE Y = 0", caps[1], h=h)
+    s.publish_name = "MFE280-VIS-008"
+    return s
+
+
+# ============================================================================ sheets 10 and 11: exterior views
+def pic_title(sheet_no, dwg, line3):
+    t = title(sheet_no, dwg, ["MFE-280 ENGINE", "EXTERIOR VIEWS", line3], doc_type="REFERENCE DWG", scale="NTS")
+    t.projection = "PICTORIAL VIEWS"
+    return t
+
+
+EXT_NOTES = [
+    f"SHADED RENDERS OF THE MFE280.FCSTD TESSELLATION ({IT.CAD_TXT}MESH/*.STL) BY SCRIPTS/RENDER_CAD.PY, "
+    "PERSPECTIVE, FEATURE EDGES DRAWN.",
+    "REFERENCE ONLY, NOT TO SCALE. GEOMETRY, DIMENSIONS AND PART LISTS: SHEETS 1 TO 6; SECTIONS: SHEETS 7, 8.",
+    "VIEW DIRECTIONS IN THE GLOBAL FRAME OF SHEET 1: Z UP, INJECTOR FACE AT Z = 0, LOX TURBOPUMP AT +X, "
+    "CH4 TURBOPUMP AT -X.",
+    "COLOURS: GRCOP-42 COPPER, IN718 GREY, SX500 BLUE-GREY, MAR-M-247 BROWN, TI-6AL-4V LIGHT GREY, "
+    "A286 FASTENERS DARK GREY. DUCTS: LOX AND OX-RICH BLUE, CH4 AND FUEL-RICH AMBER.",
+]
+
+
+def sheet_vis3():
+    """Exterior of the whole engine: front-right and rear-left isometric-type perspective views."""
+    k = sheet_no_of("vis3")
+    s = Sheet("A3")
+    s.frame(pic_title(k, "MFE280-VIS-010", "WHOLE ENGINE"))
+    fr, rl = crop_render("ext_front_right"), crop_render("ext_rear_left")
+    y_top, y_img_top = 285.0, 271.0
+    wq, _ = pic_view(s, fr, 24.0, y_top, "EXTERIOR, FRONT RIGHT", "FROM +X, -Y AND ABOVE",
+                     "WHOLE ENGINE SEEN FROM +X, -Y AND ABOVE (LOX TURBOPUMP RIGHT), PERSPECTIVE.", h=245.0)
+    xn, wn, y_box = 232.0, 174.0, 78.0
+    y_notes = y_box + 6.4 + 3.0 + note_lines(EXT_NOTES, wn) * (NOTE_H + NOTE_GAP)
+    cap = "WHOLE ENGINE SEEN FROM -X, +Y AND ABOVE (CH4 TURBOPUMP RIGHT), PERSPECTIVE."
+    x0, x1 = 24.0 + wq + 10.0, 406.0
+    h = (x1 - x0) / aspect(rl)
+    while y_img_top - h - 2.5 - len(wrap_mm(cap, h * aspect(rl))) * (CAP_H + CAP_GAP) < y_notes + 4.0:
+        h -= 1.0
+    pic_view(s, rl, x0 + 0.5 * (x1 - x0 - h * aspect(rl)), y_top, "EXTERIOR, REAR LEFT", "FROM -X, +Y AND ABOVE",
+             cap, h=h)
+    ml.wrapped_notes(s, xn, y_notes, EXT_NOTES, chars=note_chars(wn), h=NOTE_H, gap=NOTE_GAP)
+    s.boxed_note(xn, y_box, wn, STATUS_NOTE, h=2.0)
+    s.publish_name = "MFE280-VIS-010"
+    return s
+
+
+def sheet_vis4():
+    """Exterior of the two turbopump assemblies (with their preburners), two views each."""
+    k = sheet_no_of("vis4")
+    s = Sheet("A3")
+    s.frame(pic_title(k, "MFE280-VIS-011", "TURBOPUMPS"))
+    shots = [("ext_lox_tpa_fr", "LOX TURBOPUMP", "FROM +X, -Y", "TPO + OX-RICH PREBURNER, OUTBOARD SIDE (FROM +X, -Y "
+              "AND ABOVE), PERSPECTIVE."),
+             ("ext_lox_tpa_rl", "LOX TURBOPUMP", "FROM -X, +Y", "TPO + OX-RICH PREBURNER, ENGINE SIDE (FROM -X, +Y "
+              "AND ABOVE), PERSPECTIVE."),
+             ("ext_ch4_tpa_fl", "CH4 TURBOPUMP", "FROM -X, -Y", "TPF + FUEL-RICH PREBURNER, OUTBOARD SIDE (FROM -X, -Y "
+              "AND ABOVE), PERSPECTIVE."),
+             ("ext_ch4_tpa_rr", "CH4 TURBOPUMP", "FROM +X, +Y", "TPF + FUEL-RICH PREBURNER, ENGINE SIDE (FROM +X, +Y "
+              "AND ABOVE), PERSPECTIVE.")]
+    paths = [crop_render(st) for st, *_ in shots]
+    y_top, y_img_top, gap = 285.0, 271.0, 8.0
+    x0, x1 = 24.0, 406.0
+    asp = [aspect(p) for p in paths]
+    h = (x1 - x0 - 3 * gap) / sum(asp)
+    while True:                                   # captions clear the standards strip (y = 74) on the right
+        ncap = max(len(wrap_mm(c, h * a)) for (_, _, _, c), a in zip(shots, asp))
+        if y_img_top - h - 2.5 - ncap * (CAP_H + CAP_GAP) >= 74.0 + 4.0:
+            break
+        h -= 1.0
+    x = x0 + 0.5 * (x1 - x0 - 3 * gap - h * sum(asp))
+    for (st, ttl, plane, cap), p in zip(shots, paths):
+        w, _ = pic_view(s, p, x, y_top, ttl, plane, cap, h=h)
+        x += w + gap
+    notes = EXT_NOTES[:3] + ["EACH VIEW SHOWS THE PARTS OF ONE TURBOPUMP ASSEMBLY (APP::PART LOX_TURBOPUMP OR "
+                             "CH4_TURBOPUMP) ONLY; DUCTS AND VALVES OMITTED.", EXT_NOTES[3]]
+    wn = 202.0
+    y_box = 22.0
+    y_notes = y_box + 6.4 + 4.0 + note_lines(notes, wn) * (NOTE_H + NOTE_GAP)
+    ml.wrapped_notes(s, 24.0, y_notes, notes, chars=note_chars(wn), h=NOTE_H, gap=NOTE_GAP)
+    s.boxed_note(24.0, y_box, wn, STATUS_NOTE, h=2.0)
+    s.publish_name = "MFE280-VIS-011"
+    return s
+
+
+# ============================================================================ sheet 9: build strategy (hybrid)
+def colour_strip(name, colours, row_h, w=5.0, inset=0.75, ppm=20):
+    """PNG strip of colour blocks, one per table row (row_h mm), for the swatch column of a table:
+    raster, so that the colours survive the monochrome plot style. Returns (path, height mm)."""
+    from PIL import ImageDraw
+    H = row_h * len(colours)
+    im = Image.new("RGB", (int(round(w * ppm)), int(round(H * ppm))), "white")
+    dr = ImageDraw.Draw(im)
+    for i, c in enumerate(colours):
+        if not c:
+            continue
+        y0 = int(round((i * row_h + inset) * ppm))
+        y1 = int(round(((i + 1) * row_h - inset) * ppm)) - 1
+        dr.rectangle([int(inset * ppm), y0, int(round((w - inset) * ppm)) - 1, y1], fill=c, outline="#202020")
+    IMG.mkdir(parents=True, exist_ok=True)
+    out = IMG / f"{name}.png"
+    im.save(out)
+    return out, H
+
+
+def flow_box(s, x, y, w, h, lines, th=2.0):
+    s.rect(x, y - h / 2, w, h, "VISIBLE")
+    n = len(lines)
+    for i, ln in enumerate(lines):
+        s.text(ln, (x + w / 2, y + (n - 1) * (th + 1.0) / 2 - i * (th + 1.0)), th, "MIDDLE_CENTER", width=0.9)
+
+
+def flow_arrow(s, p, q):
+    s.line(p, q, "THIN")
+    s.arrowhead(q, p, 2.5, 0.9)
+
+
+def sheet_mfg():
+    import mfg_routes as MR
+    k = sheet_no_of("mfg")
+    s = Sheet("A3")
+    t = title(k, "MFE280-MFG-009", ["MFE-280 ENGINE", "HYBRID BUILD STRATEGY",
+                                    "ITERATION 1 ADDENDUM" if IT.ADDENDUM else "ROUTES AND T1 COST"],
+              doc_type="REFERENCE DWG", scale="NTS")
+    t.projection = "PICTORIAL VIEWS"
+    s.frame(t)
+    ev = MR.evaluate()
+
+    # ---- route-coloured renders (scripts/render_mfg.py)
+    iso, quarter = crop_render("mfg_iso"), crop_render("mfg_quarter")
+    y_top, gap, xl, xr = 285.0, 8.0, 24.0, 226.0
+    a1, a2 = aspect(iso), aspect(quarter)
+    caps = ("EXTERIOR, SEEN FROM +X, -Y AND ABOVE, PERSPECTIVE. EVERY PART IN THE COLOUR OF ITS ROUTE.",
+            "QUARTER CUTAWAY, QUADRANT X > 0, Y < 0 REMOVED. CUT FACES HATCHED IN THE ROUTE COLOUR.")
+    h = min((xr - xl - gap) / (a1 + a2), 128.0)
+    w1, yc1 = pic_view(s, iso, xl, y_top, "EXTERIOR", "FROM +X, -Y", caps[0], h=h)
+    _, yc2 = pic_view(s, quarter, xl + w1 + gap, y_top, "QUARTER CUTAWAY", "PLANES X = 0, Y = 0", caps[1], h=h)
+    y = min(yc1, yc2) - 4.0
+
+    # ---- legend: route classes used on this engine (two columns, raster swatches)
+    used = [c for c in MR.CLASSES if any(p["cls"] == c for p in ev["parts"].values())]
+    s.text("ROUTE COLOURS (HYBRID STRATEGY)", (xl, y), 3.0, "TOP_LEFT", width=1.05)
+    y -= 5.5
+    half = (len(used) + 1) // 2
+    rh = 4.4
+    for col, cls in enumerate((used[:half], used[half:])):
+        if not cls:
+            continue
+        xc = xl + col * 101.0
+        p, H = colour_strip(f"mfg_legend_{col}", [MR.CLASSES[c][1] for c in cls], rh, w=6.0)
+        s.image(p, xc, y - H, w=6.0)
+        for i, c in enumerate(cls):
+            s.text(MR.CLASSES[c][0], (xc + 7.5, y - (i + 0.5) * rh), 2.0, "MIDDLE_LEFT", width=0.9)
+    y -= half * rh + 5.0
+
+    # ---- process flow strip
+    s.text("PROCESS FLOW", (xl, y), 3.0, "TOP_LEFT", width=1.05)
+    pitch, bh = 11.5, 8.0
+    ys = [y - 9.5 - i * pitch for i in range(4)]
+    bw, bg = 27.0, 6.0
+    xs = [xl + 7.0 + i * (bw + bg) for i in range(4)]
+    xcol = xs[3] + bw + 4.0                        # collector
+    xfin, wfin = xcol + 7.0, xr - xcol - 7.0
+    lanes = [[(0, 1, ["AM CELL", "L-PBF + DED"]), (1, 2, ["HIP"]), (2, 3, ["MACHINING"]), (3, 4, ["CT INSPECTION"])],
+             [(0, 2, ["SUPPLIERS: CASTINGS,", "FORGINGS, BENT TUBE"]), (2, 3, ["RECEIVING", "INSPECTION"])],
+             [(0, 2, ["CUSTOM UNITS: VALVES (MAKE),", "IGNITERS (BUY)"]), (2, 3, ["UNIT ACCEPT.", "TEST"])],
+             [(0, 2, ["COTS: FASTENERS, SEALS,", "BEARINGS, SENSORS"]), (2, 3, ["RECEIVING", "INSPECTION"]),
+              (3, 4, ["STORES"])]]
+    lane_cls = [["lpbf", "ded"], ["cast", "forging", "fab"], ["custom"], ["cots"]]
+    for li, (yy, lane, cl) in enumerate(zip(ys, lanes, lane_cls)):
+        # colour key of the lane: raster bar left of the first box
+        p, _ = colour_strip(f"mfg_lane_{li}", [MR.CLASSES[c][1] for c in cl], bh / len(cl), w=4.0, inset=0.35)
+        s.image(p, xl, yy - bh / 2, w=4.0)
+        x_end = None
+        for n, (i, j, txt) in enumerate(lane):
+            x0b, w_b = xs[i], xs[j - 1] + bw - xs[i]
+            flow_box(s, x0b, yy, w_b, bh, txt, th=1.9)
+            if n > 0:
+                flow_arrow(s, (x_end, yy), (x0b, yy))
+            x_end = x0b + w_b
+        flow_arrow(s, (x_end, yy), (xcol, yy))
+    s.line((xcol, ys[-1]), (xcol, ys[0]), "VISIBLE")
+    fin = [["SUBASSEMBLY"], ["WELDING (141), RT"], ["ENGINE ASSEMBLY"], ["ACCEPTANCE", "HOT FIRE"]]
+    for i, (yy, txt) in enumerate(zip(ys, fin)):
+        flow_box(s, xfin, yy, wfin, bh, txt)
+        if i:
+            flow_arrow(s, (xfin + wfin / 2, ys[i - 1] - bh / 2), (xfin + wfin / 2, yy + bh / 2))
+    flow_arrow(s, (xcol, ys[0]), (xfin, ys[0]))
+    s.dot((xcol, ys[0]), 0.7)
+
+    # ---- table by component group (right)
+    xt, yt, rh = 232.0, 278.0, 4.1
+    cols = [("", 6), ("COMPONENT GROUP", 52), ("ROUTE (HYBRID)", 47), ("M / B", 13), ("QTY", 12), ("MASS kg", 18),
+            ("T1 NOM. k$", 26)]
+    rows, sw = [], []
+    for g in ev["groups"]:
+        lab = MR.GROUP_LABEL.get(g["id"], g["id"].upper().replace("_", " "))
+        if g["id"] == "injector_structure" and IT.SINGLE_INJ:
+            lab = "OX DOME"                            # body, faceplate and plate are in the single print
+        rows.append(["", lab, MR.ROUTE_LABEL[g["route"]],
+                     g["make_buy"], str(g["qty"]), fmt(g["mass_kg"], 1), fmt(g["cost"] / 1e3, 1)])
+        sw.append(MR.CLASSES[g["cls"]][1])
+    m_tot = sum(g["mass_kg"] for g in ev["groups"])
+    rows.append(["", "ASSEMBLY, INSPECTION, HOT FIRE", f"{fmt(ev['assembly_hours'], 0)} h + TEST", "MAKE", "-", "-",
+                 fmt(ev["assembly_test"] / 1e3, 1)])
+    rows.append(["", "ENGINE T1 TOTAL", "", "", str(sum(g["qty"] for g in ev["groups"])), fmt(m_tot, 1),
+                 fmt(ev["total"] / 1e3, 1)])
+    yb = s.table(xt, yt, cols, rows, title="COMPONENT GROUPS, HYBRID BUILD", row_h=rh, text_h=1.85)
+    p, H = colour_strip("mfg_table_swatches", sw, rh, w=6.0)
+    s.image(p, xt, yt - rh - H, w=6.0)
+    cat = ev["categories"]
+    sums = [["MAKE (IN-HOUSE)", fmt(cat["in-house"] / 1e3, 1)], ["BUY TO PRINT", fmt(cat["buy-to-print"] / 1e3, 1)],
+            ["COTS", fmt(cat["COTS"] / 1e3, 1)], ["ASSEMBLY + TEST", fmt(ev["assembly_test"] / 1e3, 1)]]
+    yb2 = s.table(xt, yb - 7.5, [("T1 BY SOURCE", 40), ("k$", 18)], sums, title="", row_h=rh, text_h=1.85)
+
+    new_groups = ev["new_groups"]
+    notes = [
+        "ROUTES AND COSTS FROM THE COST MODEL FFSC/ECONOMICS.PY: COSTMODEL(BOM, DESIGN, HYBRID, SAMPLER(N = 1, "
+        "NOMINAL), ROUTES = RESULTS/ECONOMICS.JSON HYBRID_ROUTES). GROUPS: CONFIG/COMPONENTS.YAML; PRICES: "
+        "CONFIG/COSTS.YAML.",
+        "HYBRID: EACH GROUP TAKES THE CHEAPER P50 ROUTE OF THE TWO PURE STRATEGIES (CONVENTIONAL, IN-HOUSE AM).",
+        "T1 NOM. = FIRST-UNIT COST AT THE NOMINAL (MODE) VALUE OF EVERY INPUT, WITH SUPPLIER MARGIN ON BOUGHT PARTS AND "
+        f"QA ON MADE AND BOUGHT PARTS. QTY = PIECES. MASS FROM {IT.CAD_TXT}BOM.CSV.",
+    ]
+    att = IT.RESULTS / "attribution.json"
+    if att.exists():                                     # reconcile with the Monte Carlo figure in the report
+        a = json.load(open(att, encoding="utf-8"))
+        add = a.get("non_bom_adders_P50", {})
+        txt = (f"MONTE CARLO (4,000 SAMPLES, TRIANGULAR INPUTS): T1 P50 OF THIS BOM {fmt(a['unit_cost_T1']['P50'] / 1e6, 2)} M$"
+               f" (P10 {fmt(a['unit_cost_T1']['P10'] / 1e6, 2)}, P90 {fmt(a['unit_cost_T1']['P90'] / 1e6, 2)}).")
+        if add:
+            txt += (" NOT IN THE BOM: SX FUEL-TURBINE BLADES (C3), OX-RICH HOT-SECTION ALLOY (C4) AND SECOND TURBINE STAGES "
+                    f"(C5), +{fmt(sum(add.values()) / 1e6, 2)} M$ P50; ENGINE T1 P50 "
+                    f"{fmt(a['unit_cost_T1_P50_with_adders'] / 1e6, 2)} M$.")
+        notes.append(txt)
+    if new_groups:
+        notes.append("GROUPS NOT IN HYBRID_ROUTES TAKE THEIR IN-HOUSE AM ROUTE FROM COMPONENTS.YAML: "
+                     + ", ".join(g.upper().replace("_", " ") for g in new_groups) + ".")
+    if ev["overrides"]:
+        notes.append("COOLANT MANIFOLDS PRINTED INTEGRAL WITH THE JACKET (CAD SWITCH INTEGRAL_MANIFOLDS): PRICED ON "
+                     "THE GROUP'S IN-HOUSE AM ROUTE (L-PBF) INSTEAD OF THE FABRICATED HYBRID ROUTE.")
+    notes.append(f"ASSEMBLY + TEST: {fmt(ev['assembly_hours'], 0)} TECHNICIAN HOURS ({ev['n_parts']} PARTS, "
+                 f"{ev['n_bolted_joints']} BOLTED JOINTS, WELDS, INTEGRATION) AND ONE ACCEPTANCE HOT FIRE.")
+    notes.append("RENDERS BY SCRIPTS/RENDER_MFG.PY FROM " + IT.CAD_TXT + "MESH, NOT TO SCALE. WELDING AND RT ARE "
+                 "IN-HOUSE STEPS OF ENGINE ASSEMBLY.")
+    xn = xt + 62.0
+    ml.wrapped_notes(s, xn, yb - 7.5, notes, chars=note_chars(406.0 - xn), h=1.8, gap=1.2)
+    s.boxed_note(xt, 78.0, 174.0, STATUS_NOTE, h=2.0)
+    s.publish_name = "MFE280-MFG-009"
+    return s
+
+
+def json_routes():
+    import json
+    return json.load(open(IT.ROOT / "results" / "economics.json", encoding="utf-8"))["hybrid_routes"]
+
+
+SHEETS = {"ga": sheet_ga, "tca": sheet_tca, "inj": sheet_inj, "tpo": lambda: sheet_tpa("ox"), "tpf": lambda: sheet_tpa("fuel"),
+          "jnt": sheet_jnt, "vis1": sheet_vis1, "vis2": sheet_vis2, "mfg": sheet_mfg, "vis3": sheet_vis3,
+          "vis4": sheet_vis4}
+NAMES = {"ga": "MFE280-GA-001", "tca": "MFE280-TCA-002", "inj": "MFE280-INJ-003", "tpo": "MFE280-TPO-004",
+         "tpf": "MFE280-TPF-005", "jnt": "MFE280-JNT-006", "vis1": "MFE280-VIS-007", "vis2": "MFE280-VIS-008",
+         "mfg": "MFE280-MFG-009", "vis3": "MFE280-VIS-010", "vis4": "MFE280-VIS-011"}
 
 if __name__ == "__main__":
     which = sys.argv[1:] or ORDER
@@ -790,8 +1411,9 @@ if __name__ == "__main__":
         sh = SHEETS[k]()
         publish(sh, sh.publish_name)
         print("published", sh.publish_name)
-    names = ["MFE280-GA-001", "MFE280-TCA-002", "MFE280-INJ-003", "MFE280-TPO-004", "MFE280-TPF-005", "MFE280-JNT-006"]
-    pdfs = [OUT / "pdf" / f"{n}.pdf" for n in names]
-    if all(p.exists() for p in pdfs):
-        merge(pdfs, OUT / "MFE280-DWG-SET.pdf")
-        print("merged", OUT / "MFE280-DWG-SET.pdf")
+    pdfs = [OUT / "pdf" / f"{NAMES[k]}.pdf" for k in ORDER]
+    if IT.ADDENDUM:
+        print("addendum sheet:", pdfs[0])
+    elif not IT.DXF_ONLY and all(p.exists() for p in pdfs):
+        merge(pdfs, IT.SET_DWG)
+        print("merged", IT.SET_DWG)

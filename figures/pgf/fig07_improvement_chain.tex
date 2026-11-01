@@ -1,0 +1,28 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig07_chain.csv}{\chain}
+\begin{tikzpicture}
+\begin{axis}[width=15.85cm, height=6cm, xmin=-0.2, xmax=4.2, ymin=0, ymax=1000,
+    xtick={0,...,4}, xticklabels={{baseline},{polish\\channels},{coolant split\\50/50},{shrouded\\turbines},{close-coupled\\hot gas}}, xticklabel style={align=center, font=\footnotesize},
+    ylabel={pressure (bar)}, legend style={at={(0.98,0.5)}, anchor=east}]
+  \addplot[cFu, mark=square*, mk] table[x=step, y=p_fu] {\chain};
+  \addlegendentry{CH$_4$ pump discharge}
+  \addplot[cOx, mark=*, mk] table[x=step, y=p_ox] {\chain};
+  \addlegendentry{LOX pump discharge}
+  \addplot[cG, mark=triangle*, mkt] table[x=step, y=dp_jacket] {\chain};
+  \addlegendentry{jacket pressure drop}
+  \node[ann, anchor=south, yshift=3pt] at (axis cs:0,915.585) {916};
+  \node[ann, anchor=north, yshift=-3pt] at (axis cs:0,759.862) {760};
+  \node[ann, anchor=south, yshift=3pt] at (axis cs:1,873.636) {874};
+  \node[ann, anchor=north, yshift=-3pt] at (axis cs:1,757.002) {757};
+  \node[ann, anchor=south, yshift=3pt] at (axis cs:2,848.522) {849};
+  \node[ann, anchor=north, yshift=-3pt] at (axis cs:2,755.323) {755};
+  \node[ann, anchor=south, yshift=3pt] at (axis cs:3,829.318) {829};
+  \node[ann, anchor=north, yshift=-3pt] at (axis cs:3,732.868) {733};
+  \node[ann, anchor=south, yshift=3pt] at (axis cs:4,810.547) {811};
+  \node[ann, anchor=north, yshift=-3pt] at (axis cs:4,709.526) {710};
+  \node[ann, anchor=base west] at (rel axis cs:0.01,0.03) {sea-level $I_{sp}$ unchanged at 333.7 s};
+\end{axis}
+\end{tikzpicture}
+\end{document}

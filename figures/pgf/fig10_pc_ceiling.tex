@@ -1,0 +1,42 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_0.csv}{\ea}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_1.csv}{\eb}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_2.csv}{\ec}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_3.csv}{\ed}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_4.csv}{\ee}
+\pgfplotstableread[col sep=comma]{data/fig10_enabler_5.csv}{\ef}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.65cm},
+    width=6.98cm, height=4.6cm, xmin=346.25, xmax=428.75,
+    xlabel={chamber pressure (bar)}, ylabel={discharge pressure (bar)}]
+\nextgroupplot[ymin=606.431, ymax=1045, title={(a) LOX pump discharge},
+    legend to name=legPc, legend columns=3, legend style={draw=none, fill=none}]
+  \addplot[cK, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\ea};
+  \addlegendentry{I1 improved (reference)}
+  \addplot[cOx, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\eb};
+  \addlegendentry{Pump inlet 6 $\rightarrow$ 10 bar}
+  \addplot[cR, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\ec};
+  \addlegendentry{OPB 820 $\rightarrow$ 900 K}
+  \addplot[cG, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\ed};
+  \addlegendentry{Turbine peak $\eta$ 0.82 $\rightarrow$ 0.87}
+  \addplot[cFu, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\ee};
+  \addlegendentry{FPB 1100 $\rightarrow$ 1200 K}
+  \addplot[cP, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_ox] {\ef};
+  \addlegendentry{All four}
+  \draw[cK, refline] (axis cs:346.25,1000) -- (axis cs:428.75,1000);
+  \node[ann, anchor=base west] at (axis cs:352,1012) {assumed 1,000 bar limit};
+\nextgroupplot[ymin=702.063, ymax=1215.36, title={(b) CH$_4$ pump discharge}]
+  \addplot[cK, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\ea};
+  \addplot[cOx, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\eb};
+  \addplot[cR, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\ec};
+  \addplot[cG, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\ed};
+  \addplot[cFu, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\ee};
+  \addplot[cP, mark=*, mark size=1.4pt, line width=0.8pt] table[x=pc, y=p_fu] {\ef};
+  \draw[cK, refline] (axis cs:346.25,1000) -- (axis cs:428.75,1000);
+  \node[ann, anchor=south west, align=left, yshift=1pt] at (axis cs:352,1000) {assumed\\1,000 bar limit};
+\end{groupplot}
+\node[anchor=north] at ($(group c1r1.south)!0.5!(group c2r1.south) + (0,-1.15cm)$) {\ref{legPc}};
+\end{tikzpicture}
+\end{document}

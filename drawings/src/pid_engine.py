@@ -1,7 +1,12 @@
-"""MFE280-PID-001: engine P&ID on an A2 sheet (layout in sheet mm)."""
+"""MFE280-PID-001: engine P&ID on an A2 sheet (layout in sheet mm).
 
+Iteration switches (pid_data): laser igniters with electric signal lines from XC-206 / XC-306
+replace the torch igniters and their supplies; the CH4 hydrostatic-bearing loop (supply 309 via
+FO-309, drain 310) is drawn on the fuel turbopump shaft; welded lines are listed in a note."""
+
+import itercfg as IT
 import pid_lib as L
-from pid_data import D, line_tag
+from pid_data import D, line_tag, LASER, HYDRO, WELDED_LINES
 from sheet import Sheet
 
 
@@ -88,18 +93,24 @@ def engine_pid(info):
     L.valve(s, (218, 274.5), "v", "ball", act="S", act_side=1, tag="XV-204", tag_side=-1)
     L.pipe(s, [(232, 266), (232, top)], minor=True, arrows=(0,), label=line_tag("206"), side=1, at=0.78, h=1.9)
     L.connector(s, (232, top), "TO LOX TANK PRESSURISATION", "up")
-    # torch igniter IG-201, torch propellants from the vehicle
     s.circle((xo - 30, 178), 4.0, "SYMBOL")
     s.text("IG", (xo - 30, 178), 2.4, "MIDDLE_CENTER")
     s.line((xo - 26, 178), (xo - 12, 178), "SYMBOL")
     s.text("IG-201", (xo - 25.5, 179.5), 2.2, "BOTTOM_LEFT")
-    s.text("EX-201", (xo - 25.5, 176.5), 1.9, "TOP_LEFT")
-    L.pipe(s, [(40, 182), (xo - 33.5, 182)], minor=True, arrows=(0,), label=line_tag("403"), side=1, at=0.62, h=1.8)
-    L.pipe(s, [(40, 174), (xo - 33.5, 174)], minor=True, arrows=(0,), label=line_tag("404"), side=-1, at=0.62, h=1.8)
-    L.valve(s, (52, 182), "h", "ball", act="S", act_side=1, tag="XV-206", tag_side=1)
-    L.valve(s, (66, 174), "h", "ball", act="S", act_side=-1, tag="XV-207", tag_side=-1)
-    L.connector(s, (32, 182), "GOX", "right", w=8)
-    L.connector(s, (32, 174), "GCH4", "right", w=8, side=-1)
+    if LASER:
+        # laser igniter IG-201, fired by the ECU ignition command XC-206 (ISA-5.1 electric signal)
+        s.text("LASER", (xo - 25.5, 176.5), 1.9, "TOP_LEFT")
+        L.instrument(s, (xo - 30, 160), "XC-206", kind="computer", r=5.5)
+        L.signal(s, [(xo - 30, 165.5), (xo - 30, 174)])
+    else:
+        # torch igniter IG-201, torch propellants from the vehicle
+        s.text("EX-201", (xo - 25.5, 176.5), 1.9, "TOP_LEFT")
+        L.pipe(s, [(40, 182), (xo - 33.5, 182)], minor=True, arrows=(0,), label=line_tag("403"), side=1, at=0.62, h=1.8)
+        L.pipe(s, [(40, 174), (xo - 33.5, 174)], minor=True, arrows=(0,), label=line_tag("404"), side=-1, at=0.62, h=1.8)
+        L.valve(s, (52, 182), "h", "ball", act="S", act_side=1, tag="XV-206", tag_side=1)
+        L.valve(s, (66, 174), "h", "ball", act="S", act_side=-1, tag="XV-207", tag_side=-1)
+        L.connector(s, (32, 182), "GOX", "right", w=8)
+        L.connector(s, (32, 174), "GCH4", "right", w=8, side=-1)
     # OPB temperature loop TIC-203 -> TV-203 (OPFV)
     L.instrument(s, (78, 240), "TIC-203", kind="computer", r=6.0)
     L.signal(s, [(xo - 35, 229.5), (83.5, 238)])
@@ -149,19 +160,39 @@ def engine_pid(info):
     L.turbine(s, (xf, 248), tag="T-301", desc="FUEL TURBINE", tag_pos="right")
     L.shaft(s, (xf, 253.5), (xf, 333))
     L.instrument(s, (xf + 30, 296), "ST-304", conn=(xf, 296))
-    L.instrument(s, (xf + 30, 316), "VT-305", conn=(xf, 316))
+    L.instrument(s, (xf + 30, 324 if HYDRO else 316), "VT-305", conn=(xf, 324 if HYDRO else 316))
     L.pipe(s, [(xf, 253.5), (xf, 258), (xc + 35, 258)], arrows=(1,), label=line_tag("306"), seg=1, side=1, at=0.62)
     s.circle((xf + 30, 172), 4.0, "SYMBOL")
     s.text("IG", (xf + 30, 172), 2.4, "MIDDLE_CENTER")
     s.line((xf + 26, 172), (xf + 12, 172), "SYMBOL")
     s.text("IG-301", (xf + 25.5, 173.5), 2.2, "BOTTOM_RIGHT")
-    s.text("EX-301", (xf + 25.5, 170.5), 1.9, "TOP_RIGHT")
-    L.pipe(s, [(570, 176), (xf + 33.5, 176)], minor=True, arrows=(0,))
-    L.pipe(s, [(570, 168), (xf + 33.5, 168)], minor=True, arrows=(0,))
-    L.valve(s, (530, 176), "h", "ball", act="S", act_side=1, tag="XV-306", tag_side=1)
-    L.valve(s, (556, 168), "h", "ball", act="S", act_side=-1, tag="XV-307", tag_side=-1)
-    L.connector(s, (578, 176), "GOX", "left", w=8)
-    L.connector(s, (578, 168), "GCH4", "left", w=8, side=-1)
+    if LASER:
+        s.text("LASER", (xf + 25.5, 170.5), 1.9, "TOP_RIGHT")
+        L.instrument(s, (xf + 55, 172), "XC-306", kind="computer", r=5.5)
+        L.signal(s, [(xf + 49.5, 172), (xf + 34, 172)])
+    else:
+        s.text("EX-301", (xf + 25.5, 170.5), 1.9, "TOP_RIGHT")
+        L.pipe(s, [(570, 176), (xf + 33.5, 176)], minor=True, arrows=(0,))
+        L.pipe(s, [(570, 168), (xf + 33.5, 168)], minor=True, arrows=(0,))
+        L.valve(s, (530, 176), "h", "ball", act="S", act_side=1, tag="XV-306", tag_side=1)
+        L.valve(s, (556, 168), "h", "ball", act="S", act_side=-1, tag="XV-307", tag_side=-1)
+        L.connector(s, (578, 176), "GOX", "left", w=8)
+        L.connector(s, (578, 168), "GCH4", "left", w=8, side=-1)
+    if HYDRO:
+        # CH4 hydrostatic bearings BRG-301 on the P-301 / T-301 shaft: supply 309 from the P-301
+        # discharge (line 302 upstream of the MFV) through FO-309, drain 310 to the P-301 suction
+        yb_ = 312.0
+        s.rect(xf - 5, yb_ - 3, 10, 6, "SYMBOL")
+        s.line((xf - 5, yb_ - 3), (xf + 5, yb_ + 3), "SYMBOL_THIN")
+        s.line((xf - 5, yb_ + 3), (xf + 5, yb_ - 3), "SYMBOL_THIN")
+        s.text("BRG-301", (xf + 7, yb_ + 1.2), 2.2, "BOTTOM_LEFT")
+        L.tee(s, (430, yb_))
+        L.pipe(s, [(430, yb_), (xf - 5, yb_)], minor=True, arrows=(0,), label=line_tag("309"), side=-1, at=0.22, h=1.8)
+        L.orifice(s, (458, yb_), "h", "FO-309", tag_side=1)
+        L.instrument(s, (440, 322), "PT-309", conn=(440, yb_))
+        L.pipe(s, [(xf + 5, yb_), (527, yb_), (527, 352), (xf, 352)], minor=True, arrows=(0, 1, 2), label=line_tag("310"),
+               seg=1, side=1, at=0.5, h=1.8)
+        L.tee(s, (xf, 352))
     # FPB temperature loop TIC-303 -> TV-303 (FPOV)
     L.instrument(s, (545, 240), "TIC-303", kind="computer", r=6.0)
     L.signal(s, [(xf + 35, 229.5), (539.5, 238)])
@@ -174,7 +205,8 @@ def engine_pid(info):
     L.signal(s, [(xc - 44, 300), (a_mfv[0] - 2.6, 300)])
     L.instrument(s, (xc - 42, 340), "UZ-100", kind="logic", r=5.0)
     s.text("SHUTDOWN INTERLOCK IN ECU-100", (xc - 33, 343), 2.0, "BOTTOM_LEFT")
-    s.text("IN: ST-204, VT-205, ST-304, VT-305, PT-202, PT-302", (xc - 33, 339), 1.9, "TOP_LEFT")
+    s.text("IN: ST-204, VT-205, ST-304, VT-305, PT-202, PT-302" + (", PT-309" if HYDRO else ""), (xc - 33, 339), 1.9,
+           "TOP_LEFT")
     s.text("OUT: CLOSE ALL FC VALVES", (xc - 33, 335), 1.9, "TOP_LEFT")
 
     # ---------------------------------------------------------------- GHe purge
@@ -198,7 +230,7 @@ def engine_pid(info):
     L.relief(s, (115, 96), tag="PSV-402")
 
     # ---------------------------------------------------------------- notes
-    s.notes(25, 72, [
+    notes = [
         "SYMBOLS, IDENTIFICATION LETTERS, FLUID CODES AND PIPING CLASSES: SEE MFE280-PID-000.",
         "LINE DESIGNATION: INSIDE DIAMETER mm - FLUID - LINE No. - CLASS. LINE DATA: MFE280-PID-002.",
         "ALL TRANSMITTERS REPORT TO ECU-100. SIGNAL LINES ARE SHOWN FOR THE CONTROL LOOPS ONLY.",
@@ -206,6 +238,18 @@ def engine_pid(info):
         "FULL-FLOW CYCLE: NO INTER-PROPELLANT SEAL OR SEAL PURGE ON THE TURBOPUMPS.",
         "THE MAIN CHAMBER HAS NO IGNITER: ORG AND FRG IGNITE ON CONTACT AT THE INJECTOR.",
         "VEHICLE-SIDE ITEMS (PV-V01, PV-V02, GHE AND TORCH SUPPLIES) ARE OUTSIDE THE ENGINE SCOPE.",
-    ], h=2.2, gap=1.4)
-    s.boxed_note(25, 15, 200, "ITERATION 1. VALUES AT THE DESIGN POINT FROM RESULTS/DESIGN.JSON.")
+    ]
+    if LASER:
+        notes[2] = "ALL TRANSMITTERS REPORT TO ECU-100. SIGNAL LINES ARE SHOWN FOR THE CONTROL LOOPS AND THE IGNITERS ONLY."
+        notes[6] = "VEHICLE-SIDE ITEMS (PV-V01, PV-V02, GHE SUPPLY) ARE OUTSIDE THE ENGINE SCOPE."
+        notes.append("PREBURNER IGNITION: LASER IGNITERS IG-201, IG-301 FIRED BY XC-206, XC-306 IN ECU-100 (ELECTRIC "
+                     "SIGNAL). NO TORCH PROPELLANT LINES OR VALVES (OPTION N2).")
+    if HYDRO:
+        notes.append("CH4 TURBOPUMP ON HYDROSTATIC BEARINGS BRG-301 (OPTION C2): SUPPLY LINE 309 FROM THE P-301 "
+                     "DISCHARGE THROUGH FO-309, DRAIN LINE 310 TO THE P-301 SUCTION. PT-309 LOW TRIPS UZ-100.")
+    if WELDED_LINES:
+        notes.append("WELDED JOINTS, NO FLANGED BREAKS (OPTIONS I1, I3): DUCT JOINTS OF LINES " + ", ".join(WELDED_LINES)
+                     + " ARE BUTT WELDS (MFE280-JNT-006); THE VEHICLE INTERFACES (LINES 201, 301) STAY FLANGED.")
+    s.notes(25, 72, notes, h=2.2, gap=1.4)
+    s.boxed_note(25, 15, 200 if IT.IS_I1 else 230, f"{IT.LABEL}. VALUES AT THE DESIGN POINT FROM {IT.RES_TXT}DESIGN.JSON.")
     return s

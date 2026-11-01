@@ -121,8 +121,8 @@ def design(cfg=None, n_iter=2, verbose=True, write=True, out_dir=None):
         D = (4 * V / (np.pi * 1.6)) ** (1 / 3)
         return {"volume_m3": V, "D_m": D, "L_m": 1.6 * D, "tau_s": tau, "p_Pa": p, "T_K": T,
                 "wall_t_m": wall_thickness(p, D / 2, 520.0)}
-    opb = preburner(cyc["mdot_opb"], og["R"], og["T"], cyc["p_opb_Pa"], 0.003)
-    fpb = preburner(cyc["mdot_fpb"], fg["R"], fg["T"], cyc["p_fpb_Pa"], 0.004)
+    opb = preburner(cyc["mdot_opb"], og["R"], og["T"], cyc["p_opb_Pa"], cfg["cycle"].get("tau_opb_s", 0.003))
+    fpb = preburner(cyc["mdot_fpb"], fg["R"], fg["T"], cyc["p_fpb_Pa"], cfg["cycle"].get("tau_fpb_s", 0.004))
 
     # ducts
     rho_lox, rho_ch4 = cyc["ox_pump"]["rho"], cyc["fuel_pump"]["rho"]
@@ -166,9 +166,9 @@ def design(cfg=None, n_iter=2, verbose=True, write=True, out_dir=None):
     ]
 
     # internal casing joints: bolted if an ISO pattern fits, otherwise welded/integral
-    def casing_joint(name, p, D):
+    def casing_joint(name, p, D, wall_r=None):
         try:
-            return {**size_joint(name, p, D, cfg, "Inconel 718", n_min=12, d_min_mm=10), "welded": False}
+            return {**size_joint(name, p, D, cfg, "Inconel 718", n_min=12, d_min_mm=10, wall_r=wall_r), "welded": False}
         except ValueError as err:
             return {"name": name, "welded": True, "p_meop_Pa": p, "D_seal_m": D, "reason": str(err)}
     op, fp = cyc["ox_pump"], cyc["fuel_pump"]
@@ -183,6 +183,14 @@ def design(cfg=None, n_iter=2, verbose=True, write=True, out_dir=None):
         casing_joint("ox_bearing_housing", cyc["p_turbine_exit_Pa"] * 0.1, cyc["ox_shaft"]["D_m"] * 2.6),
         casing_joint("fuel_bearing_housing", cyc["p_turbine_exit_Pa"] * 0.1, cyc["fuel_shaft"]["D_m"] * 2.6),
     ]
+    # The inlet-housing screws and the volute-cover bolts sit on the same face. Their washers
+    # (OD ~ 2d) need 3 mm between them, so a small pump pushes the cover bolt circle outward.
+    for side, pump, p_dis in (("ox", op, cyc["p_ox_discharge_Pa"]), ("fuel", fp, cyc["p_fuel_discharge_Pa"])):
+        ji = next(j for j in internal if j["name"] == f"{side}_pump_inlet_housing")
+        k = next(i for i, j in enumerate(internal) if j["name"] == f"{side}_pump_volute_cover")
+        jc = internal[k]
+        if not ji["welded"] and not jc["welded"] and jc["bcd_m"] / 2 - jc["d_m"] < ji["bcd_m"] / 2 + ji["d_m"] + 3e-3:
+            internal[k] = casing_joint(jc["name"], p_dis, pump["D2_m"] + 0.02, wall_r=ji["bcd_m"] / 2 + ji["d_m"] + 1e-3)
     # A turbine-housing bolt circle under the exhaust collector cannot be reached with a
     # wrench: the collector tube (radius r_c) wraps the rotor at about tip + 0.55 r_c.
     for j in internal:

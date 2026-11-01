@@ -1,0 +1,142 @@
+# Cost-model inputs, USD (2025 basis unless a source year is given). Triangular [low, nominal, high].
+# Source keys refer to the reference list in docs/DESIGN_REPORT.md section 17; "assumed" means an
+# engineering estimate with no direct source. Monte Carlo samples every triangle independently.
+
+labor_usd_h:
+  engineering: [130.0, 160.0, 195.0]     # BLS 2025 median aerospace engineer $64.89/h x wrap 2.0-3.0
+  shop: [100.0, 150.0, 250.0]            # 5-axis CNC shop rate
+  technician: [80.0, 110.0, 150.0]       # assembly / test technician, assumed
+
+material_usd_kg:                         # stock for machining (forging or bar)
+  Inconel 718: [70.0, 120.0, 200.0]      # aerospace forgings; mill bar 40-60
+  GRCop-42: [150.0, 300.0, 600.0]        # no public price (quote only); assumed 2-5x IN718 forging
+  Ti-6Al-4V: [40.0, 70.0, 120.0]         # certified bar/forging, assumed above marketplace 25-45
+  A286: [35.0, 70.0, 120.0]              # US certified bar
+  SX500: [150.0, 250.0, 400.0]           # ox-compatible superalloy, assumed
+  MAR-M-247: [100.0, 180.0, 300.0]       # assumed
+  304L: [5.0, 8.0, 12.0]
+buy_to_fly: 5.0                          # forging / bar to finished part, assumed
+
+machining:                               # hours = h0 + k * mass_kg^0.6 * cx
+  h0: 4.0
+  k: 3.0
+
+routes:
+  lpbf:                                  # finished part incl. HIP, support removal, CT, light machining
+    usd_kg: [700.0, 1060.0, 1600.0]      # IN718, 2021 cost study (printing 59 % of total)
+    material_factor: {GRCop-42: [1.0, 1.25, 1.5], superalloy: [1.2, 1.5, 2.0], Ti-6Al-4V: [0.9, 1.0, 1.2]}
+    large_part_kg: 100.0
+    large_part_factor: 1.25              # large-format machine, assumed
+    finish_h_k: 1.0                      # extra interface machining, hours = 2 + k m^0.6
+  lpbf_liner:                            # GRCop-42 liner by L-PBF, IN718 closeout by DED
+    closeout_usd_kg: [250.0, 450.0, 800.0]
+  ded_nozzle:                            # laser-wire DED channel-wall nozzle, closeout DED/brazed
+    usd_kg: [250.0, 450.0, 800.0]        # assumed (no public $/kg found)
+    finish_cx: 4
+  milled_channel_liner:                  # forged billet, channel milling, electroformed Ni closeout
+    cx: 30
+    electroform_usd_kg: [400.0, 800.0, 1500.0]   # assumed
+  milled_channel_nozzle:                 # forged IN718 jacket, channel milling, brazed closeout
+    cx: 25
+    braze_usd_kg: [150.0, 300.0, 600.0]  # assumed
+  machined_forging: {}                   # material x buy_to_fly + machining hours
+  forged_ring: {btf: 3.0}
+  investment_cast:
+    usd_kg: [60.0, 120.0, 250.0]         # assumed
+    finish_cx: 2
+  cast_superalloy:
+    usd_kg: [250.0, 500.0, 1000.0]       # vacuum investment casting of thin superalloy parts, assumed
+    finish_cx: 3
+  fabricated:                            # bent tube / formed sheet + welds + NDE
+    tube_usd_kg: [60.0, 100.0, 150.0]
+    btf: 1.3
+    cx_hours_k: 4.0                      # hours = 10 + cx_hours_k * m^0.6 * cx
+  turned_brazed_posts:
+    turn_usd_each: [40.0, 80.0, 150.0]
+    braze_usd_each: [30.0, 60.0, 120.0]  # two joints per post incl. inspection, assumed
+  cots_fastener:
+    a286_usd_at_M5: [1.2, 2.0, 4.0]      # NAS1351 10-32 SHCS $1.5-2.0; price ~ (d/5)^2
+    in718_factor: [3.0, 5.0, 10.0]       # IN718 vs A286 (inferred 3-10x)
+    nut_washer_set_factor: 0.5
+  cots_seal:
+    usd_at_25mm: [120.0, 200.0, 400.0]   # Inconel C-ring 16-24 mm OD ~ $190-200; ~ D^0.8
+  cots_bearing:
+    usd_each: [2000.0, 5000.0, 10000.0]  # hybrid precision bearing ~$1,880 x 2-5 for cryogenic
+  cots_sensor:
+    PT_usd: [1500.0, 3000.0, 6000.0]     # Omega PX1005 cryogenic $1,500 (archived); flight units higher
+    ST_usd: [500.0, 1500.0, 3000.0]      # assumed
+  custom_valve:                          # body, ball/poppet, seals, EMA, acceptance test
+    usd_at_35kg: [100000.0, 250000.0, 600000.0]   # assumed; scales with (mass/35 kg)^0.7
+  custom_igniter:
+    usd_each: [5000.0, 15000.0, 30000.0] # assumed (turbine igniter plugs $1.4-2.4k as a floor)
+
+supplier_margin:                         # on every part bought to print from a supplier, any strategy
+  buy_to_print: [1.15, 1.25, 1.35]       # assumed
+
+assembly:                                # recurring assembly, inspection and acceptance
+  h_per_part: 2.0
+  h_per_bolted_joint: 4.0
+  h_per_weld: 8.0                        # incl. radiography
+  welds_conventional: 60                 # assumed count in the heritage build
+  welds_inhouse_am: 30
+  h_engine_integration: 400.0
+  qa_fraction: 0.08                      # inspection and paperwork on parts cost
+  acceptance_test_usd: [50000.0, 120000.0, 250000.0]   # SSC recurring ~$44k/test + $6.8k/s; commercial stand lower
+
+learning_rate:                           # NASA CEH 2002 sec. 7.6; TRANSCOST p = 0.85
+  assembly: 0.85
+  make: 0.90
+  cots: 0.87
+
+nre:                                     # bottom-up development (lean commercial programme)
+  design_hours:                          # engineering hours by subsystem, assumed
+    thrust_chamber: 60000
+    injector: 30000
+    turbopumps: 160000
+    preburners: 60000
+    valves_and_actuation: 40000
+    controls_and_avionics: 40000
+    systems_and_integration: 60000
+  dev_engines: [15, 25, 40]              # development engines built and tested, assumed
+  hot_fire_tests: [300, 500, 800]        # assumed
+  test_cost_usd: [150000.0, 300000.0, 670000.0]   # SSC 75 klbf TCA: $0.67M/test all-in
+  test_stand_usd: [30.0e+6, 60.0e+6, 120.0e+6]    # assumed
+  inhouse_am_capex_usd: [10.0e+6, 20.0e+6, 35.0e+6]  # 4 large L-PBF + DED cell + HIP access, assumed
+  inhouse_am_process_hours: 60000        # process development and qualification, assumed
+  conventional_tooling_usd: [3.0e+6, 6.0e+6, 12.0e+6]  # casting moulds, forging dies, braze fixtures, assumed
+  option_class_hours: {S: 2000, M: 10000, L: 40000, XL: 120000}
+  option_class_tests: {S: 0, M: 5, L: 20, XL: 60}
+
+option_costs:                            # recurring adders for options that change parts the BOM does not show
+  C1_bearing_premium: [1.5, 2.0, 3.0]    # hybrid Si3N4 vs steel cryogenic bearing, assumed
+  C2_hydrostatic_usd_per_position: [10000.0, 20000.0, 40000.0]   # assumed
+  C3_sx_blade_usd: [3000.0, 6000.0, 12000.0]   # small rocket-turbine SX blade, below the ~$15k aero blade
+  C4_ox_hot_section_premium: [0.2, 0.5, 1.0]   # burn-resistant alloy/coating on the ox turbine and OPB parts
+  C5_second_stage_premium: [0.4, 0.6, 0.8]     # extra turbine stage as a share of turbine hardware cost
+  I5_bimetallic_premium_usd: [20000.0, 50000.0, 100000.0]
+  N2_ignition_unit_usd: [20000.0, 50000.0, 100000.0]   # per preburner (laser head + driver), assumed
+  N3_motor_inverter_usd_per_kW: [100.0, 200.0, 400.0]
+  N3_battery_usd_per_kWh: [300.0, 600.0, 1000.0]
+  N4_alternator_usd_per_kW: [100.0, 200.0, 400.0]
+
+transcost:                               # Koelle TRANSCOST 8.2 via DLR (elib.dlr.de/202157)
+  dev_a: 277.0
+  dev_b: 0.48
+  f1: 1.3                                # new technical challenge (DLR used 1.3 for a closed-cycle engine)
+  f2: 1.0
+  f3: [0.7, 0.85, 1.0]                   # team experience
+  prod_a: 1.20                           # version A; version B is 1.9 M^0.535
+  prod_b: 0.54
+  wyr_usd: 390000.0                      # 370k EUR (2022, Springer 2025) ~ $390k
+svlcm:                                   # NASA SVLCM via UMD ENAE 483 (2023 $M, m = inert kg)
+  nre_a: 51.43
+  nre_b: 0.55
+  t1_a: 0.2829
+  t1_b: 0.662
+
+benchmarks_usd:                          # public statements (reliability in the report)
+  Raptor 1 (2019, "more than"): 2.0e+6
+  Raptor 2 (estimate): 1.0e+6
+  Raptor goal (~$1k per tf): 2.5e+5
+  RD-180 (ULA price 2014): 23.4e+6
+  RS-25 new production (OIG 2023): 104.5e+6

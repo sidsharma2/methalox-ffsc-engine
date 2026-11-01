@@ -1,0 +1,132 @@
+assembly,part,material,qty,volume_cm3,mass_kg,note
+Thrust_Chamber,Chamber_GRCop42_regen,GRCop-42,1,43952.9,158.98,L-PBF GRCop-42 liner + ribs (95 kg) with Inconel 718 closeout (64 kg); channels modelled in PicoGK
+Thrust_Chamber,Nozzle_In718_regen,Inconel 718,1,58478.5,152.48,"channel-wall nozzle eps 12-34, liner+ribs 124 kg, closeout 29 kg"
+Thrust_Chamber,Nozzle_joint_bolts,A286,38,267.6,2.12,38x M12
+Thrust_Chamber,Nozzle_joint_nuts_washers,A286,114,110.2,0.87,
+Thrust_Chamber,Coolant_outlet_manifold,Inconel 718,1,2407.8,19.72,collects chamber circuit A at the injector end; D-section printed onto the jacket (I2)
+Thrust_Chamber,Coolant_inlet_manifold_nozzle,Inconel 718,1,8088.4,66.24,split-flow inlet at the liner joint (eps 12); feeds circuit B down the nozzle and the jumpers
+Thrust_Chamber,Coolant_distribution_manifold_chamber,Inconel 718,1,1600.7,13.11,feeds circuit A up the copper chamber
+Thrust_Chamber,Coolant_jumper_1,Inconel 718,1,239.7,1.96,jumper across nozzle joint
+Thrust_Chamber,Jumper_1_flanges,Inconel 718,2,100.5,0.82,coolant_jumper flange pair
+Thrust_Chamber,Jumper_1_seal,PTFE/Inconel seal,1,0.5,0.0,metallic C-seal
+Thrust_Chamber,Jumper_1_bolts,Inconel 718,8,20.3,0.17,8x M8 Inconel 718
+Thrust_Chamber,Jumper_1_nuts_washers,Inconel 718,24,8.0,0.07,8 nuts + 16 washers
+Thrust_Chamber,Coolant_jumper_2,Inconel 718,1,239.7,1.96,jumper across nozzle joint
+Thrust_Chamber,Jumper_2_flanges,Inconel 718,2,100.5,0.82,coolant_jumper flange pair
+Thrust_Chamber,Jumper_2_seal,PTFE/Inconel seal,1,0.5,0.0,metallic C-seal
+Thrust_Chamber,Jumper_2_bolts,Inconel 718,8,20.3,0.17,8x M8 Inconel 718
+Thrust_Chamber,Jumper_2_nuts_washers,Inconel 718,24,8.0,0.07,8 nuts + 16 washers
+Thrust_Chamber,Coolant_jumper_3,Inconel 718,1,239.7,1.96,jumper across nozzle joint
+Thrust_Chamber,Jumper_3_flanges,Inconel 718,2,100.5,0.82,coolant_jumper flange pair
+Thrust_Chamber,Jumper_3_seal,PTFE/Inconel seal,1,0.5,0.0,metallic C-seal
+Thrust_Chamber,Jumper_3_bolts,Inconel 718,8,20.3,0.17,8x M8 Inconel 718
+Thrust_Chamber,Jumper_3_nuts_washers,Inconel 718,24,8.0,0.07,8 nuts + 16 washers
+Thrust_Chamber,Coolant_jumper_4,Inconel 718,1,239.7,1.96,jumper across nozzle joint
+Thrust_Chamber,Jumper_4_flanges,Inconel 718,2,100.5,0.82,coolant_jumper flange pair
+Thrust_Chamber,Jumper_4_seal,PTFE/Inconel seal,1,0.5,0.0,metallic C-seal
+Thrust_Chamber,Jumper_4_bolts,Inconel 718,8,20.3,0.17,8x M8 Inconel 718
+Thrust_Chamber,Jumper_4_nuts_washers,Inconel 718,24,8.0,0.07,8 nuts + 16 washers
+Thrust_Chamber,Coolant_exit_manifold,Inconel 718,1,7017.7,57.48,collects circuit B at the nozzle exit; stiffens the exit lip
+Injector_Head,Injector_AM_single_piece,Inconel 718,1,21393.3,175.21,"single-piece L-PBF injector (I4): plenum, faceplate, 173 posts, interpropellant plate"
+Injector_Head,Ox_dome,Inconel 718,1,7615.3,62.37,"ox-rich gas dome, carries thrust to the gimbal pad"
+Injector_Head,TVC_lug_pitch,Inconel 718,1,447.7,3.67,TVC actuator attach lug
+Injector_Head,TVC_lug_yaw,Inconel 718,1,447.7,3.67,TVC actuator attach lug
+Injector_Head,Injector_chamber_bolts,Inconel 718,22,2238.7,18.33,22x M27 Inconel 718
+Injector_Head,Injector_chamber_nuts_washers,Inconel 718,66,744.3,6.1,
+Gimbal,Gimbal_block,Ti-6Al-4V,1,2753.2,12.2,two-axis gimbal cross block
+Gimbal,Gimbal_pins,A286,2,966.6,7.68,pitch and yaw pins
+Gimbal,Gimbal_upper_yoke,Ti-6Al-4V,1,1217.4,5.39,vehicle-side yoke (thrust structure interface)
+Gimbal,Gimbal_pad_bolts,Inconel 718,12,151.8,1.24,12x M16 into tapped dome pad
+Gimbal,Gimbal_pad_washers,Inconel 718,12,17.2,0.14,
+Gimbal,Gimbal_lower_plate,Ti-6Al-4V,1,350.9,1.55,gimbal block base plate
+LOX_Turbopump,LOX_turbine_disk,SX500,1,1188.8,9.63,turbine disk (blisk hub)
+LOX_Turbopump,LOX_turbine_rotor_blades,SX500,83,13.9,0.11,"83 rotor blades, h 12.1 mm"
+LOX_Turbopump,LOX_turbine_stator_vanes,SX500,76,12.7,0.1,76 nozzle vanes
+LOX_Turbopump,LOX_stator_shrouds,SX500,1,151.7,1.23,nozzle ring shrouds
+LOX_Turbopump,LOX_turbine_housing,SX500,1,1833.4,14.85,turbine inlet housing; welded to preburner
+LOX_Turbopump,LOX_exhaust_collector,Inconel 718,1,5984.9,49.02,turbine exhaust collector
+LOX_Turbopump,LOX_bearing_housing,Inconel 718,1,1331.8,10.91,bearing housing
+LOX_Turbopump,LOX_bearing_1,M50/Si3N4 hybrid,1,106.2,0.76,"hybrid angular-contact bearing, Si3N4 balls (C1)"
+LOX_Turbopump,LOX_bearing_2,M50/Si3N4 hybrid,1,106.2,0.76,"hybrid angular-contact bearing, Si3N4 balls (C1)"
+LOX_Turbopump,LOX_kick_stage_housing,Inconel 718,1,900.3,7.37,kick stage: +32 bar for the ox flow to the FPB
+LOX_Turbopump,LOX_impeller1_hub,Inconel 718,1,850.5,6.97,"centrifugal impeller D2 277 mm, 6+6 blades"
+LOX_Turbopump,LOX_impeller1_shroud,Inconel 718,1,526.0,4.31,"centrifugal impeller D2 277 mm, 6+6 blades"
+LOX_Turbopump,LOX_impeller1_blades,Inconel 718,1,46.1,0.38,"centrifugal impeller D2 277 mm, 6+6 blades"
+LOX_Turbopump,LOX_pump_volute_casing,Inconel 718,1,5461.2,44.73,pump casing and volute; welded (no ISO bolt pattern fits)
+LOX_Turbopump,LOX_inducer_hub,Inconel 718,1,199.4,1.63,inducer hub
+LOX_Turbopump,LOX_inducer_blades,Inconel 718,3,240.6,1.97,"3-bladed helical inducer, tip angle 9 deg"
+LOX_Turbopump,LOX_inlet_housing,Inconel 718,1,2136.7,17.5,inducer housing and inlet duct
+LOX_Turbopump,LOX_shaft,Inconel 718,1,3596.7,29.46,"shaft D 80 mm (inducer stub D 43), 23237 rpm, torque 21.1 kN m"
+LOX_Turbopump,LOX_preburner_shell,SX500,1,2177.2,17.64,"ox-rich preburner 900 K, 688 bar, tau 3 ms"
+LOX_Turbopump,LOX_preburner_injector_head,SX500,1,2387.9,19.34,preburner injector head (liquid/liquid or liquid/supercritical)
+LOX_Turbopump,LOX_preburner_crossfeed_port,SX500,1,67.3,0.55,cross-feed inlet boss
+LOX_Turbopump,LOX_laser_igniter,Inconel 718,1,97.8,0.8,"laser ignition head, sapphire window, fibre-fed (N2); no GOX/GCH4 supply"
+LOX_Turbopump,LOX_bolts_ox_pump_inlet_housing,Inconel 718,14,25.9,0.21,14x M10 into tapped casing
+LOX_Turbopump,LOX_bolts_ox_bearing_housing,Inconel 718,12,22.2,0.18,12x M10 into tapped casing
+CH4_Turbopump,CH4_turbine_disk,MAR-M-247,1,491.8,4.2,turbine disk (blisk hub)
+CH4_Turbopump,CH4_turbine_rotor_blades,MAR-M-247,55,7.7,0.07,"55 rotor blades, h 10.1 mm"
+CH4_Turbopump,CH4_turbine_stator_vanes,MAR-M-247,48,6.7,0.06,48 nozzle vanes
+CH4_Turbopump,CH4_stator_shrouds,MAR-M-247,1,100.3,0.86,nozzle ring shrouds
+CH4_Turbopump,CH4_turbine_housing,Inconel 718,1,1598.0,13.09,turbine inlet housing; welded to preburner
+CH4_Turbopump,CH4_exhaust_collector,Inconel 718,1,4236.7,34.7,turbine exhaust collector
+CH4_Turbopump,CH4_bearing_housing,Inconel 718,1,1039.7,8.52,bearing housing
+CH4_Turbopump,CH4_hydrostatic_bearing_1,Inconel 718,1,106.7,0.87,"hydrostatic journal bearing, fed from CH4 pump discharge (C2)"
+CH4_Turbopump,CH4_hydrostatic_bearing_2,Inconel 718,1,106.7,0.87,"hydrostatic journal bearing, fed from CH4 pump discharge (C2)"
+CH4_Turbopump,CH4_impeller1_hub,Ti-6Al-4V,1,174.0,0.77,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_impeller1_shroud,Ti-6Al-4V,1,54.2,0.24,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_impeller1_blades,Ti-6Al-4V,1,9.3,0.04,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_impeller2_hub,Ti-6Al-4V,1,174.0,0.77,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_impeller2_shroud,Ti-6Al-4V,1,54.2,0.24,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_impeller2_blades,Ti-6Al-4V,1,9.3,0.04,"centrifugal impeller D2 148 mm, 6+6 blades"
+CH4_Turbopump,CH4_pump_volute_casing,Inconel 718,1,3387.2,27.74,pump casing and volute; welded (no ISO bolt pattern fits)
+CH4_Turbopump,CH4_inducer_hub,Ti-6Al-4V,1,99.4,0.44,inducer hub
+CH4_Turbopump,CH4_inducer_blades,Ti-6Al-4V,3,72.1,0.32,"3-bladed helical inducer, tip angle 9 deg"
+CH4_Turbopump,CH4_inlet_housing,304L,1,1530.2,12.09,inducer housing and inlet duct
+CH4_Turbopump,CH4_shaft,Inconel 718,1,1478.0,12.1,"shaft D 55 mm (inducer stub D 30), 56317 rpm, torque 8.1 kN m"
+CH4_Turbopump,CH4_preburner_shell,Inconel 718,1,4860.3,39.81,"fuel-rich preburner 1200 K, 716 bar, tau 8 ms"
+CH4_Turbopump,CH4_preburner_injector_head,Inconel 718,1,3487.7,28.56,preburner injector head (liquid/liquid or liquid/supercritical)
+CH4_Turbopump,CH4_preburner_crossfeed_port,Inconel 718,1,67.3,0.55,cross-feed inlet boss
+CH4_Turbopump,CH4_preburner_return_port,Inconel 718,1,119.6,0.98,nozzle-circuit return inlet boss (outboard)
+CH4_Turbopump,CH4_laser_igniter,Inconel 718,1,97.8,0.8,"laser ignition head, sapphire window, fibre-fed (N2); no GOX/GCH4 supply"
+CH4_Turbopump,CH4_bolts_fuel_pump_inlet_housing,Inconel 718,12,22.2,0.18,12x M10 into tapped casing
+CH4_Turbopump,CH4_bolts_fuel_bearing_housing,Inconel 718,12,22.2,0.18,12x M10 into tapped casing
+Plumbing,Ox_hot_gas_weld,Inconel 718,1,241.8,1.98,ox_hot_gas: collector welded to the injector inlet through a short spool (I1)
+Plumbing,Fuel_hot_gas_weld,Inconel 718,1,219.2,1.8,fuel_hot_gas: collector welded to the injector inlet through a short spool (I1)
+Plumbing,LOX_inlet_interface_flanges,Inconel 718,2,634.4,5.2,lox_inlet flange pair
+Plumbing,LOX_inlet_interface_seal,PTFE/Inconel seal,1,2.4,0.02,metallic C-seal
+Plumbing,LOX_inlet_interface_bolts,A286,16,69.0,0.55,16x M10 A286
+Plumbing,LOX_inlet_interface_nuts_washers,A286,48,30.5,0.24,16 nuts + 32 washers
+Plumbing,CH4_inlet_interface_flanges,Inconel 718,2,568.3,4.65,ch4_inlet flange pair
+Plumbing,CH4_inlet_interface_seal,PTFE/Inconel seal,1,2.1,0.02,metallic C-seal
+Plumbing,CH4_inlet_interface_bolts,A286,14,60.4,0.48,14x M10 A286
+Plumbing,CH4_inlet_interface_nuts_washers,A286,42,26.7,0.21,14 nuts + 28 washers
+Plumbing,LOX_discharge_duct,Inconel 718,1,10191.4,83.47,LOX pump -> MOV -> OPB
+Plumbing,LOX_discharge_duct_A_weld,Inconel 718,1,10.6,0.09,"lox_discharge butt weld, radiographed (I1/I3)"
+Plumbing,LOX_discharge_duct_B_weld,Inconel 718,1,10.6,0.09,"lox_discharge butt weld, radiographed (I1/I3)"
+Plumbing,MOV_main_ox_valve,Inconel 718,1,4522.4,37.04,"main oxidiser valve (ball, electromechanical actuator)"
+Plumbing,CH4_discharge_duct,Inconel 718,1,9005.7,73.76,CH4 pump -> MFV -> jacket inlet manifold
+Plumbing,CH4_discharge_duct_A_weld,Inconel 718,1,9.7,0.08,"ch4_discharge butt weld, radiographed (I1/I3)"
+Plumbing,CH4_discharge_duct_B_weld,Inconel 718,1,9.7,0.08,"ch4_discharge butt weld, radiographed (I1/I3)"
+Plumbing,MFV_main_fuel_valve,Inconel 718,1,4206.1,34.45,main fuel valve
+Plumbing,FPB_feed_duct,Inconel 718,1,2780.4,22.77,jacket circuit A -> FPB
+Plumbing,FPB_feed_duct_A_weld,Inconel 718,1,7.5,0.06,"fpb_feed butt weld, radiographed (I1/I3)"
+Plumbing,FPB_feed_duct_B_weld,Inconel 718,1,7.5,0.06,"fpb_feed butt weld, radiographed (I1/I3)"
+Plumbing,Nozzle_return_duct,Inconel 718,1,4494.5,36.81,jacket circuit B -> FPB (orificed to circuit A pressure)
+Plumbing,Nozzle_return_duct_A_weld,Inconel 718,1,7.5,0.06,"nozzle_return butt weld, radiographed (I1/I3)"
+Plumbing,Nozzle_return_duct_B_weld,Inconel 718,1,7.5,0.06,"nozzle_return butt weld, radiographed (I1/I3)"
+Plumbing,Ox_crossfeed_line,Inconel 718,1,1474.2,12.07,LOX kick stage -> FPOV -> FPB
+Plumbing,Ox_crossfeed_line_A_weld,Inconel 718,1,3.6,0.03,"ox_crossfeed butt weld, radiographed (I1/I3)"
+Plumbing,Ox_crossfeed_line_B_weld,Inconel 718,1,3.6,0.03,"ox_crossfeed butt weld, radiographed (I1/I3)"
+Plumbing,FPOV_fuel_preburner_ox_valve,Inconel 718,1,2360.4,19.33,fuel preburner oxidiser valve
+Plumbing,Fuel_crossfeed_line,Inconel 718,1,1336.5,10.95,CH4 discharge tap -> OPFV -> OPB
+Plumbing,Fuel_crossfeed_line_A_weld,Inconel 718,1,3.0,0.02,"fuel_crossfeed butt weld, radiographed (I1/I3)"
+Plumbing,Fuel_crossfeed_line_B_weld,Inconel 718,1,3.0,0.02,"fuel_crossfeed butt weld, radiographed (I1/I3)"
+Plumbing,OPFV_ox_preburner_fuel_valve,Inconel 718,1,2203.8,18.05,oxidiser preburner fuel valve
+Plumbing,Fuel_crossfeed_tee,Inconel 718,1,38.7,0.32,tee boss on the CH4 discharge duct
+Plumbing,OX_igniter_bolts,Inconel 718,4,1.8,0.01,4x M6 igniter flange
+Plumbing,FUEL_igniter_bolts,Inconel 718,4,1.8,0.01,4x M6 igniter flange
+Instrumentation,PT_101_chamber_pressure,A286,1,15.4,0.12,PT-101_chamber_pressure
+Instrumentation,PT_201_LOX_pump_discharge,A286,1,15.4,0.12,PT-201_LOX_pump_discharge
+Instrumentation,PT_301_CH4_pump_discharge,A286,1,15.4,0.12,PT-301_CH4_pump_discharge
+Instrumentation,ST_202_LOX_TPA_speed,A286,1,15.4,0.12,ST-202_LOX_TPA_speed
+Instrumentation,ST_302_CH4_TPA_speed,A286,1,15.4,0.12,ST-302_CH4_TPA_speed

@@ -30,6 +30,7 @@ from scipy.optimize import brentq, least_squares
 
 CFD = Path(__file__).resolve().parent
 ROOT = CFD.parent
+RES = ROOT / "results"                  # design results; --results points at an iteration build
 sys.path.insert(0, str(ROOT))
 
 OF_BASHRC = "/usr/lib/openfoam/openfoam2306/etc/bashrc"
@@ -248,7 +249,7 @@ def build_mesh(args, design, gm, xc, rc):
     N_lip = max(6, 2 * int(round(6 * res)))
     Twg = None
     if args.wall_thermal == "profile":
-        cp_ = np.genfromtxt(ROOT / "results" / "cooling_profile.csv", delimiter=",", names=True)
+        cp_ = np.genfromtxt(RES / "cooling_profile.csv", delimiter=",", names=True)
         Twg = lambda x: float(np.interp(x, cp_["x"], cp_["Twg"]))
 
     names = ["inlet", "cyl_end", "throat", "eps4", "eps15", "exit"]
@@ -446,8 +447,10 @@ def field_files(info, arrays=None):
     p = [("inlet", [("type", "totalPressure"), ("p0", f"uniform {p0:.9g}"), ("psi", "thermo:psi"),
                     ("gamma", G), ("value", f"uniform {p0:.9g}")]),
          (f'"{walls_all}"', [("type", "zeroGradient")]),
-         ('"ambient_.*"', [("type", "totalPressure"), ("p0", f"uniform {pa:.9g}"), ("psi", "thermo:psi"),
-                           ("gamma", G), ("value", f"uniform {pa:.9g}")]),
+         # static-pressure far field: a total-pressure inflow sets p = p0 - rho U^2 / 2 and collapsed to
+         # negative density at r = 5 Re when the plume's starting vortex drove fast entrainment (run 1, it 2,194)
+         ('"ambient_.*"', [("type", "waveTransmissive"), ("psi", "thermo:psi"), ("gamma", G),
+                           ("fieldInf", f"{pa:.9g}"), ("lInf", f"{bcd['lInf']:.4g}"), ("value", f"uniform {pa:.9g}")]),
          ("outlet", [("type", "waveTransmissive"), ("psi", "thermo:psi"), ("gamma", G),
                      ("fieldInf", f"{pa:.9g}"), ("lInf", f"{bcd['lInf']:.4g}"), ("value", f"uniform {pa:.9g}")])]
     files["p"] = ("volScalarField", "[1 -1 -2 0 0 0 0]", pa, "scalar", p)
@@ -468,9 +471,7 @@ def field_files(info, arrays=None):
                     ("gamma", G), ("value", f"uniform {T0:.9g}")]),
          (f'"{walls_inner}"', Tw),
          (f'"{walls_other}"', [("type", "zeroGradient")]),
-         ('"ambient_.*"', [("type", "inletOutletTotalTemperature"), ("psi", "thermo:psi"), ("gamma", G),
-                           ("inletValue", f"uniform {Ta:.6g}"), ("T0", f"uniform {Ta:.6g}"),
-                           ("value", f"uniform {Ta:.6g}")]),
+         ('"ambient_.*"', [("type", "inletOutlet"), ("inletValue", f"uniform {Ta:.6g}"), ("value", f"uniform {Ta:.6g}")]),
          ("outlet", [("type", "inletOutlet"), ("inletValue", f"uniform {Ta:.6g}"), ("value", f"uniform {Ta:.6g}")])]
     files["T"] = ("volScalarField", "[0 0 0 1 0 0 0]", Ta, "scalar", T)
 
@@ -653,7 +654,7 @@ timeFormat      general;
 timePrecision   8;
 runTimeModifiable true;
 adjustTimeStep  no;
-maxCo           {run['stages'][0][0]:g};        // Allrun ramps 0.1 -> 0.25 -> 0.5
+maxCo           {run['stages'][0][0]:g};        // Allrun ramps 0.1 -> 0.15 -> 0.3 -> 0.5
 maxDeltaT       1;          // upper bound of the local time step [s], not active
 rDeltaTSmoothingCoeff 0.2;  // max ratio of neighbouring local time steps = 1.2
 """
@@ -953,7 +954,7 @@ def initial_fields(case, info):
     C = read_cell_centres(case)
     gas, m, bcd = info["gas"], info["mesh"], info["bc"]
     g, R, p0, T0 = gas["gamma"], gas["R"], bcd["p0"], bcd["T0"]
-    con = np.loadtxt(ROOT / "results" / "contour.csv", delimiter=",", skiprows=1)
+    con = np.loadtxt(RES / "contour.csv", delimiter=",", skiprows=1)
     xc, rc = con[:, 0], con[:, 1]
     Rt, Re, x_t, x_e = m["Rt"], m["Re"], m["x_throat"], m["x_exit"]
     slope = np.gradient(rc, xc)
@@ -1038,11 +1039,15 @@ def main():
     ap.add_argument("--iters", type=int, default=40000, help="LTS iterations (end of stage 3)")
     ap.add_argument("--nprocs", type=int, default=8)
     ap.add_argument("--name", default=None)
+    ap.add_argument("--results", default=None, help="results directory of an iteration build (default: results/)")
     ap.add_argument("--distro", default="Ubuntu-22.04", help="WSL distro with OpenFOAM v2306")
     ap.add_argument("--force", action="store_true", help="overwrite an existing case directory")
     ap.add_argument("--mesh", action="store_true", help="also run Allmesh in WSL and write the initial field")
     ap.add_argument("--init-only", action="store_true", help="only write the initial field (needs 0/C from Allmesh)")
     args = ap.parse_args()
+    global RES
+    if args.results:
+        RES = Path(args.results).resolve()
 
     name = args.name or ("mfe280_sl_axi" + ("" if abs(args.pc_frac - 1) < 1e-9 else f"_pc{round(100 * args.pc_frac):03d}"))
     case = CFD / "cases" / name
@@ -1053,8 +1058,8 @@ def main():
         print("initial field:", json.dumps(rep))
         return
 
-    design = json.loads((ROOT / "results" / "design.json").read_text())
-    con = np.loadtxt(ROOT / "results" / "contour.csv", delimiter=",", skiprows=1)
+    design = json.loads((RES / "design.json").read_text())
+    con = np.loadtxt(RES / "contour.csv", delimiter=",", skiprows=1)
     xc, rc = con[:, 0], con[:, 1]
     gm = gas_model(design, args.gas, args.pc_frac)
     if abs(args.pc_frac - 1) < 1e-9 and abs(gm["Tc"] - design["performance"]["Tc_core"]) > 1.0:
@@ -1076,7 +1081,7 @@ def main():
            "k_in": k_in, "omega_in": w_in, "mixing_length": l_mix, "k_amb": k_a, "omega_amb": w_a,
            "lInf": mesh["x_far"] - mesh["x_exit"], "rho_amb": rho_a}
     if args.wall_thermal == "profile":
-        cp_ = np.genfromtxt(ROOT / "results" / "cooling_profile.csv", delimiter=",", names=True)
+        cp_ = np.genfromtxt(RES / "cooling_profile.csv", delimiter=",", names=True)
         idx = np.unique(np.linspace(0, len(cp_) - 1, 80).astype(int))
         bcd["Twg_table"] = [[float(cp_["x"][i]), float(cp_["Twg"][i])] for i in idx]
 
@@ -1085,7 +1090,9 @@ def main():
     c_w = math.sqrt(gas["gamma"] * gas["R"] * th["Taw"])
     dt_est = 0.4 / (c_w / th["h"] + (th["u"] + c_w) / th["dx"])
     if args.time_mode == "lts":
-        stages = [(0.1, 2000), (0.25, 6000), (0.5, max(args.iters, 8000))]
+        # gentler ramp: the plume's starting vortex (x ~ 8 m) over-expands to ~250 K / 17 kPa and the
+        # first run hit a floating-point exception when maxCo jumped from 0.1 to 0.25 at iteration 2,000
+        stages = [(0.1, 2000), (0.15, 8000), (0.3, 16000), (0.5, max(args.iters, 20000))]
         write_interval = 2000
         n_steps = stages[-1][1]
     else:

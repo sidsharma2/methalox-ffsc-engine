@@ -1,0 +1,33 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig02_cooling.csv}{\cool}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=1 by 3, vertical sep=0.72cm, x descriptions at=edge bottom},
+    width=15.1cm, height=3.7cm, xmin=-102.499, xmax=2152.49]
+\nextgroupplot[ymin=-1.25896, ymax=125.99, ylabel={heat flux (MW\,m$^{-2}$)}]
+  \addplot[cR] table[x=x, y=q] {\cool};
+  \draw[cK, refline] (axis cs:976.147,-1.25896) -- (axis cs:976.147,125.99);
+  \node[ann, anchor=north west, align=left] at (axis cs:991.147,113.265) {coolant enters at the joint:\\circuit A runs up, circuit B runs down};
+\nextgroupplot[ymin=87.4602, ymax=991.073, ylabel={temperature (K)},
+    legend style={at={(0.5,1.03)}, anchor=south, legend columns=3, fill=none}]
+  \addplot[cR] table[x=x, y=Twg] {\cool};
+  \addlegendentry{$T_{wg}$ hot wall}
+  \addplot[cFu] table[x=x, y=Twc] {\cool};
+  \addlegendentry{$T_{wc}$ coolant-side wall}
+  \addplot[cOx] table[x=x, y=Tb] {\cool};
+  \addlegendentry{$T_b$ methane bulk}
+  \draw[cK, refline] (axis cs:-102.499,880) -- (axis cs:2152.49,880);
+  \draw[cK, refline] (axis cs:-102.499,950) -- (axis cs:2152.49,950);
+  \draw[cK, refline] (axis cs:976.147,87.4602) -- (axis cs:976.147,991.073);
+\nextgroupplot[ymin=779.978, ymax=909.115, ytick pos=left, ylabel={pressure (bar)},
+    xlabel={axial distance from injector face (mm)}]
+  \addplot[cK] table[x=x, y=p] {\cool};
+  \draw[cK, refline] (axis cs:976.147,779.978) -- (axis cs:976.147,909.115);
+\end{groupplot}
+\begin{axis}[twin=cG, at={(group c1r3.south west)}, anchor=south west, width=15.1cm, height=3.7cm,
+    xmin=-102.499, xmax=2152.49, ymin=3.04082, ymax=89.7165, ylabel={velocity (m\,s$^{-1}$)}]
+  \addplot[cG, line width=0.7pt] table[x=x, y=v] {\cool};
+\end{axis}
+\end{tikzpicture}
+\end{document}

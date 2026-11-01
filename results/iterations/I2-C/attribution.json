@@ -1,0 +1,189 @@
+{
+  "build": "I2-C",
+  "reference": "I2_uprate400",
+  "mass_kg": 1575.6,
+  "ref_mass_kg": 1616.05,
+  "d_mass_kg": -40.450000000000045,
+  "thrust_to_weight": 177.71900995413756,
+  "ref_thrust_to_weight": 173.2706736077096,
+  "bom_items": [
+    131,
+    176
+  ],
+  "pieces": [
+    946,
+    1813
+  ],
+  "unit_cost_T1": {
+    "P10": 2709928.4289907175,
+    "P50": 3206953.497099519,
+    "P90": 3805859.5820595045
+  },
+  "ref_unit_cost_T1": {
+    "P10": 2689977.531571422,
+    "P50": 3187707.9142049365,
+    "P90": 3791422.2764953286
+  },
+  "non_bom_adders_P50": {
+    "C3": 566443.5333751477,
+    "C4": 123284.11472031983,
+    "C5": 42996.73288802496
+  },
+  "unit_cost_T1_P50_with_adders": 3939677.878083011,
+  "d_unit_cost_P50": 17648.650125873042,
+  "assembly_hours": [
+    1018.0,
+    952.0
+  ],
+  "by_group": [
+    {
+      "group": "bearings",
+      "option": "C1/C2",
+      "d_mass_kg": -1.4,
+      "d_items": -2,
+      "d_pieces": -2
+    },
+    {
+      "group": "coolant_manifolds",
+      "option": "I2",
+      "d_mass_kg": 22.589999999999975,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    {
+      "group": "ducts",
+      "option": "I1/I3",
+      "d_mass_kg": 10.570000000000022,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    {
+      "group": "fasteners",
+      "option": "I1/I3",
+      "d_mass_kg": -25.97999999999999,
+      "d_items": -28,
+      "d_pieces": -664
+    },
+    {
+      "group": "flanges",
+      "option": "I1/I3",
+      "d_mass_kg": -83.62,
+      "d_items": -14,
+      "d_pieces": -28
+    },
+    {
+      "group": "hot_gas_housings",
+      "option": "cycle/other",
+      "d_mass_kg": 1.5500000000000114,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    {
+      "group": "hydrostatic_bearings",
+      "option": "C1/C2",
+      "d_mass_kg": 1.74,
+      "d_items": 2,
+      "d_pieces": 2
+    },
+    {
+      "group": "igniters",
+      "option": "N2",
+      "d_mass_kg": -3.44,
+      "d_items": -2,
+      "d_pieces": -2
+    },
+    {
+      "group": "injector_posts",
+      "option": "I4",
+      "d_mass_kg": -14.63,
+      "d_items": -1,
+      "d_pieces": -173
+    },
+    {
+      "group": "injector_single_piece",
+      "option": "I4",
+      "d_mass_kg": 175.21,
+      "d_items": 1,
+      "d_pieces": 1
+    },
+    {
+      "group": "injector_structure",
+      "option": "I4",
+      "d_mass_kg": -160.59000000000003,
+      "d_items": -3,
+      "d_pieces": -3
+    },
+    {
+      "group": "jumpers",
+      "option": "cycle/other",
+      "d_mass_kg": 2.24,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    {
+      "group": "laser_igniters",
+      "option": "N2",
+      "d_mass_kg": 1.6,
+      "d_items": 2,
+      "d_pieces": 2
+    },
+    {
+      "group": "preburners",
+      "option": "K1",
+      "d_mass_kg": 29.35000000000001,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    {
+      "group": "seals",
+      "option": "I1/I3",
+      "d_mass_kg": -0.09999999999999998,
+      "d_items": -14,
+      "d_pieces": -14
+    },
+    {
+      "group": "welds",
+      "option": "I1/I3",
+      "d_mass_kg": 4.459999999999998,
+      "d_items": 14,
+      "d_pieces": 14
+    }
+  ],
+  "by_option": {
+    "C1/C2": {
+      "d_mass_kg": 0.3400000000000001,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    "I2": {
+      "d_mass_kg": 22.589999999999975,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    "I1/I3": {
+      "d_mass_kg": -94.66999999999997,
+      "d_items": -42,
+      "d_pieces": -692
+    },
+    "cycle/other": {
+      "d_mass_kg": 3.7900000000000116,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    "N2": {
+      "d_mass_kg": -1.8399999999999999,
+      "d_items": 0,
+      "d_pieces": 0
+    },
+    "I4": {
+      "d_mass_kg": -0.010000000000019327,
+      "d_items": -3,
+      "d_pieces": -175
+    },
+    "K1": {
+      "d_mass_kg": 29.35000000000001,
+      "d_items": 0,
+      "d_pieces": 0
+    }
+  }
+}

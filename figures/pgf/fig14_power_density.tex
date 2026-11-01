@@ -1,0 +1,32 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig14_sources.csv}{\src}
+\pgfplotstableread[col sep=comma]{data/fig14_concepts.csv}{\conc}
+\pgfplotstableread[col sep=comma]{data/fig14_references.csv}{\refs}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=4.3cm},
+    width=3.95cm, height=7cm, xmode=log, ymin=-0.6, ymax=8.6, ytick={0,...,8},
+    yticklabel style={align=right}, ytick style={draw=none}]
+\nextgroupplot[xmin=0.003, xmax=3e4, xtick={1e-2,1,1e2,1e4}, yticklabels={{fission reactor\\(SP-100 $\bullet$, Kilopower $\circ$)},{Li-ion pack},{next-gen cells},{shaft alternator + inverter},{engine turbopumps (this design)},{Plasma in the FPB\\to double its kinetic margin},{Electric drive on the LOX shaft\\to reach 400 bar},{Electric boost pumps,\\inlet 6 $\rightarrow$ 10 bar},{Plasma or laser start ignition}}, xlabel={specific power (kW/kg)},
+    title={(a) power: sources ($\bullet$) and what each concept needs ($\blacktriangledown$)}]
+  \draw[cK, line width=0.45pt] (axis cs:0.003,4.5) -- (axis cs:3e4,4.5);
+  \addplot[scatter, only marks, mark=*, mark size=2.2pt, scatter src=explicit symbolic,
+      scatter/classes={fissionmicroreactor={cR, fill=cR},liionhighpower={cOx, fill=cOx},nextgencells={cG, fill=cG},shaftalternator={cFu, fill=cFu}}] table[x=kW_per_kg, y=row, meta=key] {\src};
+  \addplot[only marks, mark=o, mark size=2.2pt, cR, line width=0.7pt] table[x=kilopower_kW_per_kg, y=row] {\refs};
+  \addplot[only marks, mark=square*, mark size=2.1pt, cK] table[x=turbomachinery_kW_per_kg, y=row] {\refs};
+  \addplot[only marks, mark=triangle*, mark size=2.6pt, mark options={rotate=180}, cP] table[x=req_kW_per_kg, y=row] {\conc};
+  \node[ann, text=cP, anchor=west] at (axis cs:0.005,7) {no mass budget left};
+\nextgroupplot[xmin=1, xmax=1e6, xtick={1,1e2,1e4,1e6}, yticklabels={{fission reactor\\(SP-100 $\bullet$, Kilopower $\circ$)},{Li-ion pack},{next-gen cells},{shaft alternator + inverter},{CH$_4$/O$_2$ propellant, chemical},{Plasma in the FPB\\to double its kinetic margin},{Electric drive on the LOX shaft\\to reach 400 bar},{Electric boost pumps,\\inlet 6 $\rightarrow$ 10 bar},{Plasma or laser start ignition}},
+    xlabel={specific energy over a 170 s burn (Wh/kg)}, title={(b) energy}]
+  \draw[cK, line width=0.45pt] (axis cs:1,4.5) -- (axis cs:1e6,4.5);
+  \addplot[scatter, only marks, mark=*, mark size=2.2pt, scatter src=explicit symbolic,
+      scatter/classes={fissionmicroreactor={cR, fill=cR},liionhighpower={cOx, fill=cOx},nextgencells={cG, fill=cG},shaftalternator={cFu, fill=cFu}}] table[x=Wh_per_kg, y=row, meta=key] {\src};
+  \addplot[only marks, mark=square*, mark size=2.1pt, cK] table[x=propellant_Wh_per_kg, y=row] {\refs};
+  \addplot[only marks, mark=triangle*, mark size=2.6pt, mark options={rotate=180}, cP] table[x=req_Wh_per_kg, y=row] {\conc};
+  \node[ann, text=cP, anchor=west] at (axis cs:1.3,7) {no mass budget left};
+  \node[ann, text=cR, anchor=west, align=left] at (axis cs:1.3,0) {energy not limiting\\(fission fuel)};
+  \node[ann, text=cFu, anchor=west, align=left] at (axis cs:1.3,3) {energy not limiting\\(turbines)};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

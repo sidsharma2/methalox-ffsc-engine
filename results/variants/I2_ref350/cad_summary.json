@@ -1,0 +1,19 @@
+{
+  "name": "I2_ref350",
+  "mass_kg": 1795.8199999999983,
+  "by_assembly_kg": {
+    "Thrust_Chamber": 485.3799999999999,
+    "Injector_Head": 287.30000000000007,
+    "Gimbal": 28.2,
+    "LOX_Turbopump": 354.51,
+    "CH4_Turbopump": 207.99000000000007,
+    "Plumbing": 431.83999999999986,
+    "Instrumentation": 0.6
+  },
+  "clashes": 0,
+  "envelope_mm": [
+    2216.049955905396,
+    1650.9355782768184,
+    3354.4764898945905
+  ]
+}

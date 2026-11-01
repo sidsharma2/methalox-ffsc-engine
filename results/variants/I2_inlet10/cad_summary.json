@@ -1,0 +1,19 @@
+{
+  "name": "I2_inlet10",
+  "mass_kg": 1638.4199999999994,
+  "by_assembly_kg": {
+    "Thrust_Chamber": 483.6599999999999,
+    "Injector_Head": 287.2900000000001,
+    "Gimbal": 28.2,
+    "LOX_Turbopump": 251.82000000000005,
+    "CH4_Turbopump": 164.38,
+    "Plumbing": 422.4699999999998,
+    "Instrumentation": 0.6
+  },
+  "clashes": 0,
+  "envelope_mm": [
+    2028.0128801582941,
+    1650.84759154044,
+    3262.3594299063257
+  ]
+}

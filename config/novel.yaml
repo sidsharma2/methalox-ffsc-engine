@@ -1,0 +1,46 @@
+# Inputs for the novel-technology options (ffsc/plasma.py, scripts/run_pac.py, scripts/run_options.py).
+# "assumed" = engineering assumption. Sourced values give the reference; full list in docs/DESIGN_REPORT.md.
+
+burn_s: 170.0                    # booster burn duration used to size energy-limited sources (assumed)
+
+plasma:
+  # Energy branching is only measured in air (N2-mediated); used here as order-of-magnitude priors.
+  alpha_O: 0.35                  # share of discharge energy to O2 dissociation, NRP spark in air (Rusterholtz et al. 2013, J. Phys. D 46 135204)
+  eps_O_eV: 7.3                  # eV per O atom implied by the same data (2.56 eV / 0.35)
+  alpha_O_range: [0.10, 0.50]    # Shkurenkov & Adamovich 2016 (~10 %) to the upper end of Boltzmann-solver estimates
+  eps_O_eV_range: [4.2, 25.0]    # electron-impact threshold (8.4 eV channel / 2) to the 10 % share case
+  EN_breakdown_Td: 100.0         # Paschen breakdown field at large pd (~100 Td); NRP pulses run 2-3x overvolted
+  pulser_kV: 30.0                # compact nanosecond pulser amplitude (assumed)
+  gap_mm: 1.0
+  demonstrated_NRP_bar: 12.0     # highest pressure with a non-equilibrium discharge benefit (Xu, Lacoste, Laux 2016: 10 bar; Pannier et al. 2022: 12 bar)
+  demonstrated_laser_bar: 40.0   # laser ignition of CH4/air (Kopecek et al. 2003)
+  flame_power_fraction: [0.0006, 0.01]   # plasma / flame power in lean-stabilisation tests at 1 atm (Blanchard et al.; Laux)
+  e_p_J_kg: [0.0, 1.0e3, 3.0e3, 1.0e4, 3.0e4, 1.0e5]   # specific plasma energy sweep
+
+power_sources:                   # pack / system level
+  li_ion_high_power: {kW_per_kg: 1.2, Wh_per_kg: 170.0, packaging_factor: 1.0}   # Formula E Gen3 pack: 350 kW, 284 kg, 47-51 kWh
+  next_gen_cells:    {kW_per_kg: 2.0, Wh_per_kg: 240.0, packaging_factor: 1.0}   # Amprius SiCore cells (3-3.5 kW/kg, 370 Wh/kg) x 0.65 pack factor (assumed)
+  shaft_alternator:  {kW_per_kg: 5.0, packaging_factor: 1.0}                     # generator ~8 kW/kg (Honeywell 1 MW) + SiC inverter; power-limited only
+  fission_microreactor: {kW_per_kg: 0.036, packaging_factor: 1.0}                # SP-100: 100 kWe, 2,770 kg (Kilopower 10 kWe: 0.0067 kW/kg)
+
+boost_pump:
+  p_inlet_from_bar: 6.0
+  p_inlet_to_bar: 10.0
+  eta_pump: 0.65                 # small single-stage boost pump (assumed)
+  eta_motor_inverter: 0.92       # assumed
+  motor_inverter_kW_per_kg: 5.0  # same machine class as the shaft alternator
+  pump_hardware_kg: 40.0         # two boost pumps and housings (assumed)
+
+alternator:
+  power_kW: 150.0                # EMAs on the main valves, igniters, controller, sensors (assumed)
+  kW_per_kg: 5.0
+
+bearings:                        # practical DN limits, million (bore mm x rpm), assumed from turbopump practice
+  steel_440C_cryogenic: 1.8
+  hybrid_Si3N4: 3.0
+  hydrostatic: null              # no rolling-element limit
+
+pattern_factor:                  # PF = (T_peak - T_mean) / (T_mean - T_inlet)
+  T_inlet_K: 100.0               # liquid oxygen injection (assumed)
+  PF_baseline: 0.20              # assumed for a first-iteration ox-rich preburner
+  PF_improved: 0.10              # target with a mixing-optimised injector (assumed)

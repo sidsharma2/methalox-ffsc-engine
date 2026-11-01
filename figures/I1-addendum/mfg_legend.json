@@ -1,0 +1,20 @@
+{
+  "classes": [
+    "lpbf",
+    "ded",
+    "cast",
+    "forging",
+    "fab",
+    "custom",
+    "cots"
+  ],
+  "colours": {
+    "lpbf": "#E8833A",
+    "ded": "#C0392B",
+    "cast": "#8E5DB5",
+    "forging": "#2F76BE",
+    "fab": "#3E9B4F",
+    "custom": "#E2B21C",
+    "cots": "#8C8F96"
+  }
+}

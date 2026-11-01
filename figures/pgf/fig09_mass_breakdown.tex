@@ -1,0 +1,14 @@
+\documentclass[border=1.5pt]{standalone}
+\input{style.tex}
+\begin{document}
+\pgfplotstableread[col sep=comma]{data/fig09_mass.csv}{\mass}
+\begin{tikzpicture}
+\begin{axis}[width=4.5cm, height=4.3cm, xbar, bar width=0.8, xmin=0, xmax=583.69, ymin=-0.6, ymax=5.6,
+    xtick distance=100, ytick={0,...,5}, yticklabels={{gimbal},{CH$_4$ turbopump + FPB},{injector head},{LOX turbopump + OPB},{ducts, valves, flanges},{thrust chamber + manifolds}}, xlabel={modelled mass (kg)},
+    title={CAD mass roll-up 1868 kg\\(Raptor 3: 1525 kg engine only)}, title style={font=\footnotesize, align=center},
+    nodes near coords={\pgfmathprintnumber[fixed, precision=0]{\pgfplotspointmeta}}, point meta=x,
+    nodes near coords style={font=\footnotesize, anchor=west, inner sep=2pt}]
+  \addplot[draw=none, fill=cIn] table[x=mass, y=y] {\mass};
+\end{axis}
+\end{tikzpicture}
+\end{document}

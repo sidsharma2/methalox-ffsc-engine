@@ -1,11 +1,12 @@
 """Extract 2-D drawing geometry from the FreeCAD model (run with freecadcmd).
 
     set MFE_VIEWS=tca,inj,tpo,tpf,ga_front,ga_side,ga_top   (default: all)
+    set FFSC_ITER=I2-C                                       (default: iteration 1)
     "C:\\Program Files\\FreeCAD 1.1\\bin\\freecadcmd.exe" drawings\\src\\extract_views.py
 
-The model file is copied to a temporary folder and opened from there, so the
-original cad/output/MFE280.FCStd is never written. Each view is written to
-drawings/build/<view>.json in view coordinates (model mm, x right, y up):
+The model file of the selected iteration (itercfg.CAD/MFE280.FCStd) is copied to a temporary
+folder and opened from there, so the original is never written. Each view is written to
+<out>/build/<view>.json (itercfg.BUILD) in view coordinates (model mm, x right, y up):
 
   visible   exact HLR (TechDraw.projectEx) of everything beyond the cutting plane:
             sharp edges + silhouettes, as polylines
@@ -17,12 +18,17 @@ drawings/build/<view>.json in view coordinates (model mm, x right, y up):
 Section views use the conventional representation for fasteners on bolt circles:
 one bolt per side is rotated into the cutting plane, drawn whole (not cut), and
 the holes it passes through are drilled in the cut faces.
+
+Parts missing from a model (later iterations rename or remove parts) are skipped. Weld-bead
+rings (*_weld) near a section view are added to it with category 'weld' (cut face filled, kept
+half drawn by HLR) so that the sheets can carry ISO 2553 weld symbols.
 """
 
 import json
 import math
 import os
 import shutil
+import sys
 import tempfile
 import time
 
@@ -32,10 +38,13 @@ import TechDraw
 from FreeCAD import Vector as V
 
 ROOT = os.environ.get("MFE_ROOT", r"D:\Research\projects\methalox-ffsc-engine")
-SRC = os.path.join(ROOT, "cad", "output", "MFE280.FCStd")
-OUT = os.path.join(ROOT, "drawings", "build")
+sys.path.insert(0, os.path.join(ROOT, "drawings", "src"))
+import itercfg  # noqa: E402
+
+SRC = str(itercfg.CAD / "MFE280.FCStd")
+OUT = str(itercfg.BUILD)
 os.makedirs(OUT, exist_ok=True)
-D = json.load(open(os.path.join(ROOT, "results", "design.json"), encoding="utf-8"))
+D = itercfg.DESIGN
 J = {j["name"]: j for j in D["joints"]}
 JI = {j["name"]: j for j in D["internal_joints"]}
 
@@ -61,8 +70,9 @@ PRE_ROT = {}          # object name -> angle (deg) about the global z axis (conv
 LARGEST_SOLID_ONLY = {"Coolant_jumper_1", "Coolant_jumper_2", "Coolant_jumper_3", "Coolant_jumper_4"}
 
 
-def shape_in(o, frame):
-    """Copy of the object's shape in the global frame or in its App::Part frame."""
+def shape_in(o, frame, frame_group=None):
+    """Copy of the object's shape in the global frame or in its App::Part frame. With frame_group,
+    'local' means the frame of that App::Part, also for objects of other groups."""
     s = o.Shape.copy()
     if o.Name in LARGEST_SOLID_ONLY and len(s.Solids) > 1:
         s = max(s.Solids, key=lambda x: x.Volume).copy()     # features in this group have identity placement
@@ -70,7 +80,14 @@ def shape_in(o, frame):
         s.Placement = o.getGlobalPlacement()
         if o.Name in PRE_ROT:
             s.rotate(V(0, 0, 0), V(0, 0, 1), PRE_ROT[o.Name])
+    elif frame_group and group_of(o) != frame_group:
+        g = doc.getObject(frame_group)
+        s.Placement = g.getGlobalPlacement().inverse().multiply(o.getGlobalPlacement())
     return s
+
+
+def welds():
+    return [n for n in OBJ if n.endswith("_weld")]
 
 
 def view_matrix(right, up, origin):
@@ -162,6 +179,19 @@ def drop_creases(vis, creases, tol=0.08):
     return keep
 
 
+def _bogus_faces(faces, shape):
+    """A failed boolean with the cutting plane returns (part of) the 40 m plane itself."""
+    bb = shape.BoundBox
+    lim = 1.05 * (bb.XLength + 1.0) * (bb.YLength + 1.0)
+    return any(f.Area > lim for f in faces)
+
+
+def _grown(bb, d):
+    b = App.BoundBox(bb)
+    b.enlarge(d)
+    return b
+
+
 def rotated_instances(comp_shape, axis_pt, target_deg, n_pick=1):
     """Solids of a compound whose centre is angularly nearest to target_deg about the z
     axis through axis_pt, rotated exactly onto target_deg. Returns list of shapes."""
@@ -184,15 +214,19 @@ def rotated_instances(comp_shape, axis_pt, target_deg, n_pick=1):
 
 
 def section(name, frame, right, up, origin, parts, rotate_in=(), proxies=(), tol=0.05, do_hlr=True,
-            cut=True, hidden=False):
+            cut=True, hidden=False, frame_group=None):
     """parts: list of (object name, category). Categories:
        hatch    cut faces hatched; drilled by fasteners and 'solid' parts
        solid    cut lengthwise but not hatched (shafts, igniters); drills others
        bearing  cut faces drawn with the simplified bearing symbol
        hlr      no cut faces (drawn by HLR only)
        none     ignored for HLR (only listed)
+       weld     weld-bead ring: kept only if it touches a part of the view; cut face + HLR
+    Objects missing from the model are skipped (later iterations rename or remove parts).
     rotate_in: list of dicts {bolts, hardware, axis, angles, hole_d} (names of compound objects)."""
     t0 = time.time()
+    parts = [(n, c) for n, c in parts if n in OBJ]
+    rotate_in = [sp for sp in rotate_in if sp.get("bolts") in OBJ and (not sp.get("hardware") or sp["hardware"] in OBJ)]
     m = view_matrix(right, up, origin)
     plane = Part.makePlane(2 * BIG, 2 * BIG, V(-BIG, -BIG, 0))
     half = Part.makeBox(2 * BIG, 2 * BIG, BIG, V(-BIG, -BIG, -BIG))
@@ -202,7 +236,7 @@ def section(name, frame, right, up, origin, parts, rotate_in=(), proxies=(), tol
         for ang in spec["angles"]:
             for key in ("bolts", "hardware"):
                 if spec.get(key):
-                    for s in rotated_instances(shape_in(OBJ[spec[key]], frame), V(spec["axis"]), ang):
+                    for s in rotated_instances(shape_in(OBJ[spec[key]], frame, frame_group), V(spec["axis"]), ang):
                         fast.append(to_view(s, m))
                         fb = fast[-1].BoundBox
                         fast_info.append({"name": spec[key], "angle": ang, "bbox": [fb.XMin, fb.YMin, fb.XMax, fb.YMax]})
@@ -215,11 +249,23 @@ def section(name, frame, right, up, origin, parts, rotate_in=(), proxies=(), tol
                             drills.append(to_view(s, m))
     rec = {"name": name, "frame": frame, "right": list(right), "up": list(up), "origin": list(origin),
            "parts": {}, "visible": [], "hidden": [], "fasteners_in_plane": len(fast), "fasteners": fast_info}
-    solids_for_drill = [to_view(shape_in(OBJ[n], frame), m) for n, c in parts if c == "solid"]
+    solids_for_drill = [to_view(shape_in(OBJ[n], frame, frame_group), m) for n, c in parts if c == "solid"]
     hl = []
-    for n, cat in parts:
+    in_view = []                                         # view shapes of the non-weld parts (weld filter)
+    for n, cat in [p for p in parts if p[1] != "weld"] + [p for p in parts if p[1] == "weld"]:
         o = OBJ[n]
-        s = to_view(shape_in(o, frame), m)
+        s = to_view(shape_in(o, frame, frame_group), m)
+        if cat == "weld":
+            bw = s.BoundBox
+            near = [q for q in in_view if q.BoundBox.isValid() and bw.intersect(_grown(q.BoundBox, 5.0))]
+            try:
+                touch = any(s.distToShape(q)[0] < 3.0 for q in near)
+            except Exception:
+                touch = False
+            if not touch:
+                continue
+        elif cat not in ("none",):
+            in_view.append(s)
         info = {"group": group_of(o), "material": o.Material, "qty": o.Quantity, "note": o.Note, "cat": cat,
                 "faces": [], "bbox": None}
         if cat == "none":
@@ -230,10 +276,16 @@ def section(name, frame, right, up, origin, parts, rotate_in=(), proxies=(), tol
             for d in drills + solids_for_drill:
                 if sd.BoundBox.intersect(d.BoundBox):
                     sd = sd.cut(d)
-        if cut and cat in ("hatch", "cutonly", "solid", "bearing"):
+        per_solid = False                             # compounds of touching solids (single-piece AM parts)
+        if cut and cat in ("hatch", "cutonly", "solid", "bearing", "weld"):
             try:
                 cf = sd.common(plane)
-                info["faces"] = faces_out(cf.Faces, tol)
+                faces = cf.Faces
+                if _bogus_faces(faces, sd):
+                    per_solid = True
+                    log(f"{n}: cut of the compound failed, cut solid by solid ({len(sd.Solids)} solids)")
+                    faces = [f for sol in sd.Solids for f in sol.common(plane).Faces]
+                info["faces"] = faces_out(faces, tol)
             except Exception as err:
                 log("cut failed", n, err)
         kept = sd
@@ -242,7 +294,10 @@ def section(name, frame, right, up, origin, parts, rotate_in=(), proxies=(), tol
                 kept = None
             elif s.BoundBox.ZMax > -1e-6:
                 try:
-                    kept = sd.common(half)
+                    if per_solid:
+                        kept = Part.makeCompound([q for sol in sd.Solids for q in sol.common(half).Solids])
+                    else:
+                        kept = sd.common(half)
                 except Exception as err:
                     log("half failed", n, err)
         if kept is not None and not kept.isNull() and kept.Solids:
@@ -326,12 +381,15 @@ def names_in(group, exclude=()):
 def view_tca():
     parts = []
     for n in names_in("Thrust_Chamber") + names_in("Injector_Head"):
+        if n.endswith("_weld"):
+            continue                                 # added below with every other weld bead
         if n.endswith("_bolts") or n.endswith("_nuts_washers"):
             parts.append((n, "hlr"))
         elif n == "Injector_ox_posts":
             parts.append((n, "cutonly"))         # posts beyond the cut omitted at 1:10
         else:
             parts.append((n, "hatch"))
+    parts += [(n, "weld") for n in welds()]
     jic, jn, jj = J["injector_chamber"], J["nozzle_joint"], J["coolant_jumper"]
     # jumper 1 (true position 45 deg) is rotated into the cutting plane on the -x side
     for n in ("Coolant_jumper_1", "Jumper_1_flanges", "Jumper_1_seal", "Jumper_1_bolts", "Jumper_1_nuts_washers"):
@@ -349,8 +407,11 @@ def view_tca():
 def view_inj():
     parts = []
     for n in names_in("Injector_Head"):
+        if n.endswith("_weld"):
+            continue
         parts.append((n, "hlr" if (n.endswith("_bolts") or n.endswith("_nuts_washers")) else "hatch"))
     parts = [p for p in parts if not p[0].startswith("Injector_chamber_")]
+    parts += [(n, "weld") for n in welds()]
     return section("inj", "global", (1, 0, 0), (0, 0, 1), (0, 0, 0), parts, tol=0.02)
 
 
@@ -366,6 +427,8 @@ def view_tpa(side):
     parts, proxies, rot = [], [], []
     for n in names_in(grp):
         k = n[len(pre):]
+        if n.endswith("_weld"):
+            continue
         if k in ("turbine_rotor_blades", "turbine_stator_vanes") or k.endswith("_blades"):
             parts.append((n, "none"))
             corners, ext = meridional_rect(OBJ[n], "local")
@@ -378,13 +441,14 @@ def view_tpa(side):
             rot.append(dict(bolts=n, hardware=None, axis=(0, 0, 0), angles=(90.0, 270.0), hole_d=0.0))
             continue
         if k.startswith("bearing_") and k != "bearing_housing":
-            parts.append((n, "bearing"))
-        elif k in ("shaft", "torch_igniter"):
+            parts.append((n, "bearing"))         # rolling bearings: ISO 8826-1 symbol
+        elif k in ("shaft", "torch_igniter", "laser_igniter"):
             parts.append((n, "solid"))
         else:
-            parts.append((n, "hatch"))
+            parts.append((n, "hatch"))           # includes hydrostatic (plain) bearings
+    parts += [(n, "weld") for n in welds()]
     return section("tpo" if side == "ox" else "tpf", "local", (0, 0, -1), (0, -1, 0), (0, 0, 0), parts,
-                   rotate_in=rot, proxies=proxies, tol=0.03)
+                   rotate_in=rot, proxies=proxies, tol=0.03, frame_group=grp)
 
 
 EXTERIOR_EXCLUDE = ("faceplate", "ox_posts", "interpropellant", "turbine_disk", "rotor_blades", "stator_vanes",

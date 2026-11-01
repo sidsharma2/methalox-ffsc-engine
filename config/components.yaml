@@ -1,0 +1,246 @@
+# Component selection log. Every BOM part falls into one group (first matching pattern wins).
+# For each group: what it does, how it is made or bought in the two build strategies, what else was
+# considered, and why. scripts/run_economics.py prices each route with config/costs.yaml and writes
+# docs/COMPONENT_SELECTION.md from this file.
+#
+# Build strategies:
+#   conventional - buy to print from suppliers, COTS wherever a catalogue part exists, conventional
+#                  processes (forging + machining, casting, brazing, electroforming)
+#   inhouse_am   - vertically integrated: additive manufacturing in-house wherever it fits, the same
+#                  COTS parts, no supplier margin, machine capital carried as development cost
+#
+# route keys refer to config/costs.yaml -> routes. cx = complexity factor for machining hours.
+
+groups:
+  - id: fasteners
+    pattern: "(bolts|nuts_washers|washers)$|_bolts_"
+    function: Bolts, screws, nuts and washers for all bolted joints
+    routes: {conventional: cots_fastener, inhouse_am: cots_fastener}
+    cots: true
+    alternatives: Custom-rolled IN718 bolts to NAS/MS drawings; studs with captive nuts
+    rationale: >-
+      ISO 4014/4017 bolts and ISO 4032 nuts in A286 or Inconel 718 are catalogue items. The joint
+      sizing (ffsc/structures.py) only needs proof strength and size, so nothing here justifies a
+      custom fastener.
+  - id: seals
+    pattern: "_seal$"
+    function: Static seals at every bolted joint
+    routes: {conventional: cots_seal, inhouse_am: cots_seal}
+    cots: true
+    alternatives: Spiral-wound gaskets; welded omega seals; elastomer O-rings (rejected, LOX and 820 K gas)
+    rationale: >-
+      Metallic C-seals in Inconel with a soft plating cover cryogenic to 1,100 K service and the
+      400-920 bar range. Standard sizes are catalogue items; large diameters are quoted per order.
+  - id: instrumentation
+    pattern: "^(PT|ST)_\\d+"
+    function: Chamber and pump-discharge pressure transducers, turbopump speed pickups
+    routes: {conventional: cots_sensor, inhouse_am: cots_sensor}
+    cots: true
+    alternatives: In-house strain-gauge transducers
+    rationale: Flight-rated cryogenic transducers exist; building them in-house adds no value.
+  - id: valves
+    pattern: "^(MOV|MFV|FPOV|OPFV)_"
+    function: Main oxidiser, main fuel and the two preburner control valves with electromechanical actuators
+    routes: {conventional: custom_valve, inhouse_am: custom_valve}
+    cots: false
+    alternatives: COTS cryogenic ball valves (rated to about 20 bar; Moog datasheet); small-bore 1,400 bar ball valves (1/4-3/4 in bore only)
+    rationale: >-
+      No catalogue valve combines 700-920 bar with a 100-160 mm bore at cryogenic temperature, so all
+      four valves are custom. Only the actuator motor, gearbox and position sensor are catalogue parts.
+  - id: bearings
+    pattern: "(?<!hydrostatic)_bearing_\\d$"
+    function: Angular-contact rolling bearings, propellant-cooled
+    routes: {conventional: cots_bearing, inhouse_am: cots_bearing}
+    cots: true
+    alternatives: Hybrid Si3N4 bearings (option C1); hydrostatic bearings (option C2)
+    rationale: >-
+      Precision bearings are bought and modified (cage, clearance, coatings) for cryogenic service.
+      The CH4 shaft sits near 2.5 million DN, at the edge of steel bearings; see options C1 and C2.
+  - id: hydrostatic_bearings
+    pattern: "_hydrostatic_bearing_\\d$"
+    function: Propellant-fed hydrostatic journal and thrust bearings (I2, option C2)
+    routes: {conventional: machined_forging, inhouse_am: machined_forging}
+    cx: 6
+    cots: false
+    alternatives: Hybrid Si3N4 ball bearings (3.0 million DN limit, below the 3.1 million the CH4 shaft reaches at 10 bar inlet)
+    rationale: >-
+      No rolling-element DN limit and no rolling contact; the cost is a bleed of a few percent of the
+      CH4 pump flow from discharge to the bearing pockets. Machined in-house (orifices, pockets, coatings).
+  - id: laser_igniters
+    pattern: "_laser_igniter$"
+    function: Laser ignition heads with sapphire window on both preburners (I2, option N2)
+    routes: {conventional: custom_igniter, inhouse_am: custom_igniter}
+    cots: false
+    alternatives: Spark-torch igniters with GOX/GCH4 taps (iteration 1); NRP plasma igniters (start only)
+    rationale: >-
+      Laser breakdown gets easier as pressure rises and needs no propellant taps, valves or lines.
+      The laser head and driver are bought; the window port is engine-specific.
+  - id: welds
+    pattern: "_weld$"
+    function: Butt welds that replace flange pairs on joints that are never opened (I2, options I1 and I3)
+    routes: {conventional: fabricated, inhouse_am: fabricated}
+    cx: 1
+    cots: false
+    alternatives: Bolted flange pair with metallic C-seal (iteration 1)
+    rationale: Orbital TIG or EB weld with radiography; no flanges, bolts or seals, no leak path.
+  - id: igniters
+    pattern: "_torch_igniter$"
+    function: Spark-torch igniters on both preburners (GOX/GCH4 torch)
+    routes: {conventional: custom_igniter, inhouse_am: custom_igniter}
+    cots: false
+    alternatives: Laser or plasma ignition at start (option N2); pyrotechnic igniters (single use, rejected for reuse)
+    rationale: A spark plug is COTS; the torch body, its valves and propellant taps are engine-specific.
+  - id: chamber_liner
+    pattern: "^Chamber_GRCop42_regen$"
+    function: Regeneratively cooled combustion chamber to eps 12 (liner, ribs, closeout)
+    routes: {conventional: milled_channel_liner, inhouse_am: lpbf_liner}
+    material_factor_key: GRCop-42
+    closeout_fraction: 0.36
+    cots: false
+    alternatives: Milled CuCrZr or GRCop-84 liner with electroformed nickel closeout (Vulcain/RS-25 practice)
+    rationale: >-
+      The 120 MW/m2 throat flux needs a copper alloy; GRCop-42 keeps its strength to about 900 K.
+      L-PBF builds the 384-768 channel geometry and the bifurcation directly (PicoGK model). The milled
+      route needs a forged copper billet, about 1,000 channel passes and an electroformed closeout.
+  - id: nozzle
+    pattern: "^Nozzle_In718_regen$"
+    function: Channel-wall regeneratively cooled nozzle, eps 12 to 34
+    routes: {conventional: milled_channel_nozzle, inhouse_am: ded_nozzle}
+    closeout_fraction: 0.19
+    cots: false
+    alternatives: Brazed tube-wall nozzle (RS-25, J-2); radiation-cooled extension (not possible at sea level)
+    rationale: >-
+      A 1.37 m channel-wall nozzle is too large for most powder-bed machines; laser-wire DED with
+      integral channels (NASA RAMPT) is the AM route. The conventional route is a milled channel
+      jacket with a brazed closeout.
+  - id: coolant_manifolds
+    pattern: "^Coolant_(outlet|inlet|distribution|exit)_manifold"
+    function: Inlet, distribution, outlet and exit manifolds of the two coolant circuits
+    routes: {conventional: fabricated, inhouse_am: lpbf}
+    cx: 3
+    cots: false
+    alternatives: Printed integral with the jackets (option I2)
+    rationale: Welded ring manifolds are standard; printing them separately mainly saves weld inspection.
+  - id: jumpers
+    pattern: "^Coolant_jumper_\\d$"
+    function: Coolant jumpers across the bolted eps-12 joint
+    routes: {conventional: fabricated, inhouse_am: fabricated}
+    cx: 2
+    cots: false
+    alternatives: Removed by a one-piece bimetallic chamber and nozzle (option I5)
+    rationale: Short bent tubes with flanges; simple to fabricate either way.
+  - id: flanges
+    pattern: "_flanges$"
+    function: Flange pairs for ducts, jumpers and vehicle interfaces
+    routes: {conventional: forged_ring, inhouse_am: forged_ring}
+    cx: 2
+    cots: false
+    alternatives: Butt welds (options I1, I3)
+    rationale: Machined from catalogue forged rings; the ring blank is COTS, the machining is to print.
+  - id: injector_single_piece
+    pattern: "^Injector_AM_single_piece$"
+    function: Main injector printed in one piece - fuel plenum, faceplate, 173 posts, interpropellant plate (I2, option I4)
+    routes: {conventional: lpbf, inhouse_am: lpbf}
+    cots: false
+    alternatives: Machined forgings with 173 brazed posts (iteration 1)
+    rationale: 176 parts and 346 brazed or welded joints become one print; only the flange faces and seal grooves are machined.
+  - id: injector_structure
+    pattern: "^(Injector_body_fuel_plenum|Injector_faceplate|Injector_interpropellant_plate|Ox_dome)$"
+    function: Main injector body and fuel plenum, faceplate, interpropellant plate and ox-rich gas dome
+    routes: {conventional: machined_forging, inhouse_am: lpbf}
+    cx: 4
+    cots: false
+    alternatives: Single printed injector (option I4)
+    rationale: Forged IN718 bodies machined and welded are the heritage route; L-PBF removes most welds.
+  - id: injector_posts
+    pattern: "^Injector_ox_posts$"
+    function: 173 coaxial ox-rich gas posts
+    routes: {conventional: turned_brazed_posts, inhouse_am: lpbf}
+    cots: false
+    alternatives: Printed with the injector body (option I4)
+    rationale: Swiss-turned posts are cheap to make; the cost is in 346 brazed joints and their inspection.
+  - id: tvc_lugs
+    pattern: "^TVC_lug_"
+    function: TVC actuator attach lugs
+    routes: {conventional: machined_forging, inhouse_am: machined_forging}
+    cx: 2
+    cots: false
+    alternatives: Printed with the dome
+    rationale: Simple load-path parts; machining from forging is cheapest.
+  - id: gimbal
+    pattern: "^Gimbal_"
+    function: Two-axis gimbal block, yoke, base plate and pins
+    routes: {conventional: machined_forging, inhouse_am: machined_forging}
+    cx: 3
+    cots: false
+    alternatives: Spherical bearing gimbal (higher friction under 2.7 MN)
+    rationale: Ti-6Al-4V forgings for the block and yoke, A286 pins; standard machining.
+  - id: turbine_rotor
+    pattern: "_turbine_(disk|rotor_blades)$"
+    function: Turbine blisks (disk and rotor blades)
+    routes: {conventional: cast_superalloy, inhouse_am: lpbf}
+    material_factor_key: superalloy
+    cx: 6
+    cots: false
+    alternatives: Forged disk with inserted SX blades ($15k per aero SX blade, 60-90 week lead time); AM blisk
+    rationale: >-
+      Integral blisks avoid 84-125 blade roots each. The ox-rich side needs a burn-resistant alloy
+      (SX500 class); the fuel-rich side uses cast MAR-M-247 (SX blades are option C3).
+  - id: turbine_stator
+    pattern: "_(turbine_stator_vanes|stator_shrouds)$"
+    function: Turbine nozzle rings
+    routes: {conventional: cast_superalloy, inhouse_am: lpbf}
+    material_factor_key: superalloy
+    cx: 4
+    cots: false
+    alternatives: Brazed vane segments
+    rationale: One cast or printed ring per turbine.
+  - id: hot_gas_housings
+    pattern: "_(turbine_housing|exhaust_collector)$"
+    function: Turbine inlet housings and exhaust collectors
+    routes: {conventional: cast_superalloy, inhouse_am: lpbf}
+    material_factor_key: superalloy
+    cx: 3
+    cots: false
+    alternatives: Sheet-metal fabricated collectors
+    rationale: Large, thin, hot and complex; casting or printing beats fabrication.
+  - id: pump_housings
+    pattern: "_(pump_volute_casing|inlet_housing|bearing_housing|kick_stage_housing|pump_casing_flange)$"
+    function: Pump volutes, inlet and bearing housings, kick stage, casing flange
+    routes: {conventional: investment_cast, inhouse_am: lpbf}
+    cx: 3
+    cots: false
+    alternatives: Machined from forging (heavier)
+    rationale: Volutes are classic investment castings; L-PBF lets the volute and diffuser merge.
+  - id: impellers_inducers
+    pattern: "_(impeller\\d_(hub|shroud|blades)|inducer_(hub|blades))$"
+    function: Shrouded centrifugal impellers and helical inducers
+    routes: {conventional: machined_forging, inhouse_am: lpbf}
+    cx: 7
+    cots: false
+    alternatives: Hub and shroud machined separately and brazed
+    rationale: A shrouded impeller cannot be machined in one piece; L-PBF builds it whole.
+  - id: shafts
+    pattern: "_shaft$"
+    function: Turbopump shafts
+    routes: {conventional: machined_forging, inhouse_am: machined_forging}
+    cx: 3
+    cots: false
+    alternatives: none worth considering
+    rationale: Forged Inconel 718, turned and ground; AM brings nothing here.
+  - id: preburners
+    pattern: "_preburner_(shell|injector_head|crossfeed_port|return_port)$"
+    function: Ox-rich and fuel-rich preburner shells, injector heads and ports
+    routes: {conventional: machined_forging, inhouse_am: lpbf}
+    cx: 4
+    cots: false
+    alternatives: Printed with the turbine inlet housing
+    rationale: Heads have many small passages; printing removes drilling and plugging.
+  - id: ducts
+    pattern: "(_duct|_line|_tee)$"
+    function: Discharge, feed, return and cross-feed ducts
+    routes: {conventional: fabricated, inhouse_am: fabricated}
+    cx: 2
+    cots: false
+    alternatives: Printed elbows (only where the bend radius is too tight)
+    rationale: Bent and welded IN718 tube; catalogue tube stock, fabrication to print.

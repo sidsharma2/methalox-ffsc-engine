@@ -1,10 +1,13 @@
-"""Section views of the CAD assembly (PyVista/VTK) from cad/output/mesh/*.stl.
+"""Section views of the CAD assembly (PyVista/VTK) from the iteration's mesh folder.
 
 Each part is clipped as a closed surface, so its cut faces are capped. The caps get a
-45-degree hatch in the part colour, like a section on a drawing. Writes figures/sec_*.png
-and figures/sec_overview.png.
+45-degree hatch in the part colour, like a section on a drawing. Writes sec_*.png and
+sec_overview.png.
 
-Run:  .venv/Scripts/python.exe scripts/render_sections.py
+Run:  .venv/Scripts/python.exe scripts/render_sections.py [MESH] [--iter ID] [--fig DIR]
+
+Iteration 1 (default): cad/output/mesh -> figures/ as before. --iter ID: cad/iterations/<ID>/mesh
+-> figures/<ID>/, so the iteration-1 figures are never overwritten.
 """
 
 import json
@@ -15,17 +18,22 @@ import numpy as np
 import pyvista as pv
 
 ROOT = Path(__file__).resolve().parents[1]
-MESH = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "cad" / "output" / "mesh"
-FIG = ROOT / "figures"
+sys.path.insert(0, str(ROOT / "drawings" / "src"))
+import itercfg as IT  # noqa: E402  (parses --iter / --fig)
+
+MESH = Path(sys.argv[1]) if len(sys.argv) > 1 else IT.MESH
+FIG = IT.FIG
+FIG.mkdir(parents=True, exist_ok=True)
 LAYOUT = json.load(open(MESH.parent / "layout.json"))
 COLOR = {"GRCop-42": "#c46a37", "Inconel 718": "#a4a6ad", "SX500": "#6a7fa0", "MAR-M-247": "#7a6a5a",
-         "Ti-6Al-4V": "#c3c7d0", "A286": "#3a3a40", "304L": "#d2d2d8", "PTFE/Inconel seal": "#e6cc40"}
+         "Ti-6Al-4V": "#c3c7d0", "A286": "#3a3a40", "304L": "#d2d2d8", "PTFE/Inconel seal": "#e6cc40",
+         "M50/Si3N4 hybrid": "#4d5260"}
 idx = json.load(open(MESH / "index.json"))
 
 
 def colour(item):
     n = item["name"]
-    if ("duct" in n or "line" in n) and not n.endswith(("flanges", "bolts", "washers", "seal")):
+    if ("duct" in n or "line" in n) and not n.endswith(("flanges", "bolts", "washers", "seal", "weld")):
         if any(k in n for k in ("LOX", "Ox_")):
             return "#6f9fd0"
         if any(k in n for k in ("CH4", "Fuel", "FPB", "Nozzle_return")):
@@ -159,11 +167,11 @@ outs.append(shoot("sec_quarter_cutaway", (1.0, -1.15, 0.55), (0, 0, 1), quarter,
 titles.append("Quarter cutaway (quadrant +x / -y removed)")
 
 # longitudinal section in the x-z plane: chamber axis and both turbopump axes lie in it
-outs.append(shoot("sec_xz_full", (0.32, -1.0, 0.18), (0, 0, 1), lambda m, c: keep(m, c, *Y0), [Y0], 18.0, zoom=1.15))
+outs.append(shoot("sec_xz_full", (0.32, -1.0, 0.18), (0, 0, 1), lambda m, c: keep(m, c, *Y0), [Y0], 18.0, zoom=1.02))
 titles.append("Section x-z: chamber and both turbopump axes")
 
 # longitudinal section in the y-z plane through the chamber axis, CH4 side kept
-outs.append(shoot("sec_yz_full", (1.0, 0.32, 0.18), (0, 0, 1), lambda m, c: keep(m, c, *X0), [X0], 18.0, zoom=1.15))
+outs.append(shoot("sec_yz_full", (1.0, 0.32, 0.18), (0, 0, 1), lambda m, c: keep(m, c, *X0), [X0], 18.0, zoom=1.02))
 titles.append("Section y-z: chamber axis, seen from the LOX side")
 
 # turbopump close-ups in the plane of their axes, straight on like the drawing sections

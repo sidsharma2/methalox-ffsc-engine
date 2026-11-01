@@ -1,0 +1,60 @@
+# Design iterations. I1 is frozen (git tag iter-1). I2 candidates combine options from
+# config/options.yaml; scripts/run_iterations.py adds up their evaluated deltas.
+# Deltas are added linearly, so the combined numbers are estimates until the candidate is
+# built as its own CAD variant.
+
+frozen:
+  - id: I1
+    name: Iteration 1 baseline
+    git_tag: iter-1
+    note: First-order models, layout CAD, 178 solids, 0 clashes
+  - id: I1-imp
+    name: Iteration 1 improved (low-complexity chain, same hardware layout)
+    git_tag: iter-1
+    note: Polished channels, 50/50 coolant split, shrouded rotors, close-coupled hot gas
+
+candidates:
+  - id: I2-A
+    name: Integrate and weld (low risk)
+    options: [K1, I1, I3, I2, I4, N2, C1, N5]
+    why: >-
+      Everything here is TRL 4 or higher and costs little to develop. K1 and C1 are corrections the
+      physics asks for anyway: the fuel-rich preburner has almost no kinetic margin at 4 ms, and the
+      CH4 bearings already run at 2.3 million DN.
+  - id: I2-B
+    name: I2-A plus 10 bar pump inlet
+    options: [K1, I1, I3, I2, I4, N2, C1, N5, Y1, C2]
+    why: >-
+      Faster, smaller turbopumps. The CH4 shaft then reaches 3.1 million DN, beyond hybrid
+      bearings, so hydrostatic bearings (C2) come with it. The inlet pressure is a vehicle
+      requirement (tank pressure), not an engine part.
+  - id: I2-C
+    name: I2-B uprated to 400 bar
+    options: [K1, I1, I3, I2, I4, N2, C1, N5, C2, Y2]
+    why: >-
+      Highest thrust-to-weight. Needs the 900 K ox-rich hot section (C4, TRL 4) and SX fuel-turbine
+      blades and two-stage turbines; Y2 already includes those and the 10 bar inlet.
+
+# Iteration builds: full design + CAD + drawings + CFD from the improved configuration.
+# mods are dotted-key overrides of results/improved/config_improved.json; cad switches the
+# integration options on in cad/build_engine.py (all default to the iteration-1 layout).
+builds:
+  I2-C:
+    rev: B
+    title: Iteration 2, candidate C
+    options: [K1, I1, I3, I2, I4, N2, C1, N5, C2, Y2]
+    mods:
+      requirements.pc_bar: 400.0
+      propellants.lox.p_inlet_bar: 10.0
+      propellants.lch4.p_inlet_bar: 10.0
+      cycle.T_opb_K: 900.0            # C4; with N5 (pattern factor 0.10) the peak is 980 K
+      cycle.eta_turbine_max: 0.87     # C5
+      cycle.T_fpb_K: 1200.0           # C3
+      cycle.tau_fpb_s: 0.008          # K1
+    cad:
+      welded_joints: [ox_hot_gas, fuel_hot_gas, lox_discharge, ch4_discharge, fpb_feed, nozzle_return,
+                      ox_crossfeed, fuel_crossfeed]          # I1, I3; vehicle interfaces stay bolted
+      integral_manifolds: true                               # I2
+      single_piece_injector: true                            # I4
+      ignition: laser                                        # N2
+      bearings: {ox: hybrid_Si3N4, fuel: hydrostatic}        # C1 (LOX 1.9 MDN), C2 (CH4 3.1 MDN)

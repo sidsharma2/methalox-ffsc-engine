@@ -1,0 +1,6 @@
+checkMesh exit status 0 (log.checkMesh)
+    cells:            161646
+    Max aspect ratio = 97.25224255574983 OK.
+    Mesh non-orthogonality Max: 31.10938359069739 average: 7.392820922721291
+    Max skewness = 0.9115076865476909 OK.
+Mesh OK.
