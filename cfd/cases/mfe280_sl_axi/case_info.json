@@ -7,19 +7,20 @@
     "wedge_deg": 5.0,
     "lip_mm": 20.0,
     "down_de": 12.0,
-    "rad_re": 5.0,
+    "rad_re": 8.0,
     "up_re": 1.5,
     "x_inlet": null,
     "gas": "equivalent",
     "wall_thermal": "adiabatic",
     "pc_frac": 1.0,
     "time_mode": "lts",
-    "iters": 40000,
-    "nprocs": 8,
+    "iters": 20000,
+    "nprocs": 4,
     "name": null,
+    "results": null,
     "distro": "Ubuntu-22.04",
     "force": true,
-    "mesh": true,
+    "mesh": false,
     "init_only": false
   },
   "gas": {
@@ -200,7 +201,7 @@
   "mesh": {
     "N_r": 90,
     "N_lip": 12,
-    "N_out": 197,
+    "N_out": 345,
     "n_down": 408,
     "n_up": 66,
     "n_axial_internal": [
@@ -210,7 +211,7 @@
       79,
       145
     ],
-    "cells": 178374,
+    "cells": 248526,
     "cells_by_block": {
       "inlet-cyl_end": 2340,
       "cyl_end-throat": 11340,
@@ -219,15 +220,15 @@
       "eps15-exit": 13050,
       "plume core": 36720,
       "lip wake": 4896,
-      "outer plume": 80376,
-      "outside nozzle": 13002
+      "outer plume": 140760,
+      "outside nozzle": 22770
     },
     "x_inlet": 0.03061568978919183,
     "x_throat": 0.35128601554961214,
     "x_exit": 2.049986260740254,
     "x_far": 18.48565818860841,
     "x_up": 1.0227567652484941,
-    "R_far": 3.424098318305866,
+    "R_far": 5.478557309289386,
     "Re": 0.6848196636611732,
     "Rt": 0.11744560339565997,
     "lip_t": 0.02,
@@ -451,23 +452,19 @@
     "stages": [
       [
         0.1,
-        2000
+        1000
       ],
       [
-        0.25,
-        6000
-      ],
-      [
-        0.5,
-        40000
+        0.15,
+        20000
       ]
     ],
     "write_interval": 2000,
-    "nprocs": 8,
+    "nprocs": 4,
     "dt_transient_est_s": 6.228857766023002e-09,
-    "steps": 40000,
-    "wall_clock_h_est": 1.6516111111111111,
-    "cost_assumption_s_per_cell_iter": 5e-06
+    "steps": 20000,
+    "wall_clock_h_est": 18.294275,
+    "cost_assumption_s_per_cell_iter": 5.3e-05
   },
   "reference_1d": {
     "ideal_chosen_gas": {

@@ -8,10 +8,10 @@
 Build  : _cafbeeb2-20260127 OPENFOAM=2306 patch=260127 version=2306
 Arch   : "LSB;label=32;scalar=64"
 Exec   : checkMesh
-Date   : Oct 31 2026
-Time   : 14:48:17
+Date   : Nov 01 2026
+Time   : 12:39:55
 Host   : SIDS-PC
-PID    : 1202
+PID    : 21691
 I/O    : uncollated
 Case   : /mnt/d/Research/projects/methalox-ffsc-engine/cfd/cases/mfe280_sl_axi
 nProcs : 1
@@ -33,19 +33,19 @@ Check mesh...
 Time = constant
 
 Mesh stats 
-    points:           358369
+    points:           498969
     internal points:  0
-    faces:            713861
-    internal faces:   355493
-    cells:            178374
-    faces per cell:   5.995010483590658
+    faces:            994617
+    internal faces:   495649
+    cells:            248526
+    faces per cell:   5.996418885750384
     boundary patches: 11
     point zones:      0
     face zones:       0
     cell zones:       0
 
 Overall number of cells of each type:
-    hexahedra:     177484
+    hexahedra:     247636
     prisms:        890
     wedges:        0
     pyramids:      0
@@ -68,13 +68,13 @@ Checking patch topology for multiply connected surfaces...
     wall_bell           330      662      ok (non-closed singly connected)  
     lip                 12       26       ok (non-closed singly connected)  
     wall_outer          66       134      ok (non-closed singly connected)  
-    ambient_inlet       197      396      ok (non-closed singly connected)  
+    ambient_inlet       345      692      ok (non-closed singly connected)  
     ambient_side        474      950      ok (non-closed singly connected)  
-    outlet              299      599      ok (non-closed singly connected)  
+    outlet              447      895      ok (non-closed singly connected)  
     axis                0        0        ok (empty)                        
-    front               178374   179630   ok (non-closed singly connected)  
-    back                178374   179630   ok (non-closed singly connected)  
-    ".*"                358368   358369   ok (closed singly connected)      
+    front               248526   249930   ok (non-closed singly connected)  
+    back                248526   249930   ok (non-closed singly connected)  
+    ".*"                498968   498969   ok (closed singly connected)      
 
 
 Checking faceZone topology for multiply connected surfaces...
@@ -87,21 +87,21 @@ Checking basic pointZone addressing...
     No pointZones found.
 
 Checking geometry...
-    Overall domain bounding box (0.03061568978919183 0 -0.1493570709231792) (18.48565818860842 3.420839335424906 0.1493570709231792)
+    Overall domain bounding box (0.03061568978919183 0 -0.2389713134770866) (18.48565818860842 5.47334293667985 0.2389713134770866)
     Mesh has 2 geometric (non-empty/wedge) directions (1 1 0)
     Mesh has 3 solution (non-empty) directions (1 1 1)
-    Wedge front with angle 2.499999996894603 degrees
-    Wedge back with angle 2.499999996894603 degrees
+    Wedge front with angle 2.499999993112884 degrees
+    Wedge back with angle 2.499999993112884 degrees
     All edges aligned with or perpendicular to non-empty directions.
-    Boundary openness (1.113583893739945e-18 -9.693601332631882e-16 6.614927243978499e-15) OK.
+    Boundary openness (6.503328868863899e-18 -8.98709312681485e-16 -5.657719613575869e-15) OK.
     Max cell openness = 2.154527801673207e-15 OK.
     Max aspect ratio = 90.11947039167737 OK.
-    Minimum face area = 2.154745105980935e-08. Maximum face area = 0.04470731087647584.  Face area magnitudes OK.
-    Min volume = 1.277206913395662e-10. Max volume = 0.002122726466589592.  Total volume = 8.92418922654007.  Cell volumes OK.
-    Mesh non-orthogonality Max: 31.15317485082757 average: 7.337145817915604
+    Minimum face area = 2.154745105980935e-08. Maximum face area = 0.07153169740236134.  Face area magnitudes OK.
+    Min volume = 1.277206913395662e-10. Max volume = 0.003424530501482362.  Total volume = 22.84291460679924.  Cell volumes OK.
+    Mesh non-orthogonality Max: 31.15317485082757 average: 6.592937971861436
     Non-orthogonality check OK.
     Face pyramids OK.
-    Max skewness = 0.9124791266407634 OK.
+    Max skewness = 0.9124942415328383 OK.
     Coupled point location match (average 0) OK.
 
 Mesh OK.

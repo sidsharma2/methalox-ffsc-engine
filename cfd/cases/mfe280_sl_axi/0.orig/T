@@ -35,11 +35,8 @@ boundaryField
     }
     "ambient_.*"
     {
-        type            inletOutletTotalTemperature;
-        psi             thermo:psi;
-        gamma           1.12504;
+        type            inletOutlet;
         inletValue      uniform 288;
-        T0              uniform 288;
         value           uniform 288;
     }
     outlet

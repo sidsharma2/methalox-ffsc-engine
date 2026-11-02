@@ -14,12 +14,19 @@ design models in `ffsc/`:
 | Solver | `rhoCentralFoam`, Kurganov flux, local time stepping (LTS) |
 | Turbulence | k-omega SST, wall functions |
 | Geometry | 2-D axisymmetric wedge, 5 deg, one cell thick |
-| Mesh | 178 374 cells at `--res 1` (blockMesh, 9 blocks), checkMesh OK |
+| Mesh | 248 526 cells at `--res 1` (blockMesh, 9 blocks), checkMesh OK; nozzle-only runs 43 380 |
 | Gas | one calorically perfect gas, gamma 1.1250, cp 3216.6 J/(kg K), MW 23.257 |
 | Inlet | total pressure 350 bar, total temperature 3785.1 K |
 | Ambient | 101 325 Pa, 288 K, same gas |
 
-Status: two runs in the Ubuntu-22.04 ext4 home, 8 ranks each, since 2026-10-31: `~/runs/mfe280_sl_axi` (iteration 1) and `~/runs/mfe280_I2C_sl_axi` (iteration 2, I2-C, generated with `--results results/iterations/I2-C`). Each takes about 1.2 s per iteration with both running, so about 13 h for 40,000 iterations. `post_compare.py` reads the exit-plane monitors of both and compares thrust and Isp with the 1-D model.
+Status (2026-11-02): all runs are done. Thrust and Isp come from the nozzle-only runs
+(`~/runs/mfe280_sl_axi_nozzle`, `~/runs/mfe280_I2C_sl_axi_nozzle`, converged at iteration
+24,000). The plume runs (`~/runs/mfe280_sl_axi`, `~/runs/mfe280_I2C_sl_axi`, run 4, 4 ranks
+each) reached iteration 20,000 on 2026-11-02: I2-C at 05:28 MST, and I1 at 07:55 MST after a
+restart with a new side boundary (run 4c, see "Run history"). The numbers are under
+"Results" and the images under "Plume images". I2-C cases are generated with
+`--results results/iterations/I2-C`. `post_compare.py` reads the exit-plane monitors of all
+runs and compares thrust and Isp with the 1-D model.
 
 ## Files
 
@@ -31,6 +38,16 @@ Status: two runs in the Ubuntu-22.04 ext4 home, 8 ranks each, since 2026-10-31: 
 | `cases/mfe280_sl_axi/Allmesh` | blockMesh, checkMesh, topoSet (exit-plane faceZone), cell centres. Does not run the solver. |
 | `cases/mfe280_sl_axi/Allrun` | decomposePar, three-stage parallel run, reconstructPar. |
 | `cases/mfe280_sl_axi/Allclean` | Removes mesh, results and logs. Keeps `0.orig`, `constant/*Properties` and `system/`. |
+| `nozzle_only.sh` | Cuts a saved plume-run time down to the chamber and nozzle, makes the exit plane the outlet and continues the solver. |
+| `plume_from_nozzle.sh` | Maps a converged nozzle-only solution onto time 0 of a plume case. |
+| `hisa_nozzle.sh` | HiSA (implicit) version of a nozzle-only case from the same saved time, for the solver comparison. |
+| `post_compare.py` | Thrust, Isp and mass-flow comparison with the 1-D model; discharge coefficient and vacuum Cf ratio; figure 15. |
+| `plume_composition.py` | Exit-plane gas composition for the emission images (shifting equilibrium from the core chamber state to the design exit pressure); writes `results/plume_exit_composition.json`. |
+| `render_plume.py` | Field images on the x-r plane (Mach number, temperature, log pressure, schlieren of ln rho), a Mach/schlieren split and a path-traced cutaway, through AetherCFD. |
+| `render_los.py` | Line-of-sight images across the plume: knife-edge schlieren with two edge directions, shadowgraph, optically thin H2O + CO2 emission and its optical depth. |
+| `render_volume.py` | The same thin emission seen from an oblique camera: perspective ray march through the revolved field on the GPU (CuPy). |
+| `plume_steadiness.py` | Compares three saves of a plume run cell by cell and along the centreline, to show where the plume has settled. |
+| `side_bc.py` | Replaces `ambient_side` in `p` files with the characteristic `exprMixed` switch (I1 run 4c). |
 
 ## Commands
 
@@ -74,7 +91,7 @@ Useful generator options (`--help` lists all of them):
 | `--wall-thermal` | adiabatic | `profile` imposes Twg(x) from `results/cooling_profile.csv` (`fixedProfile`). |
 | `--time-mode` | lts | `transient` sets up time-accurate Euler stepping. |
 | `--iters` | 40000 | End of stage 3 (LTS iterations). |
-| `--lip-mm`, `--down-de`, `--rad-re`, `--up-re` | 20, 12, 5, 1.5 | Lip thickness and size of the external region. |
+| `--lip-mm`, `--down-de`, `--rad-re`, `--up-re` | 20, 12, 8, 1.5 | Lip thickness and size of the external region (`--rad-re` was 5 for runs 1 and 2). |
 
 For a 3 h or longer run, copy the case to the WSL home (ext4). Disk I/O on `/mnt/d` is
 slower. Each write holds about 30 MB of ascii fields. `purgeWrite 4` keeps the last
@@ -90,7 +107,7 @@ x is the axial coordinate from the injector face; r is the radius.
 | Throat | x = 0.3513 m, Rt = 0.1174 m |
 | Exit | x = 2.0500 m, Re = 0.6848 m (eps 34, Rao 80 % bell) |
 | Lip | 20 mm thick, flat base at the exit plane. The outer nozzle surface is the inner contour plus 20 mm, from x = 1.023 m (1.5 Re upstream of the exit). |
-| Plume region | x from 2.05 m to 18.49 m (12 De), r up to 3.42 m (5 Re) |
+| Plume region | x from 2.05 m to 18.49 m (12 De), r up to 5.48 m (8 Re) |
 
 The inner wall is a `polyLine` through the points of `contour.csv`, so the mesh follows
 the design contour exactly. The internal part is split into five blocks at stations: the
@@ -109,9 +126,9 @@ outer plume and the region outside the nozzle.
 | eps 15 to exit | 145 x 90 |
 | plume core (axis to Re) | 408 x 90 |
 | lip wake (Re to Re + 20 mm) | 408 x 12 |
-| outer plume (to 5 Re) | 408 x 197 |
-| outside the nozzle | 66 x 197 |
-| Total | 178 374 (177 484 hex, 890 prisms on the axis) |
+| outer plume (to 8 Re) | 408 x 345 |
+| outside the nozzle | 66 x 345 |
+| Total | 248 526 (247 636 hex, 890 prisms on the axis) |
 
 Axial cell size: 4 mm at the inlet, 1 mm at the throat, 10 mm at eps 15, 4 mm at the
 exit, then growing to 150 mm at the outlet. The radial core size is 1.7 mm at the
@@ -121,8 +138,8 @@ checkMesh (v2306, default checks):
 
 | Check | Result |
 |---|---|
-| Cells | 178 374 |
-| Max non-orthogonality | 31.2 deg (average 7.3) |
+| Cells | 248 526 |
+| Max non-orthogonality | 31.2 deg (average 6.6) |
 | Max skewness | 0.91 |
 | Max aspect ratio | 90 |
 | Wedge | front and back at 2.5 deg each, planar |
@@ -205,7 +222,7 @@ The resulting Prandtl number is 0.73; Cantera gives 0.64 for the frozen mixture.
 | `inlet` | `totalPressure` 350 bar (isentropic, psi, gamma) | `pressureInletOutletVelocity` | `totalTemperature` 3785.1 K | 5 % intensity (k = 236 m2/s2) / mixing length 1.9 mm, 0.07 x injector element pitch (omega = 1.5e4 1/s) | calculated |
 | `wall_chamber`, `wall_bell` | zeroGradient | noSlip | zeroGradient (adiabatic) | `kqRWallFunction` / `omegaWallFunction` | `nutUSpaldingWallFunction` / `compressible::alphatJayatillekeWallFunction` (Prt 0.85) |
 | `lip`, `wall_outer` | zeroGradient | noSlip | zeroGradient | wall functions | wall functions |
-| `ambient_inlet` (x = 1.023 m, outside the nozzle), `ambient_side` (r = 5 Re) | `waveTransmissive` 101 325 Pa | `pressureInletOutletVelocity` | `inletOutlet` 288 K | `inletOutlet` k = 0.01, omega = 154 (nu_t/nu = 5) | calculated |
+| `ambient_inlet` (x = 1.023 m, outside the nozzle), `ambient_side` (r = 8 Re) | `fixedValue` 101 325 Pa (static); I1 run 4c: `exprMixed` on `ambient_side`, see below | `pressureInletOutletVelocity` | `inletOutlet` 288 K | `inletOutlet` k = 0.01, omega = 154 (nu_t/nu = 5) | calculated |
 | `outlet` (x = 18.49 m) | `waveTransmissive`, relaxes to 101 325 Pa over lInf = 16.4 m | `inletOutlet` | `inletOutlet` 288 K | `inletOutlet` | calculated |
 | `axis` | empty (0 faces) | | | | |
 | `front`, `back` | wedge | | | | |
@@ -214,9 +231,46 @@ The hot-gas walls are adiabatic. This matches the 1-D model, where the regen hea
 back into the flow, and it keeps the first run simple. A fixed wall-temperature profile
 from the regen model is available through `--wall-thermal profile`.
 
-The ambient boundaries let the plume entrain the external gas through total-pressure
-inlet/outlet conditions. The outlet is non-reflecting, so that the plume core can leave
-supersonic.
+The ambient boundaries act as an open reservoir at the ambient static pressure: the plume
+draws in as much gas as it entrains, at 288 K and with no tangential velocity. The inflow
+there is a few m/s, so its dynamic pressure (about 10 Pa) is negligible. The outlet is
+non-reflecting, so that the plume core can leave supersonic.
+
+A fixed static pressure is also a pressure-release boundary: it reflects an arriving
+compression wave as an expansion of the same strength. That does not matter for the weak
+steady entrainment, but it does for a strong start-up shock (run 3). The initial field
+therefore avoids a jet head; see "Numerics and run control".
+
+A fixed static pressure is also wrong for supersonic outflow, where the boundary should
+take its pressure from inside. In I1 run 4 the starting vortex ring drove a radial stream
+at Mach 2.4 to 2.85 out through `ambient_side` near x = 10.5 m. The pressure in the
+boundary cell fell to 2 to 3 kPa, the internal energy went negative, and the thermo update
+stopped at iteration 7,969. A restart from 6,000 at maxCo 0.1 stopped at 8,948 in the same
+cell, so the Courant number was not the cause. Run 4c restarted from 8,000 with a
+characteristic switch on that patch only (`exprMixed`, written into the processor `p`
+files by `side_bc.py`). With Mn the outward normal Mach number of the
+adjacent cell, a face holds 101 325 Pa for Mn < 0.9, takes zero gradient for Mn > 1.1
+and blends linearly in between:
+
+```
+ambient_side
+{
+    type            exprMixed;
+    value           uniform 101325;
+    variables       ( "Mn = (internalField(U) & face())/area()/sqrt(1.12504*internalField(p)/internalField(rho))" );
+    valueExpr       "101325";
+    gradientExpr    "0";
+    fractionExpr    "(Mn < 0.9) ? 1 : ((Mn > 1.1) ? 0 : (1.1 - Mn)/0.2)";
+}
+```
+
+While every face has Mn < 0.9 this is the same condition as `fixedValue`. At iteration
+9,000, 15 of the 474 side faces had switched, all of them supersonic outflow next to the
+failed cell. At 11,000 and 12,000 none had, and in the saves from 17,000 to 20,000
+valueFraction is 1 on every face. The converged I1 solution therefore has the same
+fixed-pressure side boundary as I2-C. (`codedMixed` would be the usual way to write
+this, but OpenFOAM refuses to compile dynamic code when it runs as root, as it does in this
+WSL distro.) `make_case.py` does not write this condition yet.
 
 ## Numerics and run control
 
@@ -227,28 +281,133 @@ supersonic.
   time unit is one iteration. `rDeltaTSmoothingCoeff 0.2` limits the ratio of local time
   steps between neighbouring cells to 1.2. That is about the mesh growth rate, so the
   small wall cells do not slow down the core.
-- CFL ramp in `Allrun`: maxCo 0.1 to iteration 2,000, 0.15 to 8,000, 0.3 to 16,000, then 0.5 to 40,000.
-- Far field: `ambient_inlet` and `ambient_side` hold the ambient static pressure (`waveTransmissive`, 101,325 Pa) with `inletOutlet` 288 K. The first runs used `totalPressure` / `inletOutletTotalTemperature`, which set p = p0 − ρU²/2 on inflow. The plume's starting vortex drove fast entrainment through the r = 5 Re patch near x = 8.5 m, the static pressure there went towards vacuum, and the density turned negative (floating-point exception at iterations 2,116 and 2,198).
+- CFL in `Allrun`: maxCo 0.1 to iteration 1,000, then 0.15 to 20,000 (I1 run 4c: 0.1 from
+  8,000 to 12,000). Higher values are not used: at 0.3 the nozzle-only runs went into a
+  chamber limit cycle (see "Nozzle-only runs").
+- Far field: `ambient_inlet` and `ambient_side` hold 101,325 Pa as a fixed static pressure,
+  with `inletOutlet` 288 K. Runs 1 and 2 failed at this boundary; see "Run history".
   `Allrun` edits `maxCo` and `endTime` with `foamDictionary`. This removes the comments
   from `controlDict` and expands its `$` macros; the result is the same.
 - Initial field (`make_case.py --init-only`): the 1-D isentropic solution in the nozzle,
   subsonic before the throat and supersonic after it. The flow angle varies linearly
   from 0 at the axis to the wall angle. Downstream of the exit, a column of exit-state
-  flow (r < Re, 4 De long) sits in still ambient gas. This avoids the starting
-  transient of a 350 bar diaphragm burst.
+  flow (r < Re) runs to the outlet through still ambient gas, and the outlet faces inside
+  r < Re carry the same state. This avoids the starting transient of a 350 bar diaphragm
+  burst, and with no jet head there is no starting shock. Up to run 3 the column was 4 De
+  long: its blunt end drove a shock of about 7 times ambient pressure into the ambient gas.
+  With the outlet faces left at U = 0, the first iteration of run 4 treated the outlet as a
+  wall for the Mach 3.75 column, and the second iteration stopped with a floating-point
+  exception in the thermo update.
 - Transient alternative (`--time-mode transient`): the 20 um throat cells limit the
   explicit time step to about 6e-9 s. 5 ms of physical time would need about 8e5 steps,
   roughly 30 h on 8 cores. Do not use it for the first run.
 
-Expected run time: 40 000 iterations x 178 k cells at an assumed 5 us per
-cell-iteration on one core, with 8 ranks at 75 % efficiency, gives about 1.7 h. Expect 1
-to 4 h. The laptop (i7-11800H) has 8 physical cores and 16 threads, so use 8 ranks.
-Hyper-threads add little to a memory-bound solver. After stage 1 starts, read
-`ExecutionTime` in `log.rhoCentralFoam.1` over 200 iterations and scale up. The internal
-nozzle flow should settle within the first 10 000 iterations. The slow entrainment field
-far from the plume takes longest. Call the run converged when the inlet and exit mass
-flows agree within 0.1 % and the exit momentum flux changes by less than 0.1 % over
+Run time: the measured cost on one core (i7-11800H in WSL, 4 ranks, parallel efficiency
+included) is 2.3e-5 s per cell-iteration on the 43 k-cell nozzle-only mesh (0.25 to 0.34 s
+per iteration) and 5.3e-5 s on the 249 k-cell plume mesh with two runs sharing the memory
+bus (3.3 s per iteration). The plume mesh no longer fits in cache. 20,000 plume iterations
+on 4 ranks take about 18 h. The laptop has 8 physical cores and 16
+threads: run at most 8 ranks in total. Hyper-threads add little to a memory-bound solver.
+The low-Mach chamber is the slowest part to settle. Call a run converged when the inlet and
+exit mass flows agree within 0.1 % and the exit momentum flux changes by less than 0.1 % over
 2000 iterations. If not, raise `endTime` and run `Allrun` again.
+
+GPU: OpenFOAM's GPU options (AmgX or PETSc offload) only speed up the linear solves of
+pressure-based solvers. `rhoCentralFoam` is explicit, with no large linear solve to offload.
+The laptop GPU (RTX 3050 Ti, 4 GB, shared with Ollama) also has 1/64-rate FP64, below the
+CPU's double-precision throughput, and this flow needs double precision (20 Pa to 35 MPa).
+
+## Nozzle-only runs
+
+At sea level the nozzle is under-expanded (pe/pa = 1.18) and the exit flow is supersonic,
+so nothing in the plume can travel upstream of the exit plane, and the wall boundary layer
+sees no adverse ambient pressure. Thrust and Isp therefore need only the chamber and the
+nozzle. `nozzle_only.sh` takes a saved time of a plume run, keeps the cells upstream of the
+exit plane (the connected region that holds the throat axis, 43 380 cells for I1), makes
+the exit plane the `outlet` patch (zeroGradient p and T, `inletOutlet` U) and continues
+`rhoCentralFoam`. Since nozzle-only runs have no plume, they also have no starting vortex
+and no far-field boundary.
+
+```bash
+bash cfd/nozzle_only.sh ~/runs/mfe280_sl_axi_run2 ~/runs/mfe280_sl_axi_nozzle 4000 4 24000
+bash cfd/plume_from_nozzle.sh ~/runs/mfe280_sl_axi ~/runs/mfe280_sl_axi_nozzle   # before the first Allrun
+```
+
+`PREP_ONLY=1` stops `nozzle_only.sh` after the mesh cut. The plume mesh has the same
+chamber and nozzle blocks as the nozzle-only mesh, so `plume_from_nozzle.sh` copies the
+converged interior exactly and the plume run only has to develop the external flow.
+
+The nozzle-only runs use maxCo 0.15. At 0.3 the wall cells next to the injector face went
+into a numerical limit cycle: static pressure up to 43 MPa against the 35 MPa inlet total
+pressure, and the inlet mass flow swung by about 13 %. Those 2,000 iterations are kept in
+`processor*/6000.maxCo03`, `postProcessing.maxCo03` and `maxCo03/`.
+
+`post_compare.py` also reports a vacuum Isp from the exit plane alone,
+(momentum flux + pressure force) / exit mass flow. For a fixed T0 and area ratio this
+does not depend on the chamber pressure, so it is a stable measure while the chamber is
+still settling.
+
+## Implicit solver test (HiSA)
+
+HiSA (gitlab.com/hisa/hisa, tag `validated-v2306`, version 1.9.6, GPLv3) is an implicit,
+density-based coupled solver for OpenFOAM: AUSM+up fluxes, a Jacobian of the coupled
+rho/rhoU/rhoE system, LU-SGS-preconditioned GMRES, and a pseudo-time Courant number that
+grows as the residual falls (here from 5 to at most 100, against 0.15 for `rhoCentralFoam`).
+It is built into the WSL user's OpenFOAM tree (`/root/OpenFOAM/hisa-validated-v2306`). The
+source audit is in ResearchOS `cfg/open_source_review.yaml`.
+
+`hisa_nozzle.sh` turns a nozzle-only case into a HiSA case from the same saved time, so the
+two solvers start from the same state on the same 43 380-cell mesh:
+
+```bash
+bash cfd/hisa_nozzle.sh ~/runs/mfe280_sl_axi_nozzle ~/runs/mfe280_sl_axi_hisa 4000 4 3000
+```
+
+Changes from the `rhoCentralFoam` case: `fvSchemes` (AUSM+up with the low-Mach option for the
+M ~ 0.2 chamber, dual-time pseudo-steady ddt), `fvSolution` (GMRES, pseudo-time control), the
+inlet and the walls. The wedges keep `type wedge`: HiSA's library registers its coupled wedge
+under that name and replaces the standard one when it loads (`libs` in `controlDict`).
+
+| Patch | p | T | U |
+|---|---|---|---|
+| `inlet` | `characteristicFarfieldPressure` | `characteristicFarfieldTemperature` | `characteristicFarfieldVelocity` |
+| `wall_chamber`, `wall_bell` | `characteristicWallPressure` | `characteristicWallTemperature` (adiabatic) | `boundaryCorrectedFixedValue` 0 |
+| `outlet` | zeroGradient | zeroGradient | `inletOutlet` |
+
+The inlet's outside state is the 1-D isentropic state at the inlet plane (p = 341.9 bar,
+T = 3775.4 K, u = 250.8 m/s for I1). The inflow velocity stays free, so the throat still sets
+the mass flow and the total pressure can end slightly off 350 bar; the exit-plane vacuum Isp
+does not depend on it. Two problems found in the smoke tests:
+
+- `characteristicPressureInletOutletTemperature` sets the temperature reference value to 0 on
+  subsonic inflow. OpenFOAM's `mixedEnergy` then evaluates he(p, T = 0), a division by zero,
+  and the default floating-point trap stops the run in the first iteration. The far-field
+  condition sets a real face temperature and is also non-reflecting.
+- `waveTransmissive` (advective) conditions do not accept HiSA's `dualTime` ddt scheme, even on
+  the 0-face plume patches left in the nozzle-only mesh; these are set to zeroGradient.
+
+## Run history
+
+| Run | Far field | Result |
+|---|---|---|
+| 1 (2026-10-31) | `totalPressure` / `inletOutletTotalTemperature` on `ambient_*`, r = 5 Re | FPE at iterations 2,116 and 2,198. The total-pressure inflow sets p = p0 − ρU²/2; the plume's starting vortex drove fast entrainment through the r = 5 Re patch near x = 8.5 m, and the density there went negative. |
+| 2 (2026-10-31) | `waveTransmissive` p on `ambient_*` (relaxes to 101,325 Pa over lInf = 16.4 m), r = 5 Re | FPE in the thermo update at iterations 5,554 (I1) and 4,991 (I2-C). On inflow faces only T and the tangential velocity were fixed, so the pressure could drift: the extremes log shows the minimum p on the r = 5 Re patch falling to 19 to 23 Pa while it moved downstream. At iteration 4,000 the ambient region already had 2.3 kPa at r = 2.7 Re. The nozzle interior was not affected. |
+| Nozzle-only (2026-11-01) | none (exit plane is the outlet) | Continued from run 2 at iteration 4,000. |
+| 3 (2026-11-01) | `fixedValue` p on `ambient_*`, r = 8 Re | Seeded from the nozzle-only solutions. FPE in the thermo update at iterations 3,183 (I1) and 3,033 (I2-C), both next to `ambient_side` (I1: 2.3 kPa at x = 10.5 m). The 4 De exit column's blunt end drove a starting shock into the still gas (at iteration 2,000: 741 kPa and 430 m/s outward at x = 8.5 m, r = 1.1 m), followed by an expansion (15 kPa, 243 K) that moved out to r = 3 m. The fixed-pressure side face reflected the shock as an expansion. |
+| 4 (2026-11-01) | as run 3 | Exit column through the whole plume region, outlet faces set to the column state, maxCo 0.1 to 1,000 then 0.15 to 20,000. Seeded from the nozzle-only solutions. I2-C reached 20,000 on 2026-11-02 at 05:28 MST. I1 stopped with an FPE at iteration 7,969 in a side-boundary cell (x = 10.53 m, r = 5.45 m): supersonic outflow through the fixed-pressure face (see "Boundary conditions"). |
+| 4b (2026-11-01) | as run 3 | I1 from iteration 6,000 at maxCo 0.1. FPE at 8,948 in the same cell. |
+| 4c (2026-11-01) | I1: `exprMixed` switch on `ambient_side` | I1 from iteration 8,000, maxCo 0.1 to 12,000, then 0.15. Reached 20,000 on 2026-11-02 at 07:55 MST (1.9 s per iteration at the end). |
+
+The run-2 and run-3 directories are kept as `~/runs/*_run2` and `~/runs/*_run3`, and the
+first run-4 attempt for I1 (stopped at iteration 2, then used for the diagnosis) as
+`~/runs/mfe280_sl_axi_run4a`. The logs of the two I1 side-boundary failures are
+`log.rhoCentralFoam.2` and `.3` in `~/runs/mfe280_sl_axi`, and the `fixedValue` p files of
+time 8,000 are kept in `~/runs/mfe280_sl_axi_p8000_fixedValue`. In the I1 run-2 case (generated by an
+earlier version of this script) the `exitPlane` faceZone had mixed face orientations, so
+`exitMassFlow` read about half the true flow (5.5 against 10.9 kg/s per wedge). The
+momentum and mass-weighted monitors use |U . n| as weight and were not affected, and Isp
+uses the inlet mass flow. The current topoSet (`setAndNormalToFaceZone`) and the
+nozzle-only `outlet` patch do not have this problem.
 
 ## Outputs
 
@@ -309,6 +468,139 @@ How to read these:
   Schmucker limit (0.32) but close to the Summerfield value (0.4). The 40 % case
   (`--pc-frac 0.4`) tests that margin.
 
+## Results
+
+Exit-plane monitors, mean of the last 2,000 iterations (`post_compare.py`,
+`results/cfd_compare.json`, figure 15). The 1-D reference is the ideal flow of the same gas
+from the same chamber state through the same throat, so the mass-flow ratio is the
+discharge coefficient Cd and Cd times the vacuum Isp ratio is the vacuum thrust-coefficient
+ratio, the number the cycle model applies as eta_Cf = 0.98.
+
+| Case | Iterations | mdot (kg/s) | Cd | F_sl (MN) | F_sl / 1-D | Isp_sl (s) | Isp_vac, exit (s) | Cf_vac / 1-D |
+|---|---|---|---|---|---|---|---|---|
+| I1 nozzle-only | 24,000 | 819.76 | 0.9924 | 2.7600 | 0.9803 | 343.32 | 361.94 | 0.9814 |
+| I1 HiSA, nozzle-only | 7,000 | 820.31 | 0.9931 | 2.7600 | 0.9803 | 343.10 | 361.51 | 0.9809 |
+| I1 plume | 20,000 | 819.74 | 0.9924 | 2.7599 | 0.9802 | 343.32 | 361.94 | 0.9814 |
+| I2-C nozzle-only | 24,000 | 813.59 | 0.9924 | 2.7593 | 0.9804 | 345.83 | 362.17 | 0.9814 |
+| I2-C plume | 20,000 | 813.57 | 0.9924 | 2.7593 | 0.9804 | 345.85 | 362.17 | 0.9814 |
+
+- Nozzle efficiency: the vacuum Cf ratio is 0.981 for both iterations, against the 0.98
+  the cycle model assumes. The sea-level thrust ratio is 0.980. The loss is divergence
+  (exit angle 8.3 deg) and wall friction, with adiabatic walls and wall functions.
+- Discharge coefficient: the throat passes 0.76 % less than the 1-D flow (2-D sonic line
+  and boundary layer). In the design this sits inside the delivered c* (eta_c* = 0.99).
+- Solver cross-check: HiSA (implicit, AUSM+up) on the same I1 nozzle mesh agrees with
+  `rhoCentralFoam` within 0.07 % in Cd, 0.01 % in thrust and 0.12 % in exit vacuum Isp,
+  after 7,000 iterations against 24,000.
+- The plume runs reproduce the nozzle-only exit plane (thrust within 0.001 % for I1 and
+  0.002 % for I2-C), as they must with a supersonic exit. Inlet and exit mass flows agree
+  within 0.02 %.
+- Separation: none at full thrust. The bell wall pressure falls to the lip with no plateau
+  or rise, to 179 kPa in I1 and 200 kPa in I2-C (1.8 and 2.0 times ambient). Ripples
+  along the wall stay below 1.5 kPa. The area-averaged exit pressure is 122.4 kPa in I1
+  (1-D: 119.5 kPa) and 139.4 kPa in I2-C (1-D: 136.1 kPa).
+
+Plume steadiness. Three saves of each run were compared cell by cell
+(`plume_steadiness.py`): 16,000, 18,000 and 20,000 for I2-C, and 17,000, 18,000 and 20,000
+for I1, whose 16,000 save was purged.
+
+- The centreline Mach number agrees within 0.01 between the three saves from the throat to
+  x = 5.1 m in I2-C and to x = 4.75 m in I1. That covers the first two shock cells. In
+  I2-C the flow expands to Mach 4.13 at x = 3.1 to 3.4 m and recompresses to 3.83 at
+  x = 4.3 m; in I1 the values are 4.12 at x = 3.3 to 3.7 m and 3.80 at x = 4.6 m. The I2-C
+  axis probe at x = 4.48 m varies by 0.6 % in pressure over the last 2,000 iterations. The
+  I1 probe at x = 4.79 m varies by 0.5 % over the same window, but it read 79 to 191 kPa
+  in the 2,000 iterations before, so the steady I1 region ends close to that point.
+- Further downstream the shock cells move between saves. The centreline Mach number at a
+  given x changes by up to 2.5 in I2-C and 1.7 in I1. Over the last 2,000 iterations the
+  axis probe 6 De downstream of the exit reads 124 to 790 kPa (I2-C, x = 9.59 m) and 29 to 473 kPa (I1,
+  x = 10.27 m). The shear layer rolls up into large structures that convect downstream and
+  send pressure waves into the ambient gas. Pressure minima reach 2.5 to 7 kPa near r = 1 m,
+  x = 3 to 5 m in I2-C, and 2.2 to 11 kPa in I1, near r = 1.1 to 1.3 m at x = 3.9 to 4.8 m
+  or on the axis at x = 6.8 to 7.4 m. In I2-C the induced inflow at x = 8 m, r = 2.5 m
+  reaches 250 m/s.
+- LTS RANS has therefore not reached a steady state in the far plume. The iteration-20,000
+  field there is one state of a pseudo-time cycle; a time average would need a
+  time-accurate run. Nothing upstream of the exit plane depends on it.
+
+## Plume images
+
+All images use the iteration-20,000 save. They are in `figures/cfd/` at 1920 x 1080, with
+4K originals in `figures/cfd/4k/`. The frame runs from x = 0.15 to 10.5 m. The plume core
+is steady to x = 5.1 m (I2-C) and 4.75 m (I1); downstream the field is one state of a moving
+pattern (see "Results").
+
+| Image | Script | What it shows |
+|---|---|---|
+| `plume_<tag>_Ma`, `_T`, `_log10p` | `render_plume.py` | Mach number, temperature and log10 pressure on the x-r plane and its mirror image. |
+| `plume_<tag>_schlieren` | `render_plume.py` | exp(-k \|grad ln rho\| / its 99th percentile) on the plane, k = 4. |
+| `plume_<tag>_split` | `render_plume.py` | Mach number above the axis, schlieren below. |
+| `plume_<tag>_cutaway` | `render_plume.py` | 270 deg revolved walls, Mach number on the cut faces where T > 700 K, translucent T = 1000 K isosurface (GPU), OptiX path tracing. |
+| `los_<tag>_schlieren_x`, `_schlieren_r` | `render_los.py` | Knife-edge schlieren through the whole revolved plume, edge normal to x (axial gradients) or to r. |
+| `los_<tag>_shadowgraph` | `render_los.py` | Shadowgraph through the whole revolved plume. |
+| `los_<tag>_emission_thin` | `render_los.py` | Optically thin H2O + CO2 thermal radiance, an upper bound. |
+| `los_<tag>_optical_depth` | `render_los.py` | Planck-mean optical depth along each ray, with tau = 1 and 3 contours. |
+| `volume_<tag>_emission` | `render_volume.py` | The thin radiance from an oblique camera, GPU ray march. |
+
+Smoothing is linear interpolation only: the cell values are averaged to the mesh points
+and interpolated per pixel or per grid point, so no cell edges show and no value is added
+that the solver did not compute. A shock spreads over about one cell.
+
+Line-of-sight images. A camera looks across the plume, as a test-stand schlieren system or
+an infrared camera would. `render_los.py` samples the axisymmetric fields on a regular
+(x, r) grid at pixel spacing out to the side boundary and sums along each ray over annular
+rings with exact chord lengths. Optics follow Settles (Schlieren and Shadowgraph
+Techniques, 2001): n - 1 = K rho with one Gladstone-Dale constant, K = 2.3e-4 m3/kg;
+deflection = gradient of the optical path difference; knife-edge contrast
+I/I0 = 1 - (f/a) eps; shadowgraph contrast I/I0 = 1 - L lap(OPD) in the small-deflection
+limit. The sensitivities f/a and L are set as an experimenter would set the knife edge, so
+that the 99th percentile of the signal uses half of the grey range:
+
+| Case | Edge normal to x: full range | Edge normal to r: full range | Shadowgraph screen distance L | Planck-mean optical depth on the axis at x = 2, 4, 5, 9 m |
+|---|---|---|---|---|
+| I1 | +-2.61 mrad (f/a = 383) | +-2.52 mrad | 14 m | 4.2, 5.9, 6.3, 10.3 |
+| I2-C | +-2.22 mrad (f/a = 450) | +-2.29 mrad | 19 m | 4.1, 4.5, 10.8, 12.3 |
+
+The emission model: a mixture fraction from the stagnation enthalpy,
+Z = (h0 - h0_amb)/(h0_jet - h0_amb). This is valid here because the CFD has one gas with
+constant cp and adiabatic walls, so h0 mixes as a passive scalar when the turbulent Prandtl
+and Schmidt numbers are equal. The exit composition from `plume_composition.py` (I2-C:
+H2O 0.644, CO2 0.289, CO 0.043, H2 0.018) is diluted with dry air by Z and held frozen. The
+Planck-mean absorption coefficients are the RADCAL fits used by the TNF workshop, the same
+numbers as in the OpenFOAM v2306 tutorial `combustion/reactingFoam/RAS/SandiaD_LTS`
+(`radiationProperties`, valid 300 to 2500 K; T is clipped to that range for kappa only).
+Radiance is the ray sum of kappa_P sigma T^4 / pi.
+
+Limits of these images:
+
+- One Gladstone-Dale constant for all the gas. The products' constant is roughly 20 %
+  higher than air's, mostly from the H2O. A different K changes the stated deflection
+  angles and leaves the images the same.
+- The ambient is the CFD gas, at 0.99 kg/m3 instead of 1.225 kg/m3 for air, so the density
+  step at the plume edge is smaller than in a real test.
+- Vertical stripes at x = 1.9 to 3.5 m in the edge-normal-to-x schlieren and in the
+  shadowgraph are pressure waves 4 to 5 cm long in the solution itself. A finite-difference
+  check of the optical path gives the same deflection within 1 %. The waves lie where the
+  axial cell spacing is fine and run normal to x; they also show as ripples in the
+  mid-plane schlieren. The ray sum over up to 10 m of path makes them prominent. They are
+  probably numerical.
+- In the I1 schlieren and shadowgraph a single dark line at x = 2.25 m crosses the whole
+  frame. It is a compression front in the ambient gas at the moment of the save: at
+  r = 2.8 m the pressure rises from 97 to 119 kPa over 2 cm, and a weaker front continues
+  out to r = 4.5 m. A front normal to the axis at a large radius crosses every line of sight
+  below that radius, so it shows over the full image height. It is one of the waves the
+  shear layer sends out (see "Results"), and the 18,000 save does not have it.
+- The emission image is an upper bound. On the axis the Planck-mean optical depth is 4 to
+  12, so the real plume is far from thin and its core radiance is lower than shown. No
+  afterburning (the 4 % CO and 2 % H2 in the exhaust would burn with entrained air and
+  heat the shear layer), no CO, OH or soot bands, and no spectral detail.
+- There is no grey self-absorbing image. With the local Planck mean, a cool mixing layer
+  absorbs the 2000 K core radiation as if its own 15 um CO2 band set the absorption, and
+  the plume goes dark between x = 7 and 9 m. A band or weighted-sum-of-grey-gases model
+  would be needed.
+- The nozzle is a black (schlieren) or grey (emission) silhouette from the wall patches;
+  the hot nozzle wall itself does not emit in these images.
+
 ## Limitations
 
 - The whole flow is one frozen gas with a tuned gamma. pe, c* and Isp match the
@@ -331,13 +623,15 @@ How to read these:
   the high-convective-Mach plume shear layer, so the supersonic core length is likely
   short.
 - The case is axisymmetric and steady (LTS): no side loads, no asymmetric or unsteady
-  separation, and no start-up transient.
+  separation, and no start-up transient. The far plume (beyond x = 5.1 m in I2-C and
+  4.75 m in I1) did not settle in 20,000 LTS iterations; a time average there needs a
+  time-accurate restart.
 - The viscosity fit error is up to 5.6 %, and the Prandtl number is 0.73 against 0.64.
 
 ## Next steps
 
-1. Run this case, then a mesh study with `--res 0.7 / 1.0 / 1.5` for mdot, Isp and pe.
-   Check the y+ distribution against the table above.
+1. A mesh study with `--res 0.7 / 1.0 / 1.5` for mdot, Isp and pe. Check the y+
+   distribution against the table above.
 2. Multi-species reacting nozzle. As a middle step, fit a JANAF polynomial to the
    Cantera shifting-equilibrium enthalpy h_eq(T) along the nozzle isentrope. This
    single gas has a temperature-dependent effective cp, which fixes most of the 9 %

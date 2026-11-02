@@ -6,15 +6,27 @@
     xlabel={iteration (local time step)}]
 \nextgroupplot[ylabel={sea-level $I_{sp}$ from exit plane (s)}, title={(a) thrust convergence (dashed: ideal 1-D)},
     legend pos=south east]
-  \addplot[cK, line width=0.8pt] table[x=it, y=isp, col sep=comma] {data/fig15_I1.csv};
-  \addlegendentry{I1 CFD}
-  \draw[cK, refline] (axis cs:0,347.57) -- (axis cs:1500,347.57);
-  \addplot[cFu, line width=0.8pt] table[x=it, y=isp, col sep=comma] {data/fig15_I2C.csv};
-  \addlegendentry{I2-C CFD}
-  \draw[cFu, refline] (axis cs:0,350.08) -- (axis cs:220,350.08);
+  \addplot[cK, line width=0.8pt] table[x=it, y=isp, col sep=comma] {data/fig15_I1_nozzle.csv};
+  \addlegendentry{I1 nozzle}
+  \draw[cK, refline] (axis cs:0,347.57) -- (axis cs:24000,347.57);
+  \addplot[cFu, line width=0.8pt] table[x=it, y=isp, col sep=comma] {data/fig15_I2C_nozzle.csv};
+  \addlegendentry{I2-C nozzle}
+  \draw[cFu, refline] (axis cs:0,350.08) -- (axis cs:24000,350.08);
+  \addplot[cK, line width=0.8pt, dashed] table[x=it, y=isp, col sep=comma] {data/fig15_I1_hisa.csv};
+  \addlegendentry{I1 hisa}
+  \draw[cK, refline] (axis cs:0,347.57) -- (axis cs:7000,347.57);
+  \addplot[cK, line width=0.8pt, densely dotted] table[x=it, y=isp, col sep=comma] {data/fig15_I1_plume.csv};
+  \addlegendentry{I1 plume}
+  \draw[cK, refline] (axis cs:0,347.57) -- (axis cs:20000,347.57);
+  \addplot[cFu, line width=0.8pt, densely dotted] table[x=it, y=isp, col sep=comma] {data/fig15_I2C_plume.csv};
+  \addlegendentry{I2-C plume}
+  \draw[cFu, refline] (axis cs:0,350.08) -- (axis cs:20000,350.08);
 \nextgroupplot[ylabel={$\dot m_{in} / \dot m_{1\text{-}D}$}, title={(b) inlet mass flow}]
-  \addplot[cK, line width=0.8pt] table[x=it, y=mr, col sep=comma] {data/fig15_I1.csv};
-  \addplot[cFu, line width=0.8pt] table[x=it, y=mr, col sep=comma] {data/fig15_I2C.csv};
+  \addplot[cK, line width=0.8pt] table[x=it, y=mr, col sep=comma] {data/fig15_I1_nozzle.csv};
+  \addplot[cFu, line width=0.8pt] table[x=it, y=mr, col sep=comma] {data/fig15_I2C_nozzle.csv};
+  \addplot[cK, line width=0.8pt, dashed] table[x=it, y=mr, col sep=comma] {data/fig15_I1_hisa.csv};
+  \addplot[cK, line width=0.8pt, densely dotted] table[x=it, y=mr, col sep=comma] {data/fig15_I1_plume.csv};
+  \addplot[cFu, line width=0.8pt, densely dotted] table[x=it, y=mr, col sep=comma] {data/fig15_I2C_plume.csv};
   \draw[cK, refline] (rel axis cs:0,0.5) -- (rel axis cs:1,0.5);
 \end{groupplot}
 \end{tikzpicture}

@@ -8,10 +8,10 @@
 Build  : _cafbeeb2-20260127 OPENFOAM=2306 patch=260127 version=2306
 Arch   : "LSB;label=32;scalar=64"
 Exec   : blockMesh
-Date   : Oct 31 2026
-Time   : 18:59:48
+Date   : Nov 01 2026
+Time   : 12:40:21
 Host   : SIDS-PC
-PID    : 2044
+PID    : 21702
 I/O    : uncollated
 Case   : /mnt/d/Research/projects/methalox-ffsc-engine/cfd/cases/mfe280_I2C_sl_axi
 nProcs : 1
@@ -84,12 +84,12 @@ Creating points with scale (1 1 1)
 
     Block 7 cell size :
         i : 0.003994980547439519 .. 0.1498117705289808
-        j : 0.0007675045993660494 .. 0.05969382276200111
+        j : 0.0007675045993185976 .. 0.0598198251166099
         k : 0.05745105392499148 .. 0.05745105392499148
 
     Block 8 cell size :
         i : 0.04121219483344353 .. 0.004121238607697714
-        j : 0.0007675045993648823 .. 0.06696333690110252
+        j : 0.0007675045993716613 .. 0.06395726852244379
         k : 0.03649527847691463 .. 0.03649527847691463
 
 No patch pairs to merge
@@ -98,25 +98,25 @@ Writing polyMesh with 0 cellZones
 ----------------
 Mesh Information
 ----------------
-  boundingBox: (0.03305148957443727 0 -0.1392656960759451) (17.25468417679844 3.189708851862522 0.1392656960759451)
-  nPoints: 324825
-  nCells: 161646
-  nFaces: 646933
-  nInternalFaces: 322109
+  boundingBox: (0.03305148957443727 0 -0.2228251137215122) (17.25468417679844 5.103534162980035 0.2228251137215122)
+  nPoints: 449469
+  nCells: 223827
+  nFaces: 895798
+  nInternalFaces: 446330
 ----------------
 Patches
 ----------------
-  patch 0 (start: 322109 size: 90) name: inlet
-  patch 1 (start: 322199 size: 146) name: wall_chamber
-  patch 2 (start: 322345 size: 308) name: wall_bell
-  patch 3 (start: 322653 size: 12) name: lip
-  patch 4 (start: 322665 size: 61) name: wall_outer
-  patch 5 (start: 322726 size: 186) name: ambient_inlet
-  patch 6 (start: 322912 size: 441) name: ambient_side
-  patch 7 (start: 323353 size: 288) name: outlet
-  patch 8 (start: 323641 size: 0) name: axis
-  patch 9 (start: 323641 size: 161646) name: front
-  patch 10 (start: 485287 size: 161646) name: back
+  patch 0 (start: 446330 size: 90) name: inlet
+  patch 1 (start: 446420 size: 146) name: wall_chamber
+  patch 2 (start: 446566 size: 308) name: wall_bell
+  patch 3 (start: 446874 size: 12) name: lip
+  patch 4 (start: 446886 size: 61) name: wall_outer
+  patch 5 (start: 446947 size: 327) name: ambient_inlet
+  patch 6 (start: 447274 size: 441) name: ambient_side
+  patch 7 (start: 447715 size: 429) name: outlet
+  patch 8 (start: 448144 size: 0) name: axis
+  patch 9 (start: 448144 size: 223827) name: front
+  patch 10 (start: 671971 size: 223827) name: back
 
 End
 

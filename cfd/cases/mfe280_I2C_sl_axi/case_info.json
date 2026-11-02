@@ -7,15 +7,15 @@
     "wedge_deg": 5.0,
     "lip_mm": 20.0,
     "down_de": 12.0,
-    "rad_re": 5.0,
+    "rad_re": 8.0,
     "up_re": 1.5,
     "x_inlet": null,
     "gas": "equivalent",
     "wall_thermal": "adiabatic",
     "pc_frac": 1.0,
     "time_mode": "lts",
-    "iters": 40000,
-    "nprocs": 8,
+    "iters": 20000,
+    "nprocs": 4,
     "name": "mfe280_I2C_sl_axi",
     "results": "results/iterations/I2-C",
     "distro": "Ubuntu-22.04",
@@ -201,7 +201,7 @@
   "mesh": {
     "N_r": 90,
     "N_lip": 12,
-    "N_out": 186,
+    "N_out": 327,
     "n_down": 380,
     "n_up": 61,
     "n_axial_internal": [
@@ -211,7 +211,7 @@
       74,
       135
     ],
-    "cells": 161646,
+    "cells": 223827,
     "cells_by_block": {
       "inlet-cyl_end": 2610,
       "cyl_end-throat": 10530,
@@ -220,15 +220,15 @@
       "eps15-exit": 12150,
       "plume core": 34200,
       "lip wake": 4560,
-      "outer plume": 70680,
-      "outside nozzle": 11346
+      "outer plume": 124260,
+      "outside nozzle": 19947
     },
     "x_inlet": 0.03305148957443728,
     "x_throat": 0.3455686727841941,
     "x_exit": 1.929495504025629,
     "x_far": 17.254684176798435,
     "x_up": 0.9716712119773286,
-    "R_far": 3.1927476401610013,
+    "R_far": 5.108396224257602,
     "Re": 0.6385495280322002,
     "Rt": 0.10951034060093912,
     "lip_t": 0.02,
@@ -452,23 +452,19 @@
     "stages": [
       [
         0.1,
-        2000
+        1000
       ],
       [
-        0.25,
-        6000
-      ],
-      [
-        0.5,
-        40000
+        0.15,
+        20000
       ]
     ],
     "write_interval": 2000,
-    "nprocs": 8,
+    "nprocs": 4,
     "dt_transient_est_s": 5.543087626923896e-09,
-    "steps": 40000,
-    "wall_clock_h_est": 1.4967222222222225,
-    "cost_assumption_s_per_cell_iter": 5e-06
+    "steps": 20000,
+    "wall_clock_h_est": 16.476154166666667,
+    "cost_assumption_s_per_cell_iter": 5.3e-05
   },
   "reference_1d": {
     "ideal_chosen_gas": {

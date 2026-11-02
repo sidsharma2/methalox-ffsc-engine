@@ -189,4 +189,4 @@ Environment: Python 3.12 venv in `.venv` (numpy, scipy, matplotlib, cantera 3.2,
 
 ## Status
 
-Iteration 1 is frozen (git tag `iter-1`). Iteration 2 is in progress on branch `iter-2`: options register, economics layer and plasma study done; the first OpenFOAM run started 2026-10-31. The physics is first-order (0-D/1-D, ideal gas in the preburners, Bartz heat flux) and the CAD is a layout-level assembly. Open items are listed in [section 18 of the report](docs/DESIGN_REPORT.md#18-limitations-and-next-steps).
+Iteration 1 is frozen (git tag `iter-1`). Iteration 2 is in progress on branch `iter-2`: options register, economics layer and plasma study done. The OpenFOAM nozzle and sea-level plume runs are done for I1 and I2-C: they confirm the assumed nozzle efficiency (vacuum Cf ratio 0.981 against η_Cf = 0.98). The physics is first-order (0-D/1-D, ideal gas in the preburners, Bartz heat flux) and the CAD is a layout-level assembly. Open items are listed in [section 18 of the report](docs/DESIGN_REPORT.md#18-limitations-and-next-steps).

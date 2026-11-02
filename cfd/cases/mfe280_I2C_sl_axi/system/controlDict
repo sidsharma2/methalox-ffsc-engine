@@ -17,7 +17,7 @@ application     rhoCentralFoam;
 startFrom       latestTime;
 startTime       0;
 stopAt          endTime;
-endTime         2000;   // Allrun sets the stage end times
+endTime         1000;   // Allrun sets the stage end times
 deltaT          1;          // local time stepping: one time unit = one iteration
 writeControl    timeStep;
 writeInterval   2000;
@@ -29,7 +29,7 @@ timeFormat      general;
 timePrecision   8;
 runTimeModifiable true;
 adjustTimeStep  no;
-maxCo           0.1;        // Allrun ramps 0.1 -> 0.25 -> 0.5
+maxCo           0.1;        // Allrun sets maxCo for each stage
 maxDeltaT       1;          // upper bound of the local time step [s], not active
 rDeltaTSmoothingCoeff 0.2;  // max ratio of neighbouring local time steps = 1.2
 

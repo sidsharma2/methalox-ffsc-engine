@@ -319,24 +319,48 @@ Drawing the sections found model defects that the clash check of that time had m
 
 ## 12. CFD
 
-`cfd/make_case.py` writes an OpenFOAM v2306 (ESI) case, `cfd/cases/mfe280_sl_axi`, from `results/contour.csv` and `design.json`. Details and run commands are in `cfd/README.md`.
+`cfd/make_case.py` writes an OpenFOAM v2306 (ESI) case, `cfd/cases/mfe280_sl_axi`, from `results/contour.csv` and `design.json`; with `--results results/iterations/I2-C` it writes the I2-C case, `cfd/cases/mfe280_I2C_sl_axi`. Details, run commands and the run history are in `cfd/README.md`.
 
 Domain:
 
 - a 5° axisymmetric wedge of the hot-gas path, from the chamber cylinder through the bell;
-- the sea-level plume region, 12 exit diameters downstream and 5 exit radii outward, with a 20 mm nozzle lip.
+- the sea-level plume region, 12 exit diameters downstream and 8 exit radii outward, with a 20 mm nozzle lip.
 
-Mesh: 9-block blockMesh, 178,374 cells. checkMesh passes, with maximum non-orthogonality 31° and skewness 0.91. First cells are sized for y+ ≈ 50 (20 µm at the throat).
+Mesh: 9-block blockMesh, 248,526 cells for I1 and 223,827 for I2-C. checkMesh passes, with maximum non-orthogonality 31° and skewness 0.91. First cells are sized for y+ ≈ 50 (20 µm at the throat).
 
 Solver set-up:
 
 - rhoCentralFoam with Kurganov fluxes, k-ω SST, and local time stepping to steady state.
-- Inlet: total pressure 350 bar and total temperature 3,785 K.
+- Inlet: total pressure 350 bar and total temperature 3,785 K (I1), 400 bar and 3,804 K (I2-C).
 - Walls are adiabatic. The cooling-profile wall temperature is an option.
 
 Gas: a single equivalent gas with γ = 1.125, cp = 3,217 J/kg K and M = 23.26 kg/kmol. This γ reproduces the shifting-equilibrium exit pressure exactly. c* is within 0.22 % and sea-level Isp within 0.07 %, but exit static temperature is 9 % low. The true frozen chamber properties would give an exit pressure 21 % low, which matters for a separation study.
 
-The first full run started on 2026-10-31 in the WSL home (`~/runs/mfe280_sl_axi`, 8 ranks), at about 1.2 s per iteration. It failed with a floating-point exception at iteration 2,116, and again at 2,198 after a gentler Courant ramp. A rerun that logged the field extremes every iteration found the cause: the density in one cell on the outer far-field boundary (x = 8.5 m, r = 3.39 m, the r = 5 Re patch) fell from 0.0099 to −0.06 kg/m3 in three iterations. That patch used a total-pressure inflow condition, which sets the static pressure to p0 − ρU²/2. When the plume's starting vortex drove fast entrainment through the boundary, that static pressure went towards vacuum. Both ambient patches now hold the ambient static pressure with a non-reflecting (waveTransmissive) condition and 288 K inflow temperature, and the ramp is 0.1, 0.15, 0.3, 0.5. The I1 run continued from iteration 2,000 and the I2-C run started again. Its first job is to check the 1-D exit pressure, Isp and throat mass flow. After that, it should check separation at 40 % throttle (`--pc-frac 0.4`).
+Thrust comes from nozzle-only runs. The exit flow is supersonic, so nothing in the plume reaches the exit plane, and these runs converged at 24,000 iterations. An implicit solver (HiSA) on the I1 nozzle is the cross-check. The plume runs then went to 20,000 iterations. Every failure on the way was at the far-field boundary, under the plume's starting vortex:
+
+- a total-pressure inflow (run 1) and a non-reflecting pressure (run 2) let the side-boundary pressure fall towards vacuum;
+- a fixed static pressure with a blunt starting column (run 3) reflected the start-up shock as an expansion;
+- in I1 run 4, a supersonic radial stream from the vortex ring left through the fixed-pressure side face, at iterations 7,969 and 8,948.
+
+I1 finished with a characteristic switch on that face: ambient pressure unless the adjacent cell flows out supersonically, zero gradient if it does. The switch was needed only while the starting vortex passed. In every save checked from iteration 11,000 on, all faces held ambient pressure, so the final I1 solution has the same boundary as I2-C.
+
+| Result (mean of the last 2,000 iterations) | I1 | I2-C |
+|---|---|---|
+| Discharge coefficient (CFD / ideal 1-D mass flow) | 0.9924 | 0.9924 |
+| Sea-level thrust, CFD / ideal 1-D (MN) | 2.760 / 2.816 | 2.759 / 2.814 |
+| Sea-level Isp, CFD / ideal 1-D (s) | 343.3 / 347.6 | 345.8 / 350.1 |
+| Vacuum Cf, CFD / ideal 1-D (the cycle model's η_Cf) | 0.981 | 0.981 |
+| Bell wall pressure at the lip | 179 kPa | 200 kPa |
+
+The nozzle efficiency the cycle model assumes, η_Cf = 0.98, holds: the CFD gives 0.981 for both iterations, with the loss in divergence and wall friction. The throat passes 0.76 % less than the 1-D flow (2-D sonic line and boundary layer); in the design this sits inside the delivered c*. HiSA agrees with rhoCentralFoam within 0.07 % in discharge coefficient and 0.12 % in vacuum Isp. The plume runs reproduce the nozzle-only exit plane within 0.002 % in thrust. The bell stays attached at sea level: the wall pressure falls to the lip with no plateau or rise, to 1.8 times ambient in I1 and 2.0 times in I2-C.
+
+The near plume is steady. Over the last three saves (I2-C: 16,000, 18,000 and 20,000; I1: 17,000, 18,000 and 20,000) the centreline Mach number agrees within 0.01 from the throat to x = 5.1 m in I2-C and to x = 4.75 m in I1. That covers the first two shock cells. Further downstream it has not settled. The shock cells move between saves, and the shear layer rolls up into large structures that convect downstream and radiate pressure waves into the ambient gas. Images of that region show one state of a moving pattern; averaging it would need a time-accurate restart.
+
+![I2-C plume at iteration 20,000: Mach number above the axis, schlieren of ln ρ below](../figures/cfd/plume_I2C_it20000_split.png)
+
+![I2-C plume: knife-edge schlieren through the whole revolved plume, edge normal to the axis](../figures/cfd/los_I2C_it20000_schlieren_x.png)
+
+The image set in `figures/cfd/` (described in `cfd/README.md`, "Plume images") has field images, a path-traced cutaway, line-of-sight knife-edge schlieren and shadowgraph, and an optically thin H2O + CO2 emission image with its optical-depth map. The emission image is an upper bound: on the axis the Planck-mean optical depth is 4 to 12. Two checks remain: separation at 40 % throttle (`--pc-frac 0.4`) and a mesh study.
 
 ## 13. Iteration 2: design options
 
@@ -591,7 +615,7 @@ The first unit costs more than the improved engine ($3.94M against $3.37M), main
 
 Drawings: the I2-C set is issued as revision B under the same drawing numbers in `drawings/I2-C/` (`MFE280-I2-C-DWG-SET.pdf`, 11 sheets: GA-001, TCA-002, INJ-003, TPO-004, TPF-005, JNT-006, VIS-007, VIS-008, MFG-009, VIS-010, VIS-011; `MFE280-I2-C-PID-SET.pdf`, PID-000 to PID-004), built with `drawings/src/build_set.py --iter I2-C`. Every sheet of the iteration-1 set is regenerated from the I2-C model, with weld symbols at the welded joints. The section-view and 3D sheets are extended, and a build-strategy sheet (MFG-009) shows the hybrid route of every part with its cost. The P&ID shows the laser igniters, the hydrostatic bearing supply from the CH4 discharge and the welded lines. The iteration-1 set stays as issued (revision A), with a build-strategy addendum in `drawings/I1-addendum/`.
 
-CFD: both nozzles (I1 and I2-C) run in OpenFOAM, 8 ranks each, from 2026-10-31. `cfd/post_compare.py` turns the exit-plane monitors into thrust and Isp, compares them with the ideal 1-D flow of the same gas, and plots the convergence (`figures/pgf/fig15_cfd_convergence.png`). The ratio of CFD to 1-D thrust is the nozzle efficiency that the cycle model assumes as η_Cf = 0.98.
+CFD: both nozzles (I1 and I2-C) and their sea-level plumes ran in OpenFOAM (section 12). `cfd/post_compare.py` turns the exit-plane monitors into thrust and Isp, compares them with the ideal 1-D flow of the same gas, and plots the convergence (`figures/pgf/fig15_cfd_convergence.png`). The vacuum thrust-coefficient ratio is 0.981 for both iterations, against the η_Cf = 0.98 that the cycle model assumes.
 
 ## 18. Limitations and next steps
 

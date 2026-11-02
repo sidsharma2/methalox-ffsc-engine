@@ -31,10 +31,7 @@ boundaryField
     }
     "ambient_.*"
     {
-        type            totalPressure;
-        p0              uniform 101325;
-        psi             thermo:psi;
-        gamma           1.12504;
+        type            fixedValue;
         value           uniform 101325;
     }
     outlet

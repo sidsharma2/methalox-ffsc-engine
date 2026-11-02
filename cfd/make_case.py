@@ -433,7 +433,16 @@ def internal(value, kind, arr=None):
     return f"internalField   nonuniform List<vector>\n{n}\n(\n{body}\n)\n;\n"
 
 
-def field_files(info, arrays=None):
+def nonuniform(arr):
+    arr = np.asarray(arr)
+    if arr.ndim == 1:
+        return f"nonuniform List<scalar>\n{len(arr)}\n(\n" + "\n".join(f"{v:.9g}" for v in arr) + "\n)\n"
+    body = "\n".join(f"({u:.7g} {v:.7g} {w:.7g})" for u, v, w in arr)
+    return f"nonuniform List<vector>\n{len(arr)}\n(\n{body}\n)\n"
+
+
+def field_files(info, arrays=None, outlet_values=None):
+    """Field files for 0/. arrays: internal fields by name; outlet_values: outlet-patch 'value' lists."""
     arrays = arrays or {}
     gas, bcd = info["gas"], info["bc"]
     G = f"{gas['gamma']:.6g}"
@@ -447,10 +456,13 @@ def field_files(info, arrays=None):
     p = [("inlet", [("type", "totalPressure"), ("p0", f"uniform {p0:.9g}"), ("psi", "thermo:psi"),
                     ("gamma", G), ("value", f"uniform {p0:.9g}")]),
          (f'"{walls_all}"', [("type", "zeroGradient")]),
-         # static-pressure far field: a total-pressure inflow sets p = p0 - rho U^2 / 2 and collapsed to
-         # negative density at r = 5 Re when the plume's starting vortex drove fast entrainment (run 1, it 2,194)
-         ('"ambient_.*"', [("type", "waveTransmissive"), ("psi", "thermo:psi"), ("gamma", G),
-                           ("fieldInf", f"{pa:.9g}"), ("lInf", f"{bcd['lInf']:.4g}"), ("value", f"uniform {pa:.9g}")]),
+         # entrainment boundaries hold the ambient static pressure (open reservoir). Run 1 used totalPressure
+         # (p = p0 - rho U^2 / 2 on inflow), which went to negative density at r = 5 Re when the starting
+         # vortex drove fast entrainment (it 2,194). Run 2 used waveTransmissive with lInf = 16 m: on inflow
+         # faces only T and the tangential velocity were set, the pressure was free to drift, and the jet's
+         # entrainment pulled the r = 5 Re patch to ~20 Pa (FPE at it 5,554 / 4,991). A fixed static
+         # pressure closes the subsonic inflow condition; the inflow's dynamic pressure there is ~10 Pa.
+         ('"ambient_.*"', [("type", "fixedValue"), ("value", f"uniform {pa:.9g}")]),
          ("outlet", [("type", "waveTransmissive"), ("psi", "thermo:psi"), ("gamma", G),
                      ("fieldInf", f"{pa:.9g}"), ("lInf", f"{bcd['lInf']:.4g}"), ("value", f"uniform {pa:.9g}")])]
     files["p"] = ("volScalarField", "[1 -1 -2 0 0 0 0]", pa, "scalar", p)
@@ -498,6 +510,14 @@ def field_files(info, arrays=None):
                                   ("value", "uniform 0")]),
               ('"(inlet|ambient_.*|outlet)"', [("type", "calculated"), ("value", "uniform 0")])]
     files["alphat"] = ("volScalarField", "[1 -1 -1 0 0 0 0]", 0, "scalar", alphat)
+
+    for name, arr in (outlet_values or {}).items():
+        pats = files[name][4]
+        entries = next((e for n, e in pats if n == "outlet"), None)
+        if entries is None:  # outlet only in a regex group: give it an entry of its own
+            entries = list(next(e for n, e in pats if "outlet" in n))
+            pats.append(("outlet", entries))
+        entries[:] = [(k, nonuniform(arr) if k == "value" else v) for k, v in entries]
 
     out = {}
     for name, (cls, dims, val, kind, pats) in files.items():
@@ -654,7 +674,7 @@ timeFormat      general;
 timePrecision   8;
 runTimeModifiable true;
 adjustTimeStep  no;
-maxCo           {run['stages'][0][0]:g};        // Allrun ramps 0.1 -> 0.15 -> 0.3 -> 0.5
+maxCo           {run['stages'][0][0]:g};        // Allrun sets maxCo for each stage
 maxDeltaT       1;          // upper bound of the local time step [s], not active
 rDeltaTSmoothingCoeff 0.2;  // max ratio of neighbouring local time steps = 1.2
 """
@@ -883,7 +903,7 @@ def allrun_text(info):
     run = info["run"]
     stages = "\n".join(f"stage {i + 1} {co:g} {end:g}" for i, (co, end) in enumerate(run["stages"]))
     return f"""#!/bin/bash
-# Parallel rhoCentralFoam run with a three-stage Courant-number ramp.
+# Parallel rhoCentralFoam run with a staged Courant-number ramp.
 #   ./Allrun [nProcs]        default {run['nprocs']} (one rank per physical core)
 #   FORCE=1 ./Allrun         skip the check for other running OpenFOAM jobs
 # Re-running continues from the latest processor time; finished stages are skipped.
@@ -948,10 +968,31 @@ def read_cell_centres(case):
     return np.array([ln.strip()[1:-1].split() for ln in body], dtype=float)
 
 
+def read_face_centres(case, patch):
+    """Face centres of one patch from the boundaryField of 0/C (written by writeCellCentres)."""
+    txt = (case / "0" / "C").read_text()
+    i = re.compile(rf"\n\s+{patch}\s*\n\s*\{{").search(txt, txt.index("boundaryField")).end()
+    m = re.compile(r"nonuniform\s+List<vector>\s+(\d+)\s*\(").search(txt, i)
+    n = int(m.group(1))
+    body = txt[m.end():].lstrip("\n").split("\n", n)[:n]
+    return np.array([ln.strip()[1:-1].split() for ln in body], dtype=float)
+
+
 def initial_fields(case, info):
-    """1-D isentropic flow inside the nozzle, an exit-state column for 4 De downstream,
-    still ambient gas elsewhere."""
+    """1-D isentropic flow inside the nozzle, an exit-state column from the exit plane to the
+    outlet, still ambient gas elsewhere.
+
+    The column runs the full length of the plume region. Run 3 had a column of 4 De: its blunt end
+    pushed into still air like a piston and sent a starting shock (7x ambient at r = 1.1 m) out to
+    the side boundary, where the fixed-pressure face reflected it as an expansion (2 kPa, FPE at
+    iteration 3,183). With the column through the outlet, only the weak pe/pa = 1.18 mismatch and
+    the shear-layer growth remain as start-up transients.
+
+    The outlet faces get the same state (column inside r < Re, ambient outside). With the default
+    U = 0 there, the first iteration saw the outlet as a wall for the Mach 3.75 column, and the
+    second iteration hit a floating-point exception in the thermo update (run 4, first attempt)."""
     C = read_cell_centres(case)
+    Cf = read_face_centres(case, "outlet")
     gas, m, bcd = info["gas"], info["mesh"], info["bc"]
     g, R, p0, T0 = gas["gamma"], gas["R"], bcd["p0"], bcd["T0"]
     con = np.loadtxt(RES / "contour.csv", delimiter=",", skiprows=1)
@@ -968,7 +1009,7 @@ def initial_fields(case, info):
     ey, ez = np.where(r > 0, y / np.maximum(r, 1e-30), 1.0), np.where(r > 0, z / np.maximum(r, 1e-30), 0.0)
     rwall = np.interp(x, xc, rc)
     inside = (x <= x_e + 1e-9) & (r < rwall + 0.5 * m["lip_t"])
-    column = (x > x_e) & (x < x_e + 4 * 2 * Re) & (r < Re)
+    column = (x > x_e) & (r < Re)
 
     M = np.interp(x, xg, Mg)
     M = np.where(column, Mg[-1], M)
@@ -984,12 +1025,25 @@ def initial_fields(case, info):
     U = np.column_stack([u * np.cos(phi), u * np.sin(phi) * ey, u * np.sin(phi) * ez])
     k = np.where(flow, bcd["k_in"], bcd["k_amb"])
     w = np.where(flow, bcd["omega_in"], bcd["omega_amb"])
-    files = field_files(info, {"p": p, "T": T, "U": U, "k": k, "omega": w})
+
+    # outlet faces: exit-column state inside r < Re, still ambient gas outside
+    rf = np.hypot(Cf[:, 1], Cf[:, 2])
+    jet = rf < Re
+    eyf, ezf = np.where(rf > 0, Cf[:, 1] / np.maximum(rf, 1e-30), 1.0), np.where(rf > 0, Cf[:, 2] / np.maximum(rf, 1e-30), 0.0)
+    Te = T0 / (1 + 0.5 * (g - 1) * Mg[-1] ** 2)
+    ue = Mg[-1] * np.sqrt(g * R * Te)
+    phf = np.arctan(slope[-1]) * np.minimum(rf / Re, 1.0)
+    uf = np.where(jet, ue, 0.0)
+    out = {"p": np.where(jet, p0 * (Te / T0) ** (g / (g - 1)), P_AMB), "T": np.where(jet, Te, T_AMB),
+           "U": np.column_stack([uf * np.cos(phf), uf * np.sin(phf) * eyf, uf * np.sin(phf) * ezf]),
+           "k": np.where(jet, bcd["k_in"], bcd["k_amb"]), "omega": np.where(jet, bcd["omega_in"], bcd["omega_amb"])}
+    files = field_files(info, {"p": p, "T": T, "U": U, "k": k, "omega": w}, out)
     for name, txt in files.items():
         write(case / "0" / name, txt)
     for f in ("C", "Cx", "Cy", "Cz"):
         (case / "0" / f).unlink(missing_ok=True)
     return {"cells": len(C), "cells_nozzle": int(inside.sum()), "cells_column": int(column.sum()),
+            "outlet_faces_jet": int(jet.sum()), "outlet_faces": len(Cf),
             "p_range": [float(p.min()), float(p.max())], "T_range": [float(T.min()), float(T.max())],
             "U_max": float(u.max())}
 
@@ -1028,7 +1082,7 @@ def main():
     ap.add_argument("--wedge-deg", type=float, default=5.0)
     ap.add_argument("--lip-mm", type=float, default=20.0, help="nozzle lip thickness")
     ap.add_argument("--down-de", type=float, default=12.0, help="plume region length in exit diameters")
-    ap.add_argument("--rad-re", type=float, default=5.0, help="outer radius in exit radii")
+    ap.add_argument("--rad-re", type=float, default=8.0, help="outer radius in exit radii")
     ap.add_argument("--up-re", type=float, default=1.5, help="external region upstream of the exit plane, in exit radii")
     ap.add_argument("--x-inlet", type=float, default=None, help="inlet plane [m from injector face], default L_cyl/4")
     ap.add_argument("--gas", choices=["equivalent", "frozen"], default="equivalent")
@@ -1036,7 +1090,7 @@ def main():
                     help="profile = Twg(x) from results/cooling_profile.csv")
     ap.add_argument("--pc-frac", type=float, default=1.0, help="chamber pressure fraction (0.4 = 40 %% throttle)")
     ap.add_argument("--time-mode", choices=["lts", "transient"], default="lts")
-    ap.add_argument("--iters", type=int, default=40000, help="LTS iterations (end of stage 3)")
+    ap.add_argument("--iters", type=int, default=40000, help="LTS iterations (end of the last stage)")
     ap.add_argument("--nprocs", type=int, default=8)
     ap.add_argument("--name", default=None)
     ap.add_argument("--results", default=None, help="results directory of an iteration build (default: results/)")
@@ -1090,17 +1144,20 @@ def main():
     c_w = math.sqrt(gas["gamma"] * gas["R"] * th["Taw"])
     dt_est = 0.4 / (c_w / th["h"] + (th["u"] + c_w) / th["dx"])
     if args.time_mode == "lts":
-        # gentler ramp: the plume's starting vortex (x ~ 8 m) over-expands to ~250 K / 17 kPa and the
-        # first run hit a floating-point exception when maxCo jumped from 0.1 to 0.25 at iteration 2,000
-        stages = [(0.1, 2000), (0.15, 8000), (0.3, 16000), (0.5, max(args.iters, 20000))]
+        # maxCo stays at 0.15: at 0.3 the nozzle-only runs went into a chamber limit cycle (43 MPa > p0).
+        # The short 0.1 stage lets the exit-state column adjust to the ambient pressure.
+        stages = [(0.1, 1000), (0.15, max(args.iters, 20000))]
         write_interval = 2000
         n_steps = stages[-1][1]
     else:
         stages = [(0.1, 5e-5), (0.25, 2e-4), (0.4, 5e-3)]
         write_interval = 2.5e-4
         n_steps = stages[-1][1] / dt_est
-    cost_cell = 5e-6                            # s per cell-iteration on one core (assumed, check log)
-    wall_h = n_steps * mesh["cells"] * cost_cell / (0.75 * args.nprocs) / 3600
+    # s per cell-iteration on one core, measured on the i7-11800H in WSL with 4 ranks (2026-11-01):
+    # 2.3e-5 on the 43k-cell nozzle-only mesh (0.25 s/iteration), 5.3e-5 on the 249k-cell plume mesh
+    # with two runs sharing the memory bus (3.3 s/iteration). The larger mesh no longer fits in cache.
+    cost_cell = 2.3e-5 if mesh["cells"] < 1e5 else 5.3e-5
+    wall_h = n_steps * mesh["cells"] * cost_cell / args.nprocs / 3600
     run = {"mode": args.time_mode, "stages": stages, "write_interval": write_interval, "nprocs": args.nprocs,
            "dt_transient_est_s": dt_est, "steps": n_steps, "wall_clock_h_est": wall_h,
            "cost_assumption_s_per_cell_iter": cost_cell}
