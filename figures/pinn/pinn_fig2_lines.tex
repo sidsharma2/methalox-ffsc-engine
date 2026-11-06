@@ -1,0 +1,44 @@
+\documentclass[border=1.5pt]{standalone}
+\input{../pgf/style.tex}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 2, horizontal sep=1.45cm, vertical sep=1.55cm}, width=7.3cm, height=5.0cm]
+\nextgroupplot[title={(a) Mach number on the axis}, xlabel={$x/R_t$}, ylabel={Mach number}, xmin=-3, xmax=15, legend pos=south east, legend style={font=\footnotesize}]
+  \addplot[cK, line width=0.7pt] table[x=xi, y=cfd, col sep=comma] {data/fig2_axis.csv}; \addlegendentry{Euler CFD, 91,935 cells}
+  \addplot[cOx, line width=0.55pt] table[x=xi, y=s0, col sep=comma] {data/fig2_axis.csv};
+  \addlegendentry{PINN, 5 seeds}
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s1, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s2, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s3, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s4, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cFu, densely dashed, line width=0.8pt] table[x=xi, y=M, col sep=comma] {data/fig2_1d.csv}; \addlegendentry{1-D exact}
+\nextgroupplot[title={(b) internal shock on the axis}, xlabel={$x/R_t$}, ylabel={Mach number}, xmin=8.5, xmax=11.5, ymin=3.0, ymax=4.3, legend pos=south west, legend style={font=\footnotesize}]
+  \addplot[cIn, line width=0.8pt] table[x=xi, y=cfd, col sep=comma] {data/fig2_axis_c.csv}; \addlegendentry{Euler CFD, 40,860 cells}
+  \addplot[cK, line width=0.9pt] table[x=xi, y=cfd, col sep=comma] {data/fig2_axis.csv}; \addlegendentry{Euler CFD, 91,935 cells}
+  \addplot[cOx, line width=0.55pt] table[x=xi, y=s0, col sep=comma] {data/fig2_axis.csv};
+  \addlegendentry{PINN, 5 seeds}
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s1, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s2, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s3, col sep=comma] {data/fig2_axis.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s4, col sep=comma] {data/fig2_axis.csv};
+\nextgroupplot[title={(c) Mach number across the throat, $x/R_t = -0.003$}, xlabel={$r/R_t$}, ylabel={Mach number}, xmin=0, xmax=1.0, legend pos=north west, legend style={font=\footnotesize}]
+  \addplot[cIn, line width=0.8pt] table[x=r, y=cfd, col sep=comma] {data/fig2_throat_c.csv}; \addlegendentry{Euler CFD, 40,860 cells}
+  \addplot[cK, line width=0.9pt] table[x=r, y=cfd, col sep=comma] {data/fig2_throat.csv}; \addlegendentry{Euler CFD, 91,935 cells}
+  \addplot[cOx, line width=0.55pt] table[x=r, y=s0, col sep=comma] {data/fig2_throat.csv};
+  \addlegendentry{PINN, 5 seeds}
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=r, y=s1, col sep=comma] {data/fig2_throat.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=r, y=s2, col sep=comma] {data/fig2_throat.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=r, y=s3, col sep=comma] {data/fig2_throat.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=r, y=s4, col sep=comma] {data/fig2_throat.csv};
+\nextgroupplot[title={(d) Mach number at the wall near the throat}, xlabel={$x/R_t$}, ylabel={Mach number}, xmin=-1, xmax=3, ymin=0.4, ymax=2.8, legend pos=south east, legend style={font=\footnotesize}]
+  \addplot[cIn, line width=0.8pt] table[x=xi, y=cfd, col sep=comma] {data/fig2_wall_c.csv}; \addlegendentry{Euler CFD, 40,860 cells}
+  \addplot[cK, line width=0.9pt] table[x=xi, y=cfd, col sep=comma] {data/fig2_wall.csv}; \addlegendentry{Euler CFD, 91,935 cells}
+  \addplot[cOx, line width=0.55pt] table[x=xi, y=s0, col sep=comma] {data/fig2_wall.csv};
+  \addlegendentry{PINN, 5 seeds}
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s1, col sep=comma] {data/fig2_wall.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s2, col sep=comma] {data/fig2_wall.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s3, col sep=comma] {data/fig2_wall.csv};
+  \addplot[cOx, line width=0.55pt, forget plot] table[x=xi, y=s4, col sep=comma] {data/fig2_wall.csv};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

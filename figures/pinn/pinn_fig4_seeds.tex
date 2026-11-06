@@ -1,0 +1,18 @@
+\documentclass[border=1.5pt]{standalone}
+\input{../pgf/style.tex}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.45cm}, width=7.3cm, height=4.8cm]
+\nextgroupplot[title={(a) error against the 91,935-cell Euler run}, xlabel={seed}, ylabel={PINN minus CFD (\%)}, xmin=-0.5, xmax=4.5, ymin=0, ymax=0.3, scaled y ticks=false, yticklabel style={/pgf/number format/.cd, fixed, fixed zerofill, precision=2}, xtick={0,1,2,3,4}, legend pos=north east, legend columns=2, legend style={font=\footnotesize}]
+  \addplot[only marks, mark=*, mark size=2pt, cOx] table[x=seed, y=dCd, col sep=comma] {data/fig4_seeds.csv}; \addlegendentry{$C_d$}
+  \addplot[only marks, mark=square*, mark size=1.8pt, cFu] table[x=seed, y=dCf, col sep=comma] {data/fig4_seeds.csv}; \addlegendentry{$C_f$ ratio}
+  \draw[cK, refline] (axis cs:-0.5,0.2) -- (axis cs:4.5,0.2) node[ann, pos=0.12, above] {gate, 0.2 \%};
+\nextgroupplot[title={(b) loss terms, seed 0}, xlabel={training step}, ylabel={loss term}, ymode=log, xmin=0, xmax=34000, ymin=2e-6, ymax=10, scaled x ticks=false, legend pos=north east, legend style={font=\footnotesize}]
+  \addplot[cK, line width=0.8pt, mark=*, mark size=1pt] table[x=step, y=total, col sep=comma] {data/fig4_loss.csv}; \addlegendentry{total}
+  \addplot[cOx, line width=0.8pt, mark=*, mark size=1pt] table[x=step, y=Mr, col sep=comma] {data/fig4_loss.csv}; \addlegendentry{radial momentum}
+  \addplot[cFu, line width=0.8pt, mark=*, mark size=1pt] table[x=step, y=s, col sep=comma] {data/fig4_loss.csv}; \addlegendentry{second law}
+  \addplot[cIn, line width=0.8pt, mark=*, mark size=1pt] table[x=step, y=Mx, col sep=comma] {data/fig4_loss.csv}; \addlegendentry{axial momentum}
+  \draw[cK, refline] (axis cs:20000,2e-6) -- (axis cs:20000,10) node[ann, pos=0.08, left] {L-BFGS starts};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

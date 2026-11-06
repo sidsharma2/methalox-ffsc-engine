@@ -1,0 +1,18 @@
+\documentclass[border=1.5pt]{standalone}
+\input{../pgf/style.tex}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=3 by 1, horizontal sep=1.45cm}, width=5.25cm, height=4.5cm, xlabel={$x/R_t$}, xmin=-3, xmax=15]
+\nextgroupplot[title={(a) Mach number}, ylabel={Mach number}, legend pos=south east, legend style={font=\footnotesize}]
+  \addplot[cIn, line width=2.0pt] table[x=xi, y=M, col sep=comma] {data/fig1.csv}; \addlegendentry{exact}
+  \addplot[cFu, densely dashed, line width=0.8pt] table[x=xi, y=M_s, col sep=comma] {data/fig1.csv}; \addlegendentry{strong form}
+  \addplot[cOx, line width=0.8pt] table[x=xi, y=M_w, col sep=comma] {data/fig1.csv}; \addlegendentry{impulse balance}
+\nextgroupplot[title={(b) Mach number error}, ylabel={PINN minus exact}, scaled y ticks=false, yticklabel style={/pgf/number format/.cd, fixed, fixed zerofill, precision=2}]
+  \addplot[cFu, densely dashed, line width=0.8pt] table[x=xi, y=eM_s, col sep=comma] {data/fig1.csv};
+  \addplot[cOx, line width=0.8pt] table[x=xi, y=eM_w, col sep=comma] {data/fig1.csv};
+\nextgroupplot[title={(c) stagnation pressure drift}, ylabel={$\ln(p_0/p_{0,c})$}, scaled y ticks=false, yticklabel style={/pgf/number format/.cd, fixed, fixed zerofill, precision=2}]
+  \addplot[cFu, densely dashed, line width=0.8pt] table[x=xi, y=lnp0_s, col sep=comma] {data/fig1.csv};
+  \addplot[cOx, line width=0.8pt] table[x=xi, y=lnp0_w, col sep=comma] {data/fig1.csv};
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

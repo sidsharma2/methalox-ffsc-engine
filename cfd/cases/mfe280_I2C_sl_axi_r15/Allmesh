@@ -1,0 +1,16 @@
+#!/bin/bash
+# Mesh only: blockMesh, checkMesh, exit-plane faceZone, cell centres for the
+# initial field. Does not start the flow solver.
+cd "$(dirname "$0")" || exit 1
+if [ -z "$WM_PROJECT_DIR" ]; then
+    . /usr/lib/openfoam/openfoam2306/etc/bashrc || exit 1
+fi
+
+blockMesh > log.blockMesh 2>&1 || { echo "blockMesh failed, see log.blockMesh"; exit 1; }
+checkMesh > log.checkMesh 2>&1
+echo "checkMesh exit status $? (log.checkMesh)"
+topoSet > log.topoSet 2>&1 || { echo "topoSet failed, see log.topoSet"; exit 1; }
+rm -rf 0 && cp -r 0.orig 0
+postProcess -func writeCellCentres -time 0 > log.writeCellCentres 2>&1 \
+    || { echo "writeCellCentres failed"; exit 1; }
+grep -E "^ *cells:|non-orthogonality Max|Max skewness|Max aspect|Failed|Mesh OK|\*\*\*" log.checkMesh

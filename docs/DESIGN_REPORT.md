@@ -346,13 +346,15 @@ I1 finished with a characteristic switch on that face: ambient pressure unless t
 
 | Result (mean of the last 2,000 iterations) | I1 | I2-C |
 |---|---|---|
-| Discharge coefficient (CFD / ideal 1-D mass flow) | 0.9924 | 0.9924 |
-| Sea-level thrust, CFD / ideal 1-D (MN) | 2.760 / 2.816 | 2.759 / 2.814 |
-| Sea-level Isp, CFD / ideal 1-D (s) | 343.3 / 347.6 | 345.8 / 350.1 |
-| Vacuum Cf, CFD / ideal 1-D (the cycle model's η_Cf) | 0.981 | 0.981 |
+| Discharge coefficient (CFD / ideal 1-D mass flow) | 0.9937 | 0.9937 |
+| Sea-level thrust, CFD / ideal 1-D (MN) | 2.764 / 2.816 | 2.763 / 2.814 |
+| Sea-level Isp, CFD / ideal 1-D (s) | 343.3 / 347.6 | 345.9 / 350.1 |
+| Vacuum Cf, CFD / ideal 1-D (the cycle model's η_Cf) | 0.983 | 0.983 |
 | Bell wall pressure at the lip | 179 kPa | 200 kPa |
 
-The nozzle efficiency the cycle model assumes, η_Cf = 0.98, holds: the CFD gives 0.981 for both iterations, with the loss in divergence and wall friction. The throat passes 0.76 % less than the 1-D flow (2-D sonic line and boundary layer); in the design this sits inside the delivered c*. HiSA agrees with rhoCentralFoam within 0.07 % in discharge coefficient and 0.12 % in vacuum Isp. The plume runs reproduce the nozzle-only exit plane within 0.002 % in thrust. The bell stays attached at sea level: the wall pressure falls to the lip with no plateau or rise, to 1.8 times ambient in I1 and 2.0 times in I2-C.
+The nozzle efficiency the cycle model assumes, η_Cf = 0.98, holds: the CFD gives 0.983 for both iterations, with the loss in divergence and wall friction. The throat passes 0.63 % less than the 1-D flow (2-D sonic line and boundary layer); in the design this sits inside the delivered c*. HiSA agrees with rhoCentralFoam within 0.07 % in discharge coefficient and 0.12 % in vacuum Isp. The plume runs reproduce the nozzle-only exit plane within 0.002 % in thrust. The bell stays attached at sea level: the wall pressure falls to the lip with no plateau or rise, to 1.8 times ambient in I1 and 2.0 times in I2-C.
+
+These values use the flat-face sector factor 2π / sin 5° = 72.0915. Earlier versions of this report used 72, which read mass flow, thrust and the Cf ratio about 0.13 % low (Cd 0.9924, Cf ratio 0.981). Vacuum Isp did not change.
 
 The near plume is steady. Over the last three saves (I2-C: 16,000, 18,000 and 20,000; I1: 17,000, 18,000 and 20,000) the centreline Mach number agrees within 0.01 from the throat to x = 5.1 m in I2-C and to x = 4.75 m in I1. That covers the first two shock cells. Further downstream it has not settled. The shock cells move between saves, and the shear layer rolls up into large structures that convect downstream and radiate pressure waves into the ambient gas. Images of that region show one state of a moving pattern; averaging it would need a time-accurate restart.
 
@@ -615,7 +617,7 @@ The first unit costs more than the improved engine ($3.94M against $3.37M), main
 
 Drawings: the I2-C set is issued as revision B under the same drawing numbers in `drawings/I2-C/` (`MFE280-I2-C-DWG-SET.pdf`, 11 sheets: GA-001, TCA-002, INJ-003, TPO-004, TPF-005, JNT-006, VIS-007, VIS-008, MFG-009, VIS-010, VIS-011; `MFE280-I2-C-PID-SET.pdf`, PID-000 to PID-004), built with `drawings/src/build_set.py --iter I2-C`. Every sheet of the iteration-1 set is regenerated from the I2-C model, with weld symbols at the welded joints. The section-view and 3D sheets are extended, and a build-strategy sheet (MFG-009) shows the hybrid route of every part with its cost. The P&ID shows the laser igniters, the hydrostatic bearing supply from the CH4 discharge and the welded lines. The iteration-1 set stays as issued (revision A), with a build-strategy addendum in `drawings/I1-addendum/`.
 
-CFD: both nozzles (I1 and I2-C) and their sea-level plumes ran in OpenFOAM (section 12). `cfd/post_compare.py` turns the exit-plane monitors into thrust and Isp, compares them with the ideal 1-D flow of the same gas, and plots the convergence (`figures/pgf/fig15_cfd_convergence.png`). The vacuum thrust-coefficient ratio is 0.981 for both iterations, against the η_Cf = 0.98 that the cycle model assumes.
+CFD: both nozzles (I1 and I2-C) and their sea-level plumes ran in OpenFOAM (section 12). `cfd/post_compare.py` turns the exit-plane monitors into thrust and Isp, compares them with the ideal 1-D flow of the same gas, and plots the convergence (`figures/pgf/fig15_cfd_convergence.png`). The vacuum thrust-coefficient ratio is 0.983 for both iterations, against the η_Cf = 0.98 that the cycle model assumes.
 
 ## 18. Limitations and next steps
 

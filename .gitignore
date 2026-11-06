@@ -16,3 +16,7 @@ results/variants/*/contour.csv
 cad/iterations/*/mesh/
 cad/iterations/*/*.FCBak
 *.log
+
+# PINN study: rebuilt by pinn.ensemble, or working figures
+results/pinn/fields_*.npz
+figures/pinn/interim/

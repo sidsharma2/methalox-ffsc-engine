@@ -1,0 +1,16 @@
+\documentclass[border=1.5pt]{standalone}
+\input{../pgf/style.tex}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.45cm}, width=7.3cm, height=5.0cm]
+\nextgroupplot[title={(a) pressure at the wall}, xlabel={$x/R_t$}, ylabel={$p/p_0$}, ymode=log, xmin=0, xmax=14.5, legend pos=north east, legend style={font=\footnotesize}]
+  \addplot[cR, line width=0.9pt] table[x=xi, y=cfd, col sep=comma] {data/fig3_wall_v.csv}; \addlegendentry{RANS CFD}
+  \addplot[cK, line width=0.9pt] table[x=xi, y=cfd, col sep=comma] {data/fig3_wall.csv}; \addlegendentry{Euler CFD}
+  \addplot[cOx, line width=0.9pt] table[x=xi, y=pinn, col sep=comma] {data/fig3_wall.csv}; \addlegendentry{PINN, seed mean}
+\nextgroupplot[title={(b) Mach number across the exit plane}, xlabel={$r/R_e$}, ylabel={Mach number}, xmin=0, xmax=1, ymin=1.5, ymax=4.1, legend pos=south west, legend style={font=\footnotesize}]
+  \addplot[cR, line width=0.9pt] table[x=r, y=cfd, col sep=comma] {data/fig3_exit_v.csv}; \addlegendentry{RANS CFD}
+  \addplot[cK, line width=0.9pt] table[x=r, y=cfd, col sep=comma] {data/fig3_exit.csv}; \addlegendentry{Euler CFD}
+  \addplot[cOx, line width=0.9pt] table[x=r, y=pinn, col sep=comma] {data/fig3_exit.csv}; \addlegendentry{PINN, seed mean}
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

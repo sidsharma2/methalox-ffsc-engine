@@ -1,7 +1,7 @@
 """Compare the OpenFOAM runs with the 1-D model: mass flow, thrust and Isp from the exit-plane monitors.
 
 For each case it reads postProcessing/ from the WSL run directory (or the copy in cfd/cases/), scales
-the 5-degree wedge by case_info["wedge_factor"], and computes
+the 5-degree wedge by sector_factor() (2 pi / sin(theta), 72.0915 at 5 degrees), and computes
     F   = W [ int rho u u_x dA + int (p - p_amb) dA ]   at the nozzle exit plane
     Isp = F / (mdot_in g0)
 against the ideal 1-D flow of the same equivalent gas (case_info["reference_1d"]["ideal_chosen_gas"]).
@@ -34,6 +34,12 @@ MIKTEX = Path(r"C:\Users\siddh\AppData\Local\Programs\MiKTeX\miktex\bin\x64")
 GS = Path(r"C:\Users\siddh\AppData\Local\Programs\Ghostscript\gs10.05.1\bin\gswin64c.exe")
 
 
+def sector_factor(wedge_deg):
+    """Full nozzle / wedge. make_case.py puts the vertices at (r cos a, +-r sin a), so a wedge cross-section is a flat
+    triangle of area r^2 sin(theta) / 2. The 360 / theta stored in older case_info.json files reads 0.127 % low at 5 degrees."""
+    return 2 * math.pi / math.sin(math.radians(wedge_deg))
+
+
 def series(pp, name, col=1, vector=False):
     """Concatenate all restart folders of one surfaceFieldValue/force monitor; returns (iter, value)."""
     rows = {}
@@ -61,7 +67,7 @@ def analyse(tag, name):
         return None
     ci = ROOT / "cfd" / "cases" / name / "case_info.json"
     info = json.loads((ci if ci.exists() else base / "case_info.json").read_text())   # nozzle-only runs: run dir
-    W = info["wedge_factor"]
+    W = sector_factor(info["mesh"]["wedge_deg"])
     ref = info["reference_1d"]["ideal_chosen_gas"]
     pp = base / "postProcessing"
     it_in, m_in = series(pp, "inletMassFlow")
@@ -114,13 +120,14 @@ def figure(res):
 \begin{document}
 \begin{tikzpicture}
 \begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.6cm}, width=7.0cm, height=4.6cm,
-    xlabel={iteration (local time step)}]
-\nextgroupplot[ylabel={sea-level $I_{sp}$ from exit plane (s)}, title={(a) thrust convergence (dashed: ideal 1-D)},
+    xlabel={iteration (local time step)}, xtick={0,4000,...,24000}, xmin=0, xmax=24000]
+\nextgroupplot[ylabel={sea-level $I_{sp}$ from exit plane (s)}, title={(a) thrust convergence (thin dotted: ideal 1-D)}, ymin=328, ymax=352,
     legend pos=south east]
 """ + "\n".join(plots_a) + r"""
-\nextgroupplot[ylabel={$\dot m_{in} / \dot m_{1\text{-}D}$}, title={(b) inlet mass flow}]
+\nextgroupplot[ylabel={$\dot m_{in} / \dot m_{1\text{-}D}$}, title={(b) inlet mass flow},
+    yticklabel style={/pgf/number format/.cd, fixed, fixed zerofill, precision=3}]
 """ + "\n".join(plots_b) + r"""
-  \draw[cK, refline] (rel axis cs:0,0.5) -- (rel axis cs:1,0.5);
+  \draw[cK, refline] (axis cs:0,1) -- (axis cs:24000,1);
 \end{groupplot}
 \end{tikzpicture}
 \end{document}

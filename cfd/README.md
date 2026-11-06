@@ -28,6 +28,9 @@ restart with a new side boundary (run 4c, see "Run history"). The numbers are un
 `--results results/iterations/I2-C`. `post_compare.py` reads the exit-plane monitors of all
 runs and compares thrust and Isp with the 1-D model.
 
+On 2026-11-04 inviscid Euler runs and a PINN comparison were added. See "Inviscid runs and the
+PINN comparison".
+
 ## Files
 
 | Path | Content |
@@ -42,6 +45,9 @@ runs and compares thrust and Isp with the 1-D model.
 | `plume_from_nozzle.sh` | Maps a converged nozzle-only solution onto time 0 of a plume case. |
 | `hisa_nozzle.sh` | HiSA (implicit) version of a nozzle-only case from the same saved time, for the solver comparison. |
 | `post_compare.py` | Thrust, Isp and mass-flow comparison with the 1-D model; discharge coefficient and vacuum Cf ratio; figure 15. |
+| `euler_nozzle.sh` | Euler restart of a nozzle-only run: slip walls, no viscosity, no turbulence model. |
+| `check_wedge.py` | Measures the inlet and outlet patch areas against pi R^2, for the two sector factors. |
+| `render_pinn.py` | CFD and PINN contours on the real mesh, with errors, close-ups and the seed spread. |
 | `plume_composition.py` | Exit-plane gas composition for the emission images (shifting equilibrium from the core chamber state to the design exit pressure); writes `results/plume_exit_composition.json`. |
 | `render_plume.py` | Field images on the x-r plane (Mach number, temperature, log pressure, schlieren of ln rho), a Mach/schlieren split and a path-traced cutaway, through AetherCFD. |
 | `render_los.py` | Line-of-sight images across the plume: knife-edge schlieren with two edge directions, shadowgraph, optically thin H2O + CO2 emission and its optical depth. |
@@ -411,9 +417,11 @@ nozzle-only `outlet` patch do not have this problem.
 
 ## Outputs
 
-The case is a 5 deg sector. Multiply every integrated flow, force and area by
-360/5 = 72. The wedge uses chords instead of arcs, so areas come out 0.03 % below a
-full revolution. That error is the same for mass flow and thrust and cancels in Isp.
+The case is a 5 deg sector with flat faces. A cross-section is a triangle of area
+r^2 sin(theta) / 2, so multiply every integrated flow, force and area by
+2 pi / sin(5 deg) = 72.0915. The arc factor 360/5 = 72 reads 0.127 % low. That error
+cancels in vacuum Isp but stays in mass flow, thrust, Cd and the Cf ratio.
+`post_compare.py` applies the flat-face factor.
 
 | Function object | Output (`postProcessing/<name>/<start time>/`) |
 |---|---|
@@ -478,16 +486,19 @@ ratio, the number the cycle model applies as eta_Cf = 0.98.
 
 | Case | Iterations | mdot (kg/s) | Cd | F_sl (MN) | F_sl / 1-D | Isp_sl (s) | Isp_vac, exit (s) | Cf_vac / 1-D |
 |---|---|---|---|---|---|---|---|---|
-| I1 nozzle-only | 24,000 | 819.76 | 0.9924 | 2.7600 | 0.9803 | 343.32 | 361.94 | 0.9814 |
-| I1 HiSA, nozzle-only | 7,000 | 820.31 | 0.9931 | 2.7600 | 0.9803 | 343.10 | 361.51 | 0.9809 |
-| I1 plume | 20,000 | 819.74 | 0.9924 | 2.7599 | 0.9802 | 343.32 | 361.94 | 0.9814 |
-| I2-C nozzle-only | 24,000 | 813.59 | 0.9924 | 2.7593 | 0.9804 | 345.83 | 362.17 | 0.9814 |
-| I2-C plume | 20,000 | 813.57 | 0.9924 | 2.7593 | 0.9804 | 345.85 | 362.17 | 0.9814 |
+| I1 nozzle-only | 24,000 | 820.80 | 0.9937 | 2.7637 | 0.9816 | 343.34 | 361.94 | 0.9826 |
+| I1 HiSA, nozzle-only | 7,000 | 821.35 | 0.9943 | 2.7637 | 0.9816 | 343.12 | 361.51 | 0.9821 |
+| I1 plume | 20,000 | 820.79 | 0.9937 | 2.7636 | 0.9816 | 343.34 | 361.94 | 0.9826 |
+| I2-C nozzle-only | 24,000 | 814.62 | 0.9937 | 2.7629 | 0.9817 | 345.85 | 362.17 | 0.9827 |
+| I2-C plume | 20,000 | 814.61 | 0.9937 | 2.7630 | 0.9817 | 345.87 | 362.17 | 0.9827 |
 
-- Nozzle efficiency: the vacuum Cf ratio is 0.981 for both iterations, against the 0.98
-  the cycle model assumes. The sea-level thrust ratio is 0.980. The loss is divergence
+- Correction, 2026-11-04: this table uses the flat-face sector factor. Before that date it
+  used 72, which gave Cd 0.9924, Cf_vac ratio 0.9814 and F_sl ratio 0.9803. Vacuum Isp did
+  not change, and sea-level Isp rose by 0.02 s.
+- Nozzle efficiency: the vacuum Cf ratio is 0.983 for both iterations, against the 0.98
+  the cycle model assumes. The sea-level thrust ratio is 0.982. The loss is divergence
   (exit angle 8.3 deg) and wall friction, with adiabatic walls and wall functions.
-- Discharge coefficient: the throat passes 0.76 % less than the 1-D flow (2-D sonic line
+- Discharge coefficient: the throat passes 0.63 % less than the 1-D flow (2-D sonic line
   and boundary layer). In the design this sits inside the delivered c* (eta_c* = 0.99).
 - Solver cross-check: HiSA (implicit, AUSM+up) on the same I1 nozzle mesh agrees with
   `rhoCentralFoam` within 0.07 % in Cd, 0.01 % in thrust and 0.12 % in exit vacuum Isp,
@@ -522,6 +533,38 @@ for I1, whose 16,000 save was purged.
 - LTS RANS has therefore not reached a steady state in the far plume. The iteration-20,000
   field there is one state of a pseudo-time cycle; a time average would need a
   time-accurate run. Nothing upstream of the exit plane depends on it.
+
+## Inviscid runs and the PINN comparison
+
+`euler_nozzle.sh` restarts the I2-C nozzle-only run with slip walls, no viscosity and no
+turbulence model. The inlet, gas and numerics stay the same, so the difference from the
+RANS run is the viscous loss. The finer run uses `make_case.py --res 1.5` and starts from
+the coarse Euler solution mapped onto the new mesh.
+
+| Run | Cells | Iterations | Wall time | Cd | Cf_vac / 1-D | Isp_vac, exit (s) | Mass imbalance |
+|---|---|---|---|---|---|---|---|
+| RANS | 40,860 | 20,000 | 2 h 01 min, 4 ranks | 0.99370 | 0.98271 | 362.17 | 0.019 % |
+| Euler | 40,860 | 20,000 | 46 min, 4 ranks | 0.99478 | 0.98781 | 363.66 | 0.010 % |
+| Euler, finer | 91,935 | 30,000 | 2 h 10 min, 8 ranks | 0.99480 | 0.98787 | 363.67 | 0.016 % |
+
+- Loss split on the 40,860-cell mesh: the 1.73 % nozzle loss is 1.22 % 2-D divergence and
+  0.51 % viscous. The 0.63 % Cd deficit is 0.52 % from the 2-D sonic line and 0.11 % from the
+  boundary layer.
+- Mesh check: from the coarse to the finer mesh, Cd moves 0.002 % and the Cf ratio 0.006 %.
+  Block means of the finer run's vacuum Isp scatter by 0.0004 %. Two meshes give no observed
+  order of convergence.
+- Internal shock: the bell has a real shock that reaches the axis near x/Rt = 10. It is not
+  mesh converged. On the axis, the peak Mach number goes from 4.137 at x/Rt = 9.62 to 4.179 at
+  x/Rt = 9.83, the trough from 3.279 to 3.190, and the width from 0.47 Rt to 0.22 Rt. The shock
+  fills too little volume to change the integrals.
+- Theory: Kliegel-Levine for a wall radius of curvature of 1.5 Rt at the throat gives Cd
+  0.9947 to 0.9952, which brackets the Euler value. The I2-C wall radius of curvature is 1.5 Rt
+  upstream of the throat and 0.382 Rt downstream.
+
+A PINN trained on the same problem with no CFD data matches the finer Euler run: on five
+seeds, Cd 0.99542 (+0.062 %), Cf ratio 0.98858 (+0.072 %) and Mach L2 error 0.87 %. It
+smears the internal shock over about 3 Rt, and its largest Mach error is 0.47. The method,
+results and figures are in `../pinn/README.md`, and the contours are in `figures/pinn/step3`.
 
 ## Plume images
 

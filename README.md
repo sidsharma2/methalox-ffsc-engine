@@ -77,6 +77,7 @@ Full write-up: [docs/DESIGN_REPORT.md](docs/DESIGN_REPORT.md).
 | `drawings/` | drawing sets as AutoCAD DWG (2018 format) and PDF. I1 (Rev A): `MFE280-DWG-SET.pdf` (8 sheets), `MFE280-PID-SET.pdf`, build-strategy addendum in `I1-addendum/`. I2-C (Rev B): `I2-C/MFE280-I2-C-DWG-SET.pdf` (11 sheets incl. MFG-009 hybrid build strategy and 3D views), `I2-C/MFE280-I2-C-PID-SET.pdf`. Sources in `drawings/src/` (template, P&ID tag database, sheet builders, `build_set.py`) |
 | `figures/` | report figures (PDF + PNG) |
 | `cfd/` | OpenFOAM case generator and CFD plan |
+| `pinn/` | PINN study of the nozzle against the CFD |
 | `tests/` | pytest checks (conservation, sizing rules) |
 
 ## How to run
@@ -189,4 +190,4 @@ Environment: Python 3.12 venv in `.venv` (numpy, scipy, matplotlib, cantera 3.2,
 
 ## Status
 
-Iteration 1 is frozen (git tag `iter-1`). Iteration 2 is in progress on branch `iter-2`: options register, economics layer and plasma study done. The OpenFOAM nozzle and sea-level plume runs are done for I1 and I2-C: they confirm the assumed nozzle efficiency (vacuum Cf ratio 0.981 against η_Cf = 0.98). The physics is first-order (0-D/1-D, ideal gas in the preburners, Bartz heat flux) and the CAD is a layout-level assembly. Open items are listed in [section 18 of the report](docs/DESIGN_REPORT.md#18-limitations-and-next-steps).
+Iteration 1 is frozen (git tag `iter-1`). Iteration 2 is in progress on branch `iter-2`: options register, economics layer and plasma study done. The OpenFOAM nozzle and sea-level plume runs are done for I1 and I2-C: they confirm the assumed nozzle efficiency (vacuum Cf ratio 0.983 against η_Cf = 0.98). A PINN trained with no CFD data matches the inviscid CFD to 0.07 % in Cf ([pinn/README.md](pinn/README.md)). The physics is first-order (0-D/1-D, ideal gas in the preburners, Bartz heat flux) and the CAD is a layout-level assembly. Open items are listed in [section 18 of the report](docs/DESIGN_REPORT.md#18-limitations-and-next-steps).

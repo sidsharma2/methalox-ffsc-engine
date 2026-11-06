@@ -712,7 +712,7 @@ maxDeltaT       1e-6;
     return foam_file("dictionary", "controlDict", f"""
 application     rhoCentralFoam;
 {timing}
-// Wedge = {m['wedge_deg']:g} deg sector: multiply integrated flows/forces by 360/{m['wedge_deg']:g} = {360 / m['wedge_deg']:g}.
+// Wedge = {m['wedge_deg']:g} deg sector with flat faces: multiply integrated flows/forces by 2 pi / sin({m['wedge_deg']:g} deg) = {2 * math.pi / math.sin(math.radians(m['wedge_deg'])):.4f}.
 functions
 {{
     // ---- exit plane (faceZone exitPlane, x = {x_e:.6g} m, oriented +x)
@@ -1173,7 +1173,7 @@ def main():
                                              "isp_sl_delivered": P["isp_sl"], "isp_sl_ideal_uniform": P["isp_sl_ideal"],
                                              "At": P["At_m2"], "gamma_eff": P["gamma_eff"],
                                              "throttle": design["throttle"]}},
-            "wedge_factor": 360.0 / args.wedge_deg}
+            "wedge_factor": 2 * math.pi / math.sin(math.radians(args.wedge_deg))}
 
     if case.exists() and not args.force:
         sys.exit(f"{case} exists: use --force to overwrite (or --init-only)")
